@@ -1,65 +1,52 @@
-import Image from "next/image";
+import { Users, Clock, CalendarDays, Briefcase } from 'lucide-react';
+import { StatsCard } from '@/components/dashboard/stats-card';
+import { HeadcountChart } from '@/components/dashboard/headcount-chart';
+import { RecentEvents } from '@/components/dashboard/recent-events';
+import { Breadcrumb } from '@/components/layout/breadcrumb';
 
-export default function Home() {
+// Demo data - in production these come from Supabase
+const statsData = [
+  { title: '전체 임직원', value: '127', icon: Users, description: '정규직 115 / 계약직 12' },
+  { title: '금일 출근', value: '98', icon: Clock, description: '출근율 77.2%', trend: { value: 2.1, label: '전주 대비' } },
+  { title: '휴가 중', value: '8', icon: CalendarDays, description: '연차 5 / 병가 2 / 기타 1' },
+  { title: '진행 중 채용', value: '3', icon: Briefcase, description: '총 지원자 45명' },
+];
+
+const headcountData = [
+  { department: '인사팀', count: 8 },
+  { department: '재무팀', count: 6 },
+  { department: '총무팀', count: 5 },
+  { department: '개발1팀', count: 25 },
+  { department: '개발2팀', count: 20 },
+  { department: 'QA팀', count: 12 },
+  { department: '국내영업', count: 15 },
+  { department: '해외영업', count: 10 },
+];
+
+const recentEvents = [
+  { id: '1', type: 'hire' as const, title: '김신입 사원 입사', date: '2026-02-19', description: '개발1팀' },
+  { id: '2', type: 'appointment' as const, title: '이과장 → 차장 승진', date: '2026-02-17', description: '개발2팀' },
+  { id: '3', type: 'leave' as const, title: '박대리 연차 사용', date: '2026-02-16', description: '2/16 ~ 2/18' },
+  { id: '4', type: 'birthday' as const, title: '최부장 생일', date: '2026-02-20', description: 'QA팀' },
+  { id: '5', type: 'hire' as const, title: '정인턴 입사', date: '2026-02-15', description: '인사팀 인턴' },
+];
+
+export default function DashboardPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div>
+      <Breadcrumb />
+      <h1 className="text-2xl font-bold mb-6">대시보드</h1>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        {statsData.map((stat) => (
+          <StatsCard key={stat.title} {...stat} />
+        ))}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <HeadcountChart data={headcountData} />
+        <RecentEvents events={recentEvents} />
+      </div>
     </div>
   );
 }

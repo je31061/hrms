@@ -32,7 +32,7 @@ export function useAuth() {
       setState({
         user: { id: 'demo', email: 'admin@demo.com' } as User,
         role: 'admin',
-        employeeId: null,
+        employeeId: 'e022',
         loading: false,
       });
       return;

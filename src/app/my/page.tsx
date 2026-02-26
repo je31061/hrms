@@ -1,0 +1,759 @@
+'use client';
+
+import { useMemo } from 'react';
+import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { useLeaveStore, demoEmployees } from '@/lib/stores/leave-store';
+import { usePayrollStore, demoEmployeeSalaries } from '@/lib/stores/payroll-store';
+import {
+  LEAVE_REQUEST_STATUS,
+  PAYROLL_STATUS,
+  APPOINTMENT_TYPES,
+  ATTENDANCE_STATUS,
+  TRAINING_STATUS,
+} from '@/lib/constants/codes';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import {
+  User,
+  Briefcase,
+  CalendarDays,
+  Banknote,
+  Clock,
+  GraduationCap,
+  ArrowRight,
+} from 'lucide-react';
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const MY_ID = 'e022';
+
+// ---------------------------------------------------------------------------
+// Hardcoded data
+// ---------------------------------------------------------------------------
+
+const myAppointments = [
+  { id: 'ma-1', date: '2020-01-01', type: 'hire', prevDept: null, prevRank: null, newDept: '개발1팀', newRank: '사원', reason: '신규 입사' },
+  { id: 'ma-2', date: '2022-01-01', type: 'promotion', prevDept: '개발1팀', prevRank: '사원', newDept: '개발1팀', newRank: '주임', reason: '정기 승진' },
+  { id: 'ma-3', date: '2024-01-01', type: 'promotion', prevDept: '개발1팀', prevRank: '주임', newDept: '개발1팀', newRank: '대리', reason: '정기 승진' },
+];
+
+const myAttendance = [
+  { id: 'at-1', date: '2026-02-27', clockIn: '08:52', clockOut: null, workHours: null, status: 'normal' },
+  { id: 'at-2', date: '2026-02-26', clockIn: '08:48', clockOut: '18:05', workHours: 9.28, status: 'normal' },
+  { id: 'at-3', date: '2026-02-25', clockIn: '09:12', clockOut: '18:30', workHours: 9.3, status: 'late' },
+  { id: 'at-4', date: '2026-02-24', clockIn: '08:55', clockOut: '18:00', workHours: 9.08, status: 'normal' },
+  { id: 'at-5', date: '2026-02-21', clockIn: '08:50', clockOut: '19:30', workHours: 10.67, status: 'normal', overtime: 2.67 },
+  { id: 'at-6', date: '2026-02-20', clockIn: '08:58', clockOut: '18:10', workHours: 9.2, status: 'normal' },
+  { id: 'at-7', date: '2026-02-19', clockIn: '08:45', clockOut: '18:00', workHours: 9.25, status: 'normal' },
+  { id: 'at-8', date: '2026-02-18', clockIn: null, clockOut: null, workHours: null, status: 'leave' },
+  { id: 'at-9', date: '2026-02-17', clockIn: '08:50', clockOut: '17:00', workHours: 8.17, status: 'early_leave' },
+  { id: 'at-10', date: '2026-02-16', clockIn: '08:55', clockOut: '18:00', workHours: 9.08, status: 'normal' },
+];
+
+const myTrainings = [
+  { id: 'tr-1', title: '정보보안 교육', category: '법정교육', startDate: '2026-02-10', endDate: '2026-02-10', status: 'completed', score: 92 },
+  { id: 'tr-2', title: 'React/Next.js 심화', category: '직무교육', startDate: '2026-02-17', endDate: '2026-02-21', status: 'in_progress', score: null },
+  { id: 'tr-3', title: '신입사원 OJT 교육', category: '직무교육', startDate: '2026-03-02', endDate: '2026-03-06', status: 'planned', score: null },
+];
+
+const myEvaluations = [
+  { id: 'ev-1', period: '2025년 하반기', grade: 'A', totalScore: 88, evaluator: '문팀장', comment: '업무 수행 능력 우수, 팀 내 협업 적극적', completedAt: '2025-12-28' },
+  { id: 'ev-2', period: '2025년 상반기', grade: 'B', totalScore: 78, evaluator: '문팀장', comment: '꾸준한 성장세, 기술 역량 향상 필요', completedAt: '2025-06-30' },
+];
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const fmtWon = (n: number) => new Intl.NumberFormat('ko-KR').format(n) + '원';
+
+function getYearsMonths(hireDate: string): string {
+  const hire = new Date(hireDate);
+  const now = new Date();
+  let years = now.getFullYear() - hire.getFullYear();
+  let months = now.getMonth() - hire.getMonth();
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+  if (years === 0) return `${months}개월`;
+  if (months === 0) return `${years}년`;
+  return `${years}년 ${months}개월`;
+}
+
+const appointmentTypeVariant = (type: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  switch (type) {
+    case 'promotion':
+    case 'hire':
+      return 'default';
+    case 'transfer':
+      return 'secondary';
+    case 'title_change':
+      return 'outline';
+    case 'resignation':
+      return 'destructive';
+    default:
+      return 'outline';
+  }
+};
+
+const leaveStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  switch (status) {
+    case 'approved':
+      return 'default';
+    case 'pending':
+      return 'secondary';
+    case 'rejected':
+      return 'destructive';
+    case 'cancelled':
+      return 'outline';
+    default:
+      return 'outline';
+  }
+};
+
+const payrollStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  switch (status) {
+    case 'paid':
+      return 'default';
+    case 'confirmed':
+      return 'secondary';
+    case 'draft':
+      return 'outline';
+    default:
+      return 'outline';
+  }
+};
+
+const attendanceStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  switch (status) {
+    case 'normal':
+      return 'default';
+    case 'late':
+    case 'absent':
+      return 'destructive';
+    case 'early_leave':
+      return 'secondary';
+    case 'leave':
+      return 'outline';
+    default:
+      return 'outline';
+  }
+};
+
+const trainingStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  switch (status) {
+    case 'completed':
+      return 'default';
+    case 'in_progress':
+      return 'secondary';
+    case 'planned':
+      return 'outline';
+    case 'cancelled':
+      return 'destructive';
+    default:
+      return 'outline';
+  }
+};
+
+const gradeVariant = (grade: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  switch (grade) {
+    case 'S':
+    case 'A':
+      return 'default';
+    case 'B':
+      return 'secondary';
+    case 'C':
+      return 'outline';
+    case 'D':
+      return 'destructive';
+    default:
+      return 'outline';
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Page Component
+// ---------------------------------------------------------------------------
+
+export default function MyPage() {
+  const myInfo = demoEmployees.find((e) => e.id === MY_ID)!;
+
+  // Leave store
+  const leaveTypes = useLeaveStore((s) => s.leaveTypes);
+  const leaveBalances = useLeaveStore((s) => s.leaveBalances);
+  const leaveRequests = useLeaveStore((s) => s.leaveRequests);
+
+  // Payroll store
+  const savedPayrolls = usePayrollStore((s) => s.savedPayrolls);
+
+  // Derived data
+  const myBalances = useMemo(
+    () => leaveBalances.filter((b) => b.employee_id === MY_ID && b.year === 2026),
+    [leaveBalances],
+  );
+
+  const myRequests = useMemo(
+    () =>
+      leaveRequests
+        .filter((r) => r.employee_id === MY_ID)
+        .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    [leaveRequests],
+  );
+
+  const myPayrolls = useMemo(
+    () =>
+      savedPayrolls
+        .filter((p) => p.employee_id === MY_ID)
+        .sort((a, b) => (b.year !== a.year ? b.year - a.year : b.month - a.month)),
+    [savedPayrolls],
+  );
+
+  const annualBalance = useMemo(
+    () => myBalances.find((b) => b.leave_type_id === 'lt-annual'),
+    [myBalances],
+  );
+
+  const latestPayroll = useMemo(() => (myPayrolls.length > 0 ? myPayrolls[0] : null), [myPayrolls]);
+
+  const activeBalances = useMemo(
+    () =>
+      myBalances.filter((b) => {
+        const lt = leaveTypes.find((t) => t.id === b.leave_type_id);
+        return lt?.is_active;
+      }),
+    [myBalances, leaveTypes],
+  );
+
+  const sortedAppointments = useMemo(
+    () => [...myAppointments].sort((a, b) => b.date.localeCompare(a.date)),
+    [],
+  );
+
+  // Attendance summary
+  const attendanceSummary = useMemo(() => {
+    const total = myAttendance.length;
+    const normal = myAttendance.filter((a) => a.status === 'normal').length;
+    const late = myAttendance.filter((a) => a.status === 'late').length;
+    const other = myAttendance.filter(
+      (a) => a.status === 'early_leave' || a.status === 'absent' || a.status === 'leave',
+    ).length;
+    return { total, normal, late, other };
+  }, []);
+
+  const yearsOfService = getYearsMonths(myInfo.hire_date);
+  const baseSalary = demoEmployeeSalaries[MY_ID] ?? 0;
+
+  return (
+    <div>
+      <Breadcrumb />
+      <h1 className="text-2xl font-bold mb-6">마이페이지</h1>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Profile Card                                                        */}
+      {/* ------------------------------------------------------------------ */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Left: Avatar + Name */}
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16">
+                <AvatarFallback className="text-xl font-bold">
+                  {myInfo.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h2 className="text-xl font-bold">
+                  {myInfo.name}{' '}
+                  <span className="text-base font-normal text-muted-foreground">
+                    {myInfo.position_rank}
+                  </span>
+                </h2>
+                <p className="text-sm text-muted-foreground">{myInfo.department}</p>
+              </div>
+            </div>
+
+            {/* Right: Quick Stats */}
+            <div className="flex flex-wrap gap-6">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">근속</p>
+                <p className="text-sm font-semibold">{yearsOfService}</p>
+              </div>
+              <Separator orientation="vertical" className="h-10 hidden md:block" />
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">연차 잔여</p>
+                <p className="text-sm font-semibold">
+                  {annualBalance
+                    ? `${annualBalance.remaining_days} / ${annualBalance.total_days}일`
+                    : '-'}
+                </p>
+              </div>
+              <Separator orientation="vertical" className="h-10 hidden md:block" />
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">이번달 급여</p>
+                <p className="text-sm font-semibold">
+                  {latestPayroll ? fmtWon(latestPayroll.net_pay) : '-'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Tabs                                                                */}
+      {/* ------------------------------------------------------------------ */}
+      <Tabs defaultValue="basic" className="w-full">
+        <TabsList className="w-full justify-start mb-4">
+          <TabsTrigger value="basic" className="gap-1">
+            <User className="h-3.5 w-3.5" />
+            기본정보
+          </TabsTrigger>
+          <TabsTrigger value="appointments" className="gap-1">
+            <Briefcase className="h-3.5 w-3.5" />
+            인사발령
+          </TabsTrigger>
+          <TabsTrigger value="leave" className="gap-1">
+            <CalendarDays className="h-3.5 w-3.5" />
+            연차/휴가
+          </TabsTrigger>
+          <TabsTrigger value="payroll" className="gap-1">
+            <Banknote className="h-3.5 w-3.5" />
+            급여
+          </TabsTrigger>
+          <TabsTrigger value="attendance" className="gap-1">
+            <Clock className="h-3.5 w-3.5" />
+            근태
+          </TabsTrigger>
+          <TabsTrigger value="training" className="gap-1">
+            <GraduationCap className="h-3.5 w-3.5" />
+            교육/평가
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ============================================================== */}
+        {/* Tab 1: 기본정보                                                 */}
+        {/* ============================================================== */}
+        <TabsContent value="basic">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">기본 정보</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {[
+                  { label: '사원번호', value: 'EMP-022' },
+                  { label: '이름', value: '권대리' },
+                  { label: '부서', value: '개발1팀' },
+                  { label: '직급', value: '대리' },
+                  { label: '입사일', value: '2020-01-01' },
+                  { label: '근속연수', value: yearsOfService },
+                  { label: '고용형태', value: '정규직' },
+                  { label: '이메일', value: 'kwon@company.com' },
+                  { label: '연락처', value: '010-2222-0022' },
+                  { label: '은행', value: '국민은행 ***-****-2022' },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-lg border p-4">
+                    <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
+                    <p className="text-sm font-medium">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ============================================================== */}
+        {/* Tab 2: 인사발령 내역                                            */}
+        {/* ============================================================== */}
+        <TabsContent value="appointments">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">인사발령 내역</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>발령일</TableHead>
+                      <TableHead>유형</TableHead>
+                      <TableHead>변경 전</TableHead>
+                      <TableHead>변경 후</TableHead>
+                      <TableHead>사유</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedAppointments.map((a) => (
+                      <TableRow key={a.id}>
+                        <TableCell className="font-medium">{a.date}</TableCell>
+                        <TableCell>
+                          <Badge variant={appointmentTypeVariant(a.type)} className="text-xs">
+                            {APPOINTMENT_TYPES[a.type as keyof typeof APPOINTMENT_TYPES] ?? a.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {a.prevDept && a.prevRank ? `${a.prevDept} / ${a.prevRank}` : '-'}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {a.newDept && a.newRank ? `${a.newDept} / ${a.newRank}` : '-'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{a.reason}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ============================================================== */}
+        {/* Tab 3: 연차/휴가                                                */}
+        {/* ============================================================== */}
+        <TabsContent value="leave">
+          {/* Balance cards */}
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mb-6">
+            {activeBalances.map((b) => {
+              const lt = leaveTypes.find((t) => t.id === b.leave_type_id);
+              const rate = b.total_days > 0 ? Math.round((b.used_days / b.total_days) * 100) : 0;
+              return (
+                <Card key={b.id}>
+                  <CardContent className="pt-4">
+                    <p className="text-sm text-muted-foreground mb-1">{lt?.name ?? '-'}</p>
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="text-2xl font-bold">{b.remaining_days}</span>
+                      <span className="text-sm text-muted-foreground">
+                        / {b.total_days}일 (사용: {b.used_days})
+                      </span>
+                    </div>
+                    <Progress value={rate} className="h-2" />
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Leave request history */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">휴가 신청 내역</CardTitle>
+              <Link href="/leave">
+                <Button size="sm">
+                  휴가 신청하기
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>신청일</TableHead>
+                      <TableHead>유형</TableHead>
+                      <TableHead>기간</TableHead>
+                      <TableHead>일수</TableHead>
+                      <TableHead>사유</TableHead>
+                      <TableHead>상태</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {myRequests.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                          휴가 신청 내역이 없습니다.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      myRequests.map((req) => {
+                        const lt = leaveTypes.find((t) => t.id === req.leave_type_id);
+                        return (
+                          <TableRow key={req.id}>
+                            <TableCell className="text-sm">{req.created_at}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs">
+                                {lt?.name ?? '-'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {req.start_date === req.end_date
+                                ? req.start_date
+                                : `${req.start_date} ~ ${req.end_date}`}
+                            </TableCell>
+                            <TableCell className="text-sm">{req.days}일</TableCell>
+                            <TableCell className="text-sm">{req.reason}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={leaveStatusVariant(req.status)}
+                                className="text-xs"
+                              >
+                                {LEAVE_REQUEST_STATUS[req.status as keyof typeof LEAVE_REQUEST_STATUS] ?? req.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ============================================================== */}
+        {/* Tab 4: 급여 내역                                                */}
+        {/* ============================================================== */}
+        <TabsContent value="payroll">
+          {/* Base salary card */}
+          <Card className="mb-6">
+            <CardContent className="pt-4">
+              <p className="text-sm text-muted-foreground mb-1">현재 기본급</p>
+              <p className="text-2xl font-bold">{fmtWon(baseSalary)}</p>
+            </CardContent>
+          </Card>
+
+          {/* Payroll history */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">급여 내역</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>기간</TableHead>
+                      <TableHead className="text-right">기본급</TableHead>
+                      <TableHead className="text-right">총 지급액</TableHead>
+                      <TableHead className="text-right">총 공제액</TableHead>
+                      <TableHead className="text-right">실수령액</TableHead>
+                      <TableHead>상태</TableHead>
+                      <TableHead>명세서</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {myPayrolls.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground">
+                          급여 내역이 없습니다.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      myPayrolls.map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-medium">
+                            {p.year}년 {String(p.month).padStart(2, '0')}월
+                          </TableCell>
+                          <TableCell className="text-right text-sm">{fmtWon(p.base_salary)}</TableCell>
+                          <TableCell className="text-right text-sm">{fmtWon(p.total_earnings)}</TableCell>
+                          <TableCell className="text-right text-sm">{fmtWon(p.total_deductions)}</TableCell>
+                          <TableCell className="text-right text-sm font-semibold">
+                            {fmtWon(p.net_pay)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={payrollStatusVariant(p.status)} className="text-xs">
+                              {PAYROLL_STATUS[p.status as keyof typeof PAYROLL_STATUS] ?? p.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Link href={`/payroll/payslip/${p.id}`}>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs">
+                                보기
+                              </Button>
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ============================================================== */}
+        {/* Tab 5: 근태 현황                                                */}
+        {/* ============================================================== */}
+        <TabsContent value="attendance">
+          {/* Summary cards */}
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-4 mb-6">
+            <Card>
+              <CardContent className="pt-4 text-center">
+                <p className="text-xs text-muted-foreground mb-1">이번 달 총 근무일</p>
+                <p className="text-2xl font-bold">{attendanceSummary.total}일</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 text-center">
+                <p className="text-xs text-muted-foreground mb-1">정상출근</p>
+                <p className="text-2xl font-bold text-green-600">{attendanceSummary.normal}일</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 text-center">
+                <p className="text-xs text-muted-foreground mb-1">지각</p>
+                <p className="text-2xl font-bold text-red-600">{attendanceSummary.late}일</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 text-center">
+                <p className="text-xs text-muted-foreground mb-1">조퇴/결근/휴가</p>
+                <p className="text-2xl font-bold text-orange-600">{attendanceSummary.other}일</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Attendance table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">근태 기록</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>날짜</TableHead>
+                      <TableHead>출근</TableHead>
+                      <TableHead>퇴근</TableHead>
+                      <TableHead>근무시간</TableHead>
+                      <TableHead>상태</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {myAttendance.map((a) => (
+                      <TableRow key={a.id}>
+                        <TableCell className="font-medium">{a.date}</TableCell>
+                        <TableCell className="text-sm">{a.clockIn ?? '-'}</TableCell>
+                        <TableCell className="text-sm">{a.clockOut ?? '-'}</TableCell>
+                        <TableCell className="text-sm">
+                          {a.workHours != null ? `${a.workHours.toFixed(2)}h` : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={attendanceStatusVariant(a.status)}
+                            className="text-xs"
+                          >
+                            {ATTENDANCE_STATUS[a.status as keyof typeof ATTENDANCE_STATUS] ?? a.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ============================================================== */}
+        {/* Tab 6: 교육/평가                                                */}
+        {/* ============================================================== */}
+        <TabsContent value="training">
+          {/* Training history */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-base">교육 이력</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>교육명</TableHead>
+                      <TableHead>분류</TableHead>
+                      <TableHead>기간</TableHead>
+                      <TableHead>상태</TableHead>
+                      <TableHead>점수</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {myTrainings.map((t) => (
+                      <TableRow key={t.id}>
+                        <TableCell className="font-medium">{t.title}</TableCell>
+                        <TableCell className="text-sm">{t.category}</TableCell>
+                        <TableCell className="text-sm">
+                          {t.startDate === t.endDate
+                            ? t.startDate
+                            : `${t.startDate} ~ ${t.endDate}`}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={trainingStatusVariant(t.status)} className="text-xs">
+                            {TRAINING_STATUS[t.status as keyof typeof TRAINING_STATUS] ?? t.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm font-medium">
+                          {t.score != null ? `${t.score}점` : '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Separator className="my-6" />
+
+          {/* Evaluation results */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">평가 결과</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>평가기간</TableHead>
+                      <TableHead>등급</TableHead>
+                      <TableHead>점수</TableHead>
+                      <TableHead>평가자</TableHead>
+                      <TableHead>코멘트</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {myEvaluations.map((ev) => (
+                      <TableRow key={ev.id}>
+                        <TableCell className="font-medium">{ev.period}</TableCell>
+                        <TableCell>
+                          <Badge variant={gradeVariant(ev.grade)} className="text-xs">
+                            {ev.grade}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm font-medium">{ev.totalScore}점</TableCell>
+                        <TableCell className="text-sm">{ev.evaluator}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate">
+                          {ev.comment}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

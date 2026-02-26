@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
+  UserCircle,
   Network,
   Users,
   Clock,
@@ -21,6 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const menuItems = [
   { href: '/', label: '대시보드', icon: LayoutDashboard },
+  { href: '/my', label: '마이페이지', icon: UserCircle },
   { href: '/organization', label: '조직도', icon: Network },
   { href: '/employees', label: '인사정보', icon: Users },
   { href: '/attendance', label: '근태관리', icon: Clock },

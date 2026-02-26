@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut, User } from 'lucide-react';
+import Link from 'next/link';
 
 export function Header() {
   const { user, role, signOut } = useAuth();
@@ -44,9 +45,11 @@ export function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                내 정보
+              <DropdownMenuItem asChild>
+                <Link href="/my">
+                  <User className="mr-2 h-4 w-4" />
+                  내 정보
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut}>

@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { WORKFLOW_TYPE, WORKFLOW_STATUS } from '@/lib/constants/codes';
 import type { WorkflowInstance } from '@/lib/stores/workflow-store';
 import { format } from 'date-fns';
+import { FileText } from 'lucide-react';
 
 interface WorkflowProgressCardProps {
   instance: WorkflowInstance;
@@ -18,6 +19,13 @@ export default function WorkflowProgressCard({ instance }: WorkflowProgressCardP
     (t) => t.status === 'completed' || t.status === 'skipped'
   ).length;
   const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  // Document stats
+  const allDocs = instance.tasks.flatMap((t) => t.documents || []);
+  const totalDocs = allDocs.length;
+  const submittedDocs = allDocs.filter((d) => d.status === 'submitted').length;
+  const pendingDocs = allDocs.filter((d) => d.status === 'pending').length;
+  const rejectedDocs = allDocs.filter((d) => d.status === 'rejected').length;
 
   const typeLabel =
     WORKFLOW_TYPE[instance.type as keyof typeof WORKFLOW_TYPE] || instance.type;
@@ -61,6 +69,21 @@ export default function WorkflowProgressCard({ instance }: WorkflowProgressCardP
               </span>
             </div>
           </div>
+
+          {totalDocs > 0 && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <FileText className="h-3 w-3" />
+              <span>
+                서류 {submittedDocs}/{totalDocs}
+                {rejectedDocs > 0 && (
+                  <span className="text-red-500 ml-1">(반려 {rejectedDocs})</span>
+                )}
+                {pendingDocs > 0 && instance.status === 'in_progress' && (
+                  <span className="ml-1">(미제출 {pendingDocs})</span>
+                )}
+              </span>
+            </div>
+          )}
 
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>

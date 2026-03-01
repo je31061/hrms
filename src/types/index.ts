@@ -120,6 +120,7 @@ export type EvalType = 'self' | 'peer' | 'manager' | 'subordinate';
 export type WorkflowType = 'onboarding' | 'offboarding' | 'promotion' | 'transfer' | 'custom';
 export type WorkflowStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 export type WorkflowTaskStatus = 'pending' | 'completed' | 'skipped';
+export type DocumentSubmissionStatus = 'pending' | 'submitted' | 'rejected';
 
 export interface Department {
   id: string;

@@ -118,6 +118,12 @@ export const WORKFLOW_TASK_STATUS = {
   skipped: '건너뜀',
 } as const;
 
+export const DOCUMENT_SUBMISSION_STATUS = {
+  pending: '미제출',
+  submitted: '제출완료',
+  rejected: '반려',
+} as const;
+
 export const WORKFLOW_ASSIGNEE_ROLES = {
   hr: '인사담당자',
   it: 'IT담당자',

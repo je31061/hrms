@@ -13,6 +13,7 @@ import WorkflowStepper from '@/components/workflow/workflow-stepper';
 import WorkflowChecklist from '@/components/workflow/workflow-checklist';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { FileText } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +35,8 @@ export default function WorkflowDetailPage() {
   const completeTask = useWorkflowStore((s) => s.completeTask);
   const skipTask = useWorkflowStore((s) => s.skipTask);
   const cancelInstance = useWorkflowStore((s) => s.cancelInstance);
+  const submitDocument = useWorkflowStore((s) => s.submitDocument);
+  const rejectDocument = useWorkflowStore((s) => s.rejectDocument);
 
   const [selectedStep, setSelectedStep] = useState<number>(instance?.current_step ?? 0);
 
@@ -53,6 +56,14 @@ export default function WorkflowDetailPage() {
     (t) => t.status === 'completed' || t.status === 'skipped'
   ).length;
   const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  // Document stats
+  const allDocs = instance.tasks.flatMap((t) => t.documents || []);
+  const totalDocs = allDocs.length;
+  const submittedDocs = allDocs.filter((d) => d.status === 'submitted').length;
+  const rejectedDocs = allDocs.filter((d) => d.status === 'rejected').length;
+  const pendingDocs = allDocs.filter((d) => d.status === 'pending').length;
+  const docProgressPercent = totalDocs > 0 ? Math.round((submittedDocs / totalDocs) * 100) : 0;
 
   const typeLabel = WORKFLOW_TYPE[instance.type as keyof typeof WORKFLOW_TYPE] || instance.type;
   const statusLabel = WORKFLOW_STATUS[instance.status as keyof typeof WORKFLOW_STATUS] || instance.status;
@@ -80,6 +91,16 @@ export default function WorkflowDetailPage() {
     cancelInstance(instance.id);
     toast.success('프로세스가 취소되었습니다.');
     router.push('/workflows');
+  };
+
+  const handleSubmitDocument = (taskId: string, docId: string) => {
+    submitDocument(instance.id, taskId, docId, '현재 사용자');
+    toast.success('서류가 제출되었습니다.');
+  };
+
+  const handleRejectDocument = (taskId: string, docId: string, reason: string) => {
+    rejectDocument(instance.id, taskId, docId, reason);
+    toast.info('서류가 반려되었습니다.');
   };
 
   return (
@@ -155,6 +176,42 @@ export default function WorkflowDetailPage() {
         </CardContent>
       </Card>
 
+      {/* Document Summary Card */}
+      {totalDocs > 0 && (
+        <Card className="mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              서류 현황
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+              <div>
+                <p className="text-xs text-muted-foreground">전체</p>
+                <p className="text-lg font-bold">{totalDocs}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">제출완료</p>
+                <p className="text-lg font-bold text-green-600">{submittedDocs}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">미제출</p>
+                <p className="text-lg font-bold text-gray-500">{pendingDocs}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">반려</p>
+                <p className="text-lg font-bold text-red-600">{rejectedDocs}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Progress value={docProgressPercent} className="flex-1 h-2" />
+              <span className="text-xs font-medium">{docProgressPercent}%</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stepper Card */}
       <Card className="mb-6">
         <CardHeader className="pb-0">
@@ -186,6 +243,8 @@ export default function WorkflowDetailPage() {
             instanceStatus={instance.status}
             onComplete={handleComplete}
             onSkip={handleSkip}
+            onSubmitDocument={handleSubmitDocument}
+            onRejectDocument={handleRejectDocument}
           />
         </CardContent>
       </Card>

@@ -16,6 +16,7 @@ import {
   Briefcase,
   GraduationCap,
   Star,
+  ListChecks,
   Settings,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -33,6 +34,7 @@ const menuItems = [
   { href: '/recruitment', label: '채용관리', icon: Briefcase },
   { href: '/training', label: '교육관리', icon: GraduationCap },
   { href: '/evaluation', label: '평가관리', icon: Star },
+  { href: '/workflows', label: '업무프로세스', icon: ListChecks },
   { href: '/settings', label: '설정', icon: Settings },
 ];
 

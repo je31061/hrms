@@ -116,6 +116,11 @@ export type EvaluationStatus = 'draft' | 'in_progress' | 'completed';
 export type EvalItemStatus = 'draft' | 'submitted' | 'confirmed';
 export type EvalType = 'self' | 'peer' | 'manager' | 'subordinate';
 
+// Workflow types
+export type WorkflowType = 'onboarding' | 'offboarding' | 'promotion' | 'transfer' | 'custom';
+export type WorkflowStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
+export type WorkflowTaskStatus = 'pending' | 'completed' | 'skipped';
+
 export interface Department {
   id: string;
   name: string;

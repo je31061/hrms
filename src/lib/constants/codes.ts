@@ -97,6 +97,37 @@ export const UNUSED_LEAVE_POLICIES = {
   payout: '수당지급',
 } as const;
 
+export const WORKFLOW_TYPE = {
+  onboarding: '입사',
+  offboarding: '퇴사',
+  promotion: '승진',
+  transfer: '전보',
+  custom: '사용자정의',
+} as const;
+
+export const WORKFLOW_STATUS = {
+  pending: '대기',
+  in_progress: '진행중',
+  completed: '완료',
+  cancelled: '취소',
+} as const;
+
+export const WORKFLOW_TASK_STATUS = {
+  pending: '미완료',
+  completed: '완료',
+  skipped: '건너뜀',
+} as const;
+
+export const WORKFLOW_ASSIGNEE_ROLES = {
+  hr: '인사담당자',
+  it: 'IT담당자',
+  manager: '부서장',
+  admin: '총무담당자',
+  employee: '본인',
+  mentor: '멘토',
+  finance: '재무담당자',
+} as const;
+
 export const APPROVAL_DOCUMENT_TYPES = {
   leave: '휴가',
   expense: '경비',

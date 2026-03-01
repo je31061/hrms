@@ -22,6 +22,7 @@ const pathLabels: Record<string, string> = {
   recruitment: '채용관리',
   training: '교육관리',
   evaluation: '평가관리',
+  workflows: '업무프로세스',
   settings: '설정',
   my: '마이페이지',
 };

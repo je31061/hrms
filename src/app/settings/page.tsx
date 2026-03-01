@@ -11,6 +11,9 @@ import EvaluationSettings from '@/components/settings/evaluation-settings';
 import NotificationSettings from '@/components/settings/notification-settings';
 import SecuritySettings from '@/components/settings/security-settings';
 import HolidaySettings from '@/components/settings/holiday-settings';
+import DisplaySettings from '@/components/settings/display-settings';
+import PrintTemplateSettings from '@/components/settings/print-template-settings';
+import WorkflowTemplateSettings from '@/components/settings/workflow-template-settings';
 
 export default function SettingsPage() {
   return (
@@ -29,6 +32,9 @@ export default function SettingsPage() {
           <TabsTrigger value="notification">알림설정</TabsTrigger>
           <TabsTrigger value="security">보안설정</TabsTrigger>
           <TabsTrigger value="holiday">공휴일설정</TabsTrigger>
+          <TabsTrigger value="display">화면설정</TabsTrigger>
+          <TabsTrigger value="print">출력설정</TabsTrigger>
+          <TabsTrigger value="workflow">프로세스설정</TabsTrigger>
         </TabsList>
 
         <TabsContent value="company">
@@ -57,6 +63,15 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="holiday">
           <HolidaySettings />
+        </TabsContent>
+        <TabsContent value="display">
+          <DisplaySettings />
+        </TabsContent>
+        <TabsContent value="print">
+          <PrintTemplateSettings />
+        </TabsContent>
+        <TabsContent value="workflow">
+          <WorkflowTemplateSettings />
         </TabsContent>
       </Tabs>
     </div>

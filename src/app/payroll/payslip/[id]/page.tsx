@@ -3,6 +3,7 @@
 import { use } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { usePayrollStore } from '@/lib/stores/payroll-store';
+import { useSettingsStore } from '@/lib/stores/settings-store';
 import { demoEmployees } from '@/lib/stores/leave-store';
 import { PAYROLL_STATUS } from '@/lib/constants/codes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +19,8 @@ export default function PayslipPage({ params }: { params: Promise<{ id: string }
   const { id } = use(params);
   const savedPayrolls = usePayrollStore((s) => s.savedPayrolls);
   const payroll = savedPayrolls.find((p) => p.id === id);
+  const pt = useSettingsStore((s) => s.printTemplate);
+  const companyName = useSettingsStore((s) => s.company.name);
 
   if (!payroll) {
     return (
@@ -45,7 +48,7 @@ export default function PayslipPage({ params }: { params: Promise<{ id: string }
   return (
     <div>
       <Breadcrumb />
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 no-print">
         <h1 className="text-2xl font-bold">급여명세서</h1>
         <Button variant="outline" onClick={() => window.print()}>
           <Printer className="h-4 w-4 mr-2" />
@@ -53,36 +56,55 @@ export default function PayslipPage({ params }: { params: Promise<{ id: string }
         </Button>
       </div>
 
-      <Card className="max-w-2xl mx-auto">
+      <Card className="max-w-2xl mx-auto print-area">
         <CardHeader className="text-center border-b">
-          <CardTitle className="text-xl">급여명세서</CardTitle>
+          {pt.company_name_visible && (
+            <p className="text-sm text-muted-foreground font-semibold">
+              {pt.company_logo_text || companyName}
+            </p>
+          )}
+          <CardTitle className="text-xl">{pt.header_title || '급여명세서'}</CardTitle>
           <p className="text-muted-foreground">{payroll.year}년 {payroll.month}월</p>
           <Badge
             variant={payroll.status === 'paid' ? 'default' : payroll.status === 'confirmed' ? 'secondary' : 'outline'}
-            className="mt-1"
+            className="mt-1 no-print"
           >
             {PAYROLL_STATUS[payroll.status as keyof typeof PAYROLL_STATUS]}
           </Badge>
         </CardHeader>
         <CardContent className="pt-6 space-y-6">
+          {/* Header Note */}
+          {pt.header_note && (
+            <>
+              <p className="text-sm text-muted-foreground text-center">{pt.header_note}</p>
+              <Separator />
+            </>
+          )}
+
           {/* Employee Info */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">성명:</span>{' '}
               <strong>{emp?.name ?? payroll.employee_id}</strong>
             </div>
-            <div>
-              <span className="text-muted-foreground">부서:</span>{' '}
-              <strong>{emp?.department ?? ''}</strong>
-            </div>
-            <div>
-              <span className="text-muted-foreground">직급:</span>{' '}
-              <strong>{emp?.position_rank ?? ''}</strong>
-            </div>
-            <div>
-              <span className="text-muted-foreground">부양가족:</span>{' '}
-              <strong>{payroll.dependents}인</strong>
-            </div>
+            {pt.show_department && (
+              <div>
+                <span className="text-muted-foreground">부서:</span>{' '}
+                <strong>{emp?.department ?? ''}</strong>
+              </div>
+            )}
+            {pt.show_position && (
+              <div>
+                <span className="text-muted-foreground">직급:</span>{' '}
+                <strong>{emp?.position_rank ?? ''}</strong>
+              </div>
+            )}
+            {pt.show_dependents && (
+              <div>
+                <span className="text-muted-foreground">부양가족:</span>{' '}
+                <strong>{payroll.dependents}인</strong>
+              </div>
+            )}
           </div>
 
           <Separator />
@@ -98,15 +120,17 @@ export default function PayslipPage({ params }: { params: Promise<{ id: string }
                     <div className="flex justify-between text-sm">
                       <div className="flex items-center gap-1">
                         <span>{item.name}</span>
-                        {!item.is_taxable && (
+                        {pt.show_tax_badge && !item.is_taxable && (
                           <Badge variant="outline" className="text-[10px] h-4">비과세</Badge>
                         )}
                       </div>
                       <span className="font-mono">{fmtWon(item.amount)}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">
-                      {item.formula}
-                    </p>
+                    {pt.show_formula && (
+                      <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">
+                        {item.formula}
+                      </p>
+                    )}
                   </div>
                 ))}
                 <Separator />
@@ -127,9 +151,11 @@ export default function PayslipPage({ params }: { params: Promise<{ id: string }
                       <span>{item.name}</span>
                       <span className="font-mono text-destructive">{fmtWon(item.amount)}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">
-                      {item.formula}
-                    </p>
+                    {pt.show_formula && (
+                      <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">
+                        {item.formula}
+                      </p>
+                    )}
                   </div>
                 ))}
                 <Separator />
@@ -148,6 +174,14 @@ export default function PayslipPage({ params }: { params: Promise<{ id: string }
             <p className="text-muted-foreground text-sm">실수령액</p>
             <p className="text-3xl font-bold text-primary">{fmtWon(payroll.net_pay)}</p>
           </div>
+
+          {/* Footer Note */}
+          {pt.footer_note && (
+            <>
+              <Separator />
+              <p className="text-xs text-muted-foreground text-center">{pt.footer_note}</p>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

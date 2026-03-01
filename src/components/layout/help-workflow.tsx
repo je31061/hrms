@@ -1,0 +1,340 @@
+'use client';
+
+import { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import {
+  HelpCircle,
+  X,
+  LayoutDashboard,
+  UserCircle,
+  Network,
+  Users,
+  Clock,
+  CalendarDays,
+  Banknote,
+  ArrowRightLeft,
+  FileCheck,
+  Briefcase,
+  GraduationCap,
+  Star,
+  Settings,
+  ChevronDown,
+  ArrowRight,
+  ArrowDown,
+  type LucideIcon,
+} from 'lucide-react';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+// ── Workflow diagram data ──
+
+interface FlowNode {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  href: string;
+}
+
+interface FlowRow {
+  nodes: FlowNode[];
+}
+
+const workflowRows: FlowRow[] = [
+  {
+    nodes: [
+      { id: 'employees', label: '인사정보', icon: Users, href: '/employees' },
+      { id: 'appointments', label: '인사발령', icon: ArrowRightLeft, href: '/appointments' },
+      { id: 'organization', label: '조직도', icon: Network, href: '/organization' },
+    ],
+  },
+  {
+    nodes: [
+      { id: 'attendance', label: '근태관리', icon: Clock, href: '/attendance' },
+      { id: 'leave', label: '휴가관리', icon: CalendarDays, href: '/leave' },
+    ],
+  },
+  {
+    nodes: [
+      { id: 'payroll', label: '급여관리', icon: Banknote, href: '/payroll' },
+    ],
+  },
+  {
+    nodes: [
+      { id: 'approval', label: '전자결재', icon: FileCheck, href: '/approval' },
+    ],
+  },
+  {
+    nodes: [
+      { id: 'training', label: '교육관리', icon: GraduationCap, href: '/training' },
+      { id: 'evaluation', label: '평가관리', icon: Star, href: '/evaluation' },
+    ],
+  },
+  {
+    nodes: [
+      { id: 'recruitment', label: '채용관리', icon: Briefcase, href: '/recruitment' },
+      { id: 'hire', label: '입사', icon: Users, href: '/employees' },
+      { id: 'employees2', label: '인사정보', icon: Users, href: '/employees' },
+    ],
+  },
+];
+
+// ── Module guide data ──
+
+interface ModuleGuide {
+  label: string;
+  icon: LucideIcon;
+  href: string;
+  description: string;
+  workflow: string;
+}
+
+const moduleGuides: ModuleGuide[] = [
+  {
+    label: '대시보드',
+    icon: LayoutDashboard,
+    href: '/',
+    description: '전체 현황을 한눈에 확인합니다. 직원수, 근태, 휴가, 급여 요약 정보를 제공합니다.',
+    workflow: '로그인 → 대시보드 → 현황 카드 확인 → 상세 모듈 이동',
+  },
+  {
+    label: '마이페이지',
+    icon: UserCircle,
+    href: '/my',
+    description: '내 인사정보, 발령내역, 연차, 급여, 근태, 교육/평가 이력을 조회합니다.',
+    workflow: '마이페이지 접속 → 탭 선택 → 정보 조회',
+  },
+  {
+    label: '조직도',
+    icon: Network,
+    href: '/organization',
+    description: '조직 구조를 확인하고, 시뮬레이션 모드로 인사이동을 미리 볼 수 있습니다.',
+    workflow: '조직도 조회 → 부서 클릭 → 구성원 확인 → (시뮬레이션 모드)',
+  },
+  {
+    label: '인사정보',
+    icon: Users,
+    href: '/employees',
+    description: '직원 등록/수정 및 인사카드를 관리합니다. 기본정보, 경력, 학력, 자격증, 가족 정보를 포함합니다.',
+    workflow: '직원 목록 → 직원 선택/등록 → 인사카드 탭별 정보 입력 → 저장',
+  },
+  {
+    label: '근태관리',
+    icon: Clock,
+    href: '/attendance',
+    description: '출퇴근 기록을 관리하고, 월별 근태 현황을 조회합니다.',
+    workflow: '출근 기록 → 퇴근 기록 → 월별 현황 조회 → 이상근태 확인',
+  },
+  {
+    label: '휴가관리',
+    icon: CalendarDays,
+    href: '/leave',
+    description:
+      '직원은 잔여 연차 확인 후 휴가를 신청하고, HR은 승인/반려 및 연차 일괄 부여, 휴가 유형을 설정합니다.',
+    workflow: '잔여 연차 확인 → 휴가 신청 → HR 승인 → 잔여일수 차감 → 완료',
+  },
+  {
+    label: '급여관리',
+    icon: Banknote,
+    href: '/payroll',
+    description:
+      '지급/공제 항목 설정, 급여 계산(직원 선택 → 항목 체크 → 계산식 확인 → 저장), 급여 대장 조회 및 상태 관리(작성중→확정→지급완료), 급여명세서 출력을 수행합니다.',
+    workflow: '항목 설정 → 직원 선택 → 급여 계산 → 확정 → 지급완료 → 명세서 출력',
+  },
+  {
+    label: '인사발령',
+    icon: ArrowRightLeft,
+    href: '/appointments',
+    description: '승진, 전보, 직책변경, 입사, 퇴사 등 발령을 등록하고 이력을 관리합니다.',
+    workflow: '발령 유형 선택 → 대상자 선택 → 발령 내용 입력 → 등록 → 이력 확인',
+  },
+  {
+    label: '전자결재',
+    icon: FileCheck,
+    href: '/approval',
+    description: '휴가, 경비, 발령 등 문서를 기안하고, 결재라인에서 승인/반려합니다.',
+    workflow: '문서 기안 → 결재라인 설정 → 제출 → 순차 승인/반려 → 완료',
+  },
+  {
+    label: '채용관리',
+    icon: Briefcase,
+    href: '/recruitment',
+    description: '채용공고 등록부터 지원자 관리, 서류심사, 면접, 제안, 최종 채용까지의 프로세스를 관리합니다.',
+    workflow: '채용공고 → 지원자 접수 → 서류심사 → 면접 → 제안 → 채용 확정',
+  },
+  {
+    label: '교육관리',
+    icon: GraduationCap,
+    href: '/training',
+    description: '교육과정을 등록하고, 수강 신청 및 이수 현황을 관리합니다.',
+    workflow: '교육과정 등록 → 수강 신청 → 교육 진행 → 이수 처리',
+  },
+  {
+    label: '평가관리',
+    icon: Star,
+    href: '/evaluation',
+    description: '평가기간을 설정하고, 다면평가(자기/동료/상사)를 실시하여 등급을 부여합니다.',
+    workflow: '평가기간 설정 → 평가 대상 배정 → 다면평가 실시 → 등급 부여',
+  },
+  {
+    label: '설정',
+    icon: Settings,
+    href: '/settings',
+    description: '근무일정, 공휴일, 연차정책, 직급체계, 결재양식, 평가항목 등 시스템 전반의 설정을 관리합니다.',
+    workflow: '설정 메뉴 선택 → 항목 조회/수정 → 저장',
+  },
+];
+
+// ── Sub-components ──
+
+function FlowNodeCard({
+  node,
+  isActive,
+}: {
+  node: FlowNode;
+  isActive: boolean;
+}) {
+  const Icon = node.icon;
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+        isActive
+          ? 'border-primary bg-primary text-primary-foreground'
+          : 'border-border bg-card text-card-foreground'
+      )}
+    >
+      <Icon className="h-3.5 w-3.5 shrink-0" />
+      <span>{node.label}</span>
+    </div>
+  );
+}
+
+function WorkflowDiagram({ pathname }: { pathname: string }) {
+  const isNodeActive = (node: FlowNode) => {
+    if (node.href === '/') return pathname === '/';
+    return pathname.startsWith(node.href);
+  };
+
+  return (
+    <div className="rounded-lg border bg-muted/30 p-4">
+      <h3 className="mb-3 text-sm font-semibold text-foreground">전체 업무흐름도</h3>
+      <div className="flex flex-col items-center gap-1.5">
+        {workflowRows.map((row, rowIdx) => (
+          <div key={rowIdx} className="flex flex-col items-center gap-1.5">
+            {rowIdx > 0 && (
+              <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+            <div className="flex items-center gap-1.5">
+              {row.nodes.map((node, nodeIdx) => (
+                <div key={node.id} className="flex items-center gap-1.5">
+                  {nodeIdx > 0 && (
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                  <FlowNodeCard node={node} isActive={isNodeActive(node)} />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GuideItem({ guide, pathname }: { guide: ModuleGuide; pathname: string }) {
+  const [open, setOpen] = useState(false);
+  const Icon = guide.icon;
+  const isActive = guide.href === '/' ? pathname === '/' : pathname.startsWith(guide.href);
+
+  return (
+    <div className={cn('rounded-lg border transition-colors', isActive && 'border-primary/50')}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium hover:bg-muted/50 rounded-lg transition-colors"
+      >
+        <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-primary' : 'text-muted-foreground')} />
+        <span className="flex-1">{guide.label}</span>
+        <ChevronDown
+          className={cn(
+            'h-4 w-4 text-muted-foreground transition-transform',
+            open && 'rotate-180'
+          )}
+        />
+      </button>
+      {open && (
+        <div className="border-t px-3 py-2.5 text-sm">
+          <p className="text-muted-foreground leading-relaxed">{guide.description}</p>
+          <div className="mt-2 rounded-md bg-muted/50 px-2.5 py-2 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">흐름: </span>
+            {guide.workflow}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main component ──
+
+export function HelpWorkflow() {
+  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  return (
+    <>
+      {/* Floating button */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={cn(
+          'liquid-glass fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full transition-transform hover:scale-105 active:scale-95',
+          !open && 'help-pulse'
+        )}
+        aria-label="업무 도움말"
+      >
+        {open ? (
+          <X className="h-6 w-6 text-foreground" />
+        ) : (
+          <HelpCircle className="h-6 w-6 text-foreground" />
+        )}
+      </button>
+
+      {/* Sheet panel */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="right" className="sm:max-w-md w-full p-0 flex flex-col">
+          <SheetHeader className="px-4 pt-4 pb-2 border-b">
+            <SheetTitle className="text-lg">업무 도움말</SheetTitle>
+            <SheetDescription>
+              HRMS 업무흐름 가이드 및 모듈별 사용법
+            </SheetDescription>
+          </SheetHeader>
+
+          <ScrollArea className="flex-1">
+            <div className="flex flex-col gap-4 p-4">
+              {/* Workflow diagram */}
+              <WorkflowDiagram pathname={pathname} />
+
+              {/* Module guides */}
+              <div>
+                <h3 className="mb-2 text-sm font-semibold text-foreground">모듈별 가이드</h3>
+                <div className="flex flex-col gap-2">
+                  {moduleGuides.map((guide) => (
+                    <GuideItem key={guide.href} guide={guide} pathname={pathname} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}

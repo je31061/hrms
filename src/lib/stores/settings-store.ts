@@ -10,6 +10,34 @@ import type {
   CondolenceLeaveRule,
 } from '@/types';
 
+// ---- Display & Print Template types ----
+
+export interface DisplayState {
+  theme: 'system' | 'light' | 'dark';
+  font_size: 'small' | 'medium' | 'large';
+  content_density: 'compact' | 'comfortable' | 'spacious';
+  sidebar_compact: boolean;
+  rows_per_page: number;
+  date_format: 'yyyy-MM-dd' | 'yyyy.MM.dd' | 'yyyy년 MM월 dd일';
+  number_format: 'comma' | 'plain';
+}
+
+export interface PrintTemplateState {
+  header_title: string;
+  company_name_visible: boolean;
+  company_logo_text: string;
+  show_department: boolean;
+  show_position: boolean;
+  show_dependents: boolean;
+  show_formula: boolean;
+  show_tax_badge: boolean;
+  header_note: string;
+  footer_note: string;
+  page_size: 'A4' | 'Letter';
+  orientation: 'portrait' | 'landscape';
+  margin: 'normal' | 'narrow' | 'wide';
+}
+
 // ---- State shape ----
 
 interface SettingsState {
@@ -96,6 +124,12 @@ interface SettingsState {
   // Holidays
   holidays: Holiday[];
   holiday_auto_substitute: boolean;
+
+  // Display
+  display: DisplayState;
+
+  // Print Template
+  printTemplate: PrintTemplateState;
 }
 
 interface SettingsActions {
@@ -139,6 +173,12 @@ interface SettingsActions {
   setHolidayAutoSubstitute: (value: boolean) => void;
   addHoliday: (holiday: Holiday) => void;
   deleteHoliday: (id: string) => void;
+
+  // Display
+  updateDisplay: (data: Partial<DisplayState>) => void;
+
+  // Print Template
+  updatePrintTemplate: (data: Partial<PrintTemplateState>) => void;
 }
 
 export type SettingsStore = SettingsState & SettingsActions;
@@ -313,6 +353,30 @@ export const useSettingsStore = create<SettingsStore>()(
       },
       holidays: defaultHolidays,
       holiday_auto_substitute: true,
+      display: {
+        theme: 'system',
+        font_size: 'medium',
+        content_density: 'comfortable',
+        sidebar_compact: false,
+        rows_per_page: 10,
+        date_format: 'yyyy-MM-dd',
+        number_format: 'comma',
+      },
+      printTemplate: {
+        header_title: '급여명세서',
+        company_name_visible: true,
+        company_logo_text: '',
+        show_department: true,
+        show_position: true,
+        show_dependents: true,
+        show_formula: true,
+        show_tax_badge: true,
+        header_note: '',
+        footer_note: '본 명세서는 급여 지급 내역을 안내하기 위한 문서입니다.',
+        page_size: 'A4',
+        orientation: 'portrait',
+        margin: 'normal',
+      },
 
       // --- Actions ---
       updateCompany: (data) =>
@@ -414,6 +478,12 @@ export const useSettingsStore = create<SettingsStore>()(
         set((s) => ({
           holidays: s.holidays.filter((h) => h.id !== id),
         })),
+
+      updateDisplay: (data) =>
+        set((s) => ({ display: { ...s.display, ...data } })),
+
+      updatePrintTemplate: (data) =>
+        set((s) => ({ printTemplate: { ...s.printTemplate, ...data } })),
     }),
     {
       name: 'hrms-settings',

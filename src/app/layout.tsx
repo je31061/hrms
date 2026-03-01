@@ -5,6 +5,9 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { HelpWorkflow } from '@/components/layout/help-workflow';
+import { ThemeProvider } from 'next-themes';
+import { DisplaySettingsApplier } from '@/components/layout/display-settings-applier';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -27,16 +30,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <TooltipProvider>
-          <Sidebar />
-          <Header />
-          <main className="ml-60 mt-14 min-h-[calc(100vh-3.5rem)] p-6">
-            {children}
-          </main>
-          <Toaster position="top-right" />
-        </TooltipProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <TooltipProvider>
+            <DisplaySettingsApplier />
+            <Sidebar />
+            <Header />
+            <main className="ml-60 mt-14 min-h-[calc(100vh-3.5rem)] p-6">
+              {children}
+            </main>
+            <Toaster position="top-right" />
+            <HelpWorkflow />
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

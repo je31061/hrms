@@ -14,6 +14,7 @@ import HolidaySettings from '@/components/settings/holiday-settings';
 import DisplaySettings from '@/components/settings/display-settings';
 import PrintTemplateSettings from '@/components/settings/print-template-settings';
 import WorkflowTemplateSettings from '@/components/settings/workflow-template-settings';
+import CodeManagementSettings from '@/components/settings/code-management-settings';
 
 export default function SettingsPage() {
   return (
@@ -35,6 +36,7 @@ export default function SettingsPage() {
           <TabsTrigger value="display">화면설정</TabsTrigger>
           <TabsTrigger value="print">출력설정</TabsTrigger>
           <TabsTrigger value="workflow">프로세스설정</TabsTrigger>
+          <TabsTrigger value="codes">코드관리</TabsTrigger>
         </TabsList>
 
         <TabsContent value="company">
@@ -72,6 +74,9 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="workflow">
           <WorkflowTemplateSettings />
+        </TabsContent>
+        <TabsContent value="codes">
+          <CodeManagementSettings />
         </TabsContent>
       </Tabs>
     </div>

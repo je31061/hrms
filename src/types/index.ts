@@ -100,6 +100,21 @@ export type Gender = 'M' | 'F';
 export type DegreeType = 'high_school' | 'associate' | 'bachelor' | 'master' | 'doctorate';
 
 export type AttendanceStatus = 'normal' | 'late' | 'early_leave' | 'absent' | 'holiday' | 'leave';
+
+export interface AttendanceTypeConfig {
+  id: string;
+  code: string;
+  label: string;
+  is_active: boolean;
+  requires_approval: boolean;
+  requires_location: boolean;
+  requires_purpose: boolean;
+  counts_as_work: boolean;
+  sort_order: number;
+  is_system: boolean;
+  created_at: string;
+  updated_at: string;
+}
 export type LeaveRequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 export type PayrollStatus = 'draft' | 'confirmed' | 'paid';
 export type AppointmentType = 'promotion' | 'transfer' | 'title_change' | 'hire' | 'resignation' | 'other';
@@ -121,6 +136,58 @@ export type WorkflowType = 'onboarding' | 'offboarding' | 'promotion' | 'transfe
 export type WorkflowStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 export type WorkflowTaskStatus = 'pending' | 'completed' | 'skipped';
 export type DocumentSubmissionStatus = 'pending' | 'submitted' | 'rejected';
+
+// Audit log types
+export type AuditActionType = 'page_view' | 'create' | 'update' | 'delete' | 'login' | 'logout' | 'export' | 'approve' | 'reject';
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  user_id: string;
+  user_name: string;
+  user_role: UserRole;
+  action_type: AuditActionType;
+  target_type: string;
+  target_id: string | null;
+  target_label: string;
+  details: Record<string, unknown> | null;
+  session_id: string;
+}
+
+export interface AuditLogSettings {
+  enabled: boolean;
+  track_page_views: boolean;
+  track_creates: boolean;
+  track_updates: boolean;
+  track_deletes: boolean;
+  track_logins: boolean;
+  retention_days: number;
+  max_entries: number;
+}
+
+// Auth types
+export interface DemoAccount {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  employee_id: string;
+  department: string;
+  position: string;
+  password: string;
+}
+
+export interface AuthSession {
+  account_id: string;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  role: UserRole;
+  employee_id: string;
+  session_id: string;
+  logged_in_at: string;
+  is_demo: boolean;
+}
 
 export interface Department {
   id: string;
@@ -235,6 +302,9 @@ export interface Attendance {
   overtime_hours: number;
   status: AttendanceStatus;
   note: string | null;
+  attendance_type?: string;
+  location?: string | null;
+  purpose?: string | null;
   created_at: string;
   employee?: Employee;
 }

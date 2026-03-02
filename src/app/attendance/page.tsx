@@ -16,18 +16,29 @@ export default function AttendancePage() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const records = useAttendanceStore((s) => s.records);
   const addRecord = useAttendanceStore((s) => s.addRecord);
-  const getEmployeeById = useEmployeeStore((s) => s.getEmployeeById);
+  const employees = useEmployeeStore((s) => s.employees);
+  const departments = useEmployeeStore((s) => s.departments);
+  const positionRanks = useEmployeeStore((s) => s.positionRanks);
+  const positionTitles = useEmployeeStore((s) => s.positionTitles);
 
   const today = new Date().toISOString().split('T')[0];
 
   const todayRecords = useMemo(() => {
     return records
       .filter((r) => r.date === today)
-      .map((r) => ({
-        ...r,
-        employee: getEmployeeById(r.employee_id),
-      }));
-  }, [records, today, getEmployeeById]);
+      .map((r) => {
+        const emp = employees.find((e) => e.id === r.employee_id);
+        return {
+          ...r,
+          employee: emp ? {
+            ...emp,
+            department: departments.find((d) => d.id === emp.department_id),
+            position_rank: positionRanks.find((rk) => rk.id === emp.position_rank_id),
+            position_title: positionTitles.find((t) => t.id === emp.position_title_id),
+          } : undefined,
+        };
+      });
+  }, [records, today, employees, departments, positionRanks, positionTitles]);
 
   const stats = useMemo(() => {
     const byType: Record<string, number> = {};

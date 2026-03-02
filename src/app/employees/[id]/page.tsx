@@ -15,17 +15,26 @@ import { DEGREE_LABELS } from '@/lib/constants/positions';
 
 export default function EmployeeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const getEmployeeById = useEmployeeStore((s) => s.getEmployeeById);
-  const getCareerByEmployee = useEmployeeStore((s) => s.getCareerByEmployee);
-  const getEducationByEmployee = useEmployeeStore((s) => s.getEducationByEmployee);
-  const getCertsByEmployee = useEmployeeStore((s) => s.getCertsByEmployee);
-  const getFamilyByEmployee = useEmployeeStore((s) => s.getFamilyByEmployee);
+  const employees = useEmployeeStore((s) => s.employees);
+  const departments = useEmployeeStore((s) => s.departments);
+  const positionRanks = useEmployeeStore((s) => s.positionRanks);
+  const positionTitles = useEmployeeStore((s) => s.positionTitles);
+  const careerHistories = useEmployeeStore((s) => s.careerHistories);
+  const educationHistories = useEmployeeStore((s) => s.educationHistories);
+  const certifications = useEmployeeStore((s) => s.certifications);
+  const familyMembers = useEmployeeStore((s) => s.familyMembers);
 
-  const employee = getEmployeeById(id);
-  const career = getCareerByEmployee(id);
-  const education = getEducationByEmployee(id);
-  const certs = getCertsByEmployee(id);
-  const family = getFamilyByEmployee(id);
+  const rawEmp = employees.find((e) => e.id === id);
+  const employee = rawEmp ? {
+    ...rawEmp,
+    department: departments.find((d) => d.id === rawEmp.department_id),
+    position_rank: positionRanks.find((r) => r.id === rawEmp.position_rank_id),
+    position_title: positionTitles.find((t) => t.id === rawEmp.position_title_id),
+  } : undefined;
+  const career = careerHistories.filter((c) => c.employee_id === id);
+  const education = educationHistories.filter((e) => e.employee_id === id);
+  const certs = certifications.filter((c) => c.employee_id === id);
+  const family = familyMembers.filter((f) => f.employee_id === id);
 
   if (!employee) {
     return (

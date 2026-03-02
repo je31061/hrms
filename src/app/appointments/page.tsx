@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -23,10 +24,15 @@ const typeVariant = (type: string): 'default' | 'secondary' | 'destructive' | 'o
 };
 
 export default function AppointmentsPage() {
-  const allAppointments = useAppointmentStore((s) => s.getAllAppointments());
-  const getEmployeeById = useEmployeeStore((s) => s.getEmployeeById);
-  const getDepartmentById = useEmployeeStore((s) => s.getDepartmentById);
-  const getPositionRankById = useEmployeeStore((s) => s.getPositionRankById);
+  const appointments = useAppointmentStore((s) => s.appointments);
+  const employees = useEmployeeStore((s) => s.employees);
+  const departments = useEmployeeStore((s) => s.departments);
+  const positionRanks = useEmployeeStore((s) => s.positionRanks);
+
+  const allAppointments = useMemo(
+    () => [...appointments].sort((a, b) => b.effective_date.localeCompare(a.effective_date)),
+    [appointments],
+  );
 
   return (
     <div>
@@ -66,13 +72,12 @@ export default function AppointmentsPage() {
                     </TableCell>
                   </TableRow>
                 ) : allAppointments.map((a) => {
-                  const emp = getEmployeeById(a.employee_id);
-                  // Find the employees array to look up even resigned employees
-                  const empName = emp?.name ?? useEmployeeStore.getState().employees.find(e => e.id === a.employee_id)?.name ?? a.employee_id;
-                  const prevDept = a.prev_department_id ? getDepartmentById(a.prev_department_id)?.name : null;
-                  const prevRank = a.prev_position_rank_id ? getPositionRankById(a.prev_position_rank_id)?.name : null;
-                  const newDept = a.new_department_id ? getDepartmentById(a.new_department_id)?.name : null;
-                  const newRank = a.new_position_rank_id ? getPositionRankById(a.new_position_rank_id)?.name : null;
+                  const emp = employees.find((e) => e.id === a.employee_id);
+                  const empName = emp?.name ?? a.employee_id;
+                  const prevDept = a.prev_department_id ? departments.find((d) => d.id === a.prev_department_id)?.name : null;
+                  const prevRank = a.prev_position_rank_id ? positionRanks.find((r) => r.id === a.prev_position_rank_id)?.name : null;
+                  const newDept = a.new_department_id ? departments.find((d) => d.id === a.new_department_id)?.name : null;
+                  const newRank = a.new_position_rank_id ? positionRanks.find((r) => r.id === a.new_position_rank_id)?.name : null;
                   return (
                     <TableRow key={a.id}>
                       <TableCell className="font-medium">{a.effective_date}</TableCell>

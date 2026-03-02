@@ -12,13 +12,19 @@ import { useLeaveStore } from '@/lib/stores/leave-store';
 import { useAppointmentStore } from '@/lib/stores/appointment-store';
 
 export default function DashboardPage() {
-  const activeEmployees = useEmployeeStore((s) => s.getActiveEmployees());
+  const employees = useEmployeeStore((s) => s.employees);
   const departments = useEmployeeStore((s) => s.departments);
+  const positionRanks = useEmployeeStore((s) => s.positionRanks);
   const attendanceRecords = useAttendanceStore((s) => s.records);
   const leaveRequests = useLeaveStore((s) => s.leaveRequests);
   const appointments = useAppointmentStore((s) => s.appointments);
 
   const today = new Date().toISOString().split('T')[0];
+
+  const activeEmployees = useMemo(
+    () => employees.filter((e) => e.status === 'active'),
+    [employees],
+  );
 
   // Stats
   const regularCount = activeEmployees.filter((e) => e.employment_type === 'regular').length;
@@ -58,15 +64,16 @@ export default function DashboardPage() {
     // From appointments
     for (const a of appointments.slice(0, 10)) {
       const emp = activeEmployees.find((e) => e.id === a.employee_id) ??
-        useEmployeeStore.getState().employees.find((e) => e.id === a.employee_id);
+        employees.find((e) => e.id === a.employee_id);
       const empName = emp?.name ?? a.employee_id;
+      const empDeptName = emp?.department_id ? departments.find((d) => d.id === emp.department_id)?.name ?? '' : '';
       if (a.type === 'hire') {
-        events.push({ id: a.id, type: 'hire', title: `${empName} 입사`, date: a.effective_date, description: emp?.department?.name ?? '' });
+        events.push({ id: a.id, type: 'hire', title: `${empName} 입사`, date: a.effective_date, description: empDeptName });
       } else if (a.type === 'promotion') {
-        const newRank = useEmployeeStore.getState().positionRanks.find((r) => r.id === a.new_position_rank_id)?.name ?? '';
-        events.push({ id: a.id, type: 'appointment', title: `${empName} → ${newRank} 승진`, date: a.effective_date, description: emp?.department?.name ?? '' });
+        const newRank = positionRanks.find((r) => r.id === a.new_position_rank_id)?.name ?? '';
+        events.push({ id: a.id, type: 'appointment', title: `${empName} → ${newRank} 승진`, date: a.effective_date, description: empDeptName });
       } else if (a.type === 'transfer') {
-        const newDept = useEmployeeStore.getState().departments.find((d) => d.id === a.new_department_id)?.name ?? '';
+        const newDept = departments.find((d) => d.id === a.new_department_id)?.name ?? '';
         events.push({ id: a.id, type: 'appointment', title: `${empName} ${newDept} 전보`, date: a.effective_date, description: '' });
       }
     }
@@ -84,7 +91,7 @@ export default function DashboardPage() {
 
     // Sort desc by date and take 5
     return events.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
-  }, [appointments, leaveRequests, activeEmployees]);
+  }, [appointments, leaveRequests, activeEmployees, employees, departments, positionRanks]);
 
   return (
     <div>

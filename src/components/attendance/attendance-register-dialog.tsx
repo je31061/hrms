@@ -40,8 +40,17 @@ export function AttendanceRegisterDialog({
   const activeTypes = attendanceTypes.filter((t) => t.is_active);
   const session = useAuthStore((s) => s.session);
   const employeeId = session?.employee_id ?? 'e022';
-  const getEmployeeById = useEmployeeStore((s) => s.getEmployeeById);
-  const employee = getEmployeeById(employeeId);
+  const employees = useEmployeeStore((s) => s.employees);
+  const allDepartments = useEmployeeStore((s) => s.departments);
+  const allPositionRanks = useEmployeeStore((s) => s.positionRanks);
+  const allPositionTitles = useEmployeeStore((s) => s.positionTitles);
+  const rawEmp = employees.find((e) => e.id === employeeId);
+  const employee = rawEmp ? {
+    ...rawEmp,
+    department: allDepartments.find((d) => d.id === rawEmp.department_id),
+    position_rank: allPositionRanks.find((r) => r.id === rawEmp.position_rank_id),
+    position_title: allPositionTitles.find((t) => t.id === rawEmp.position_title_id),
+  } : undefined;
 
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],

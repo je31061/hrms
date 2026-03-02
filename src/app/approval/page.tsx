@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -30,7 +30,19 @@ const typeLabels: Record<string, string> = {
 
 export default function ApprovalPage() {
   const approvals = useApprovalStore((s) => s.approvals);
-  const getEmployeeById = useEmployeeStore((s) => s.getEmployeeById);
+  const employees = useEmployeeStore((s) => s.employees);
+  const departments = useEmployeeStore((s) => s.departments);
+  const positionRanks = useEmployeeStore((s) => s.positionRanks);
+
+  const findEmployee = useCallback((empId: string) => {
+    const emp = employees.find((e) => e.id === empId);
+    if (!emp) return undefined;
+    return {
+      ...emp,
+      department: departments.find((d) => d.id === emp.department_id),
+      position_rank: positionRanks.find((r) => r.id === emp.position_rank_id),
+    };
+  }, [employees, departments, positionRanks]);
 
   const pendingApprovals = useMemo(
     () => approvals.filter((a) => a.status === 'pending' || a.status === 'in_progress'),
@@ -65,7 +77,7 @@ export default function ApprovalPage() {
               </TableRow>
             ) : (
               items.map((item) => {
-                const requester = getEmployeeById(item.requester_id);
+                const requester = findEmployee(item.requester_id);
                 return (
                   <TableRow key={item.id}>
                     <TableCell>

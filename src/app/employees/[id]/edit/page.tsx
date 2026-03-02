@@ -10,13 +10,19 @@ import { useEmployeeStore } from '@/lib/stores/employee-store';
 export default function EditEmployeePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const getEmployeeById = useEmployeeStore((s) => s.getEmployeeById);
+  const employees = useEmployeeStore((s) => s.employees);
   const departments = useEmployeeStore((s) => s.departments);
   const positionRanks = useEmployeeStore((s) => s.positionRanks);
   const positionTitles = useEmployeeStore((s) => s.positionTitles);
   const updateEmployee = useEmployeeStore((s) => s.updateEmployee);
 
-  const employee = getEmployeeById(id);
+  const rawEmp = employees.find((e) => e.id === id);
+  const employee = rawEmp ? {
+    ...rawEmp,
+    department: departments.find((d) => d.id === rawEmp.department_id),
+    position_rank: positionRanks.find((r) => r.id === rawEmp.position_rank_id),
+    position_title: positionTitles.find((t) => t.id === rawEmp.position_title_id),
+  } : undefined;
 
   if (!employee) {
     return (

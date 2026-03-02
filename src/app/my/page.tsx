@@ -175,8 +175,18 @@ export default function MyPage() {
   const session = useAuthStore((s) => s.session);
   const MY_ID = session?.employee_id ?? 'e022';
 
-  const getEmployeeById = useEmployeeStore((s) => s.getEmployeeById);
-  const myEmployee = getEmployeeById(MY_ID);
+  const employees = useEmployeeStore((s) => s.employees);
+  const departments = useEmployeeStore((s) => s.departments);
+  const positionRanks = useEmployeeStore((s) => s.positionRanks);
+  const positionTitles = useEmployeeStore((s) => s.positionTitles);
+
+  const rawEmp = employees.find((e) => e.id === MY_ID);
+  const myEmployee = rawEmp ? {
+    ...rawEmp,
+    department: departments.find((d) => d.id === rawEmp.department_id),
+    position_rank: positionRanks.find((r) => r.id === rawEmp.position_rank_id),
+    position_title: positionTitles.find((t) => t.id === rawEmp.position_title_id),
+  } : undefined;
 
   // Leave store
   const leaveTypes = useLeaveStore((s) => s.leaveTypes);
@@ -187,12 +197,10 @@ export default function MyPage() {
   const savedPayrolls = usePayrollStore((s) => s.savedPayrolls);
 
   // Attendance store
-  const getRecordsByEmployee = useAttendanceStore((s) => s.getRecordsByEmployee);
+  const attendanceRecords = useAttendanceStore((s) => s.records);
 
   // Appointment store
-  const getAppointmentsByEmployee = useAppointmentStore((s) => s.getAppointmentsByEmployee);
-  const getDepartmentById = useEmployeeStore((s) => s.getDepartmentById);
-  const getPositionRankById = useEmployeeStore((s) => s.getPositionRankById);
+  const appointments = useAppointmentStore((s) => s.appointments);
 
   // Derived data
   const myBalances = useMemo(
@@ -233,13 +241,18 @@ export default function MyPage() {
   );
 
   const myAppointments = useMemo(
-    () => getAppointmentsByEmployee(MY_ID),
-    [getAppointmentsByEmployee, MY_ID],
+    () => appointments
+      .filter((a) => a.employee_id === MY_ID)
+      .sort((a, b) => b.effective_date.localeCompare(a.effective_date)),
+    [appointments, MY_ID],
   );
 
   const myAttendance = useMemo(
-    () => getRecordsByEmployee(MY_ID).slice(0, 10),
-    [getRecordsByEmployee, MY_ID],
+    () => attendanceRecords
+      .filter((r) => r.employee_id === MY_ID)
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 10),
+    [attendanceRecords, MY_ID],
   );
 
   // Attendance summary
@@ -429,10 +442,10 @@ export default function MyPage() {
                         <TableCell colSpan={5} className="text-center text-muted-foreground">인사발령 내역이 없습니다.</TableCell>
                       </TableRow>
                     ) : myAppointments.map((a) => {
-                      const prevDept = a.prev_department_id ? getDepartmentById(a.prev_department_id)?.name : null;
-                      const prevRank = a.prev_position_rank_id ? getPositionRankById(a.prev_position_rank_id)?.name : null;
-                      const newDept = a.new_department_id ? getDepartmentById(a.new_department_id)?.name : null;
-                      const newRank = a.new_position_rank_id ? getPositionRankById(a.new_position_rank_id)?.name : null;
+                      const prevDept = a.prev_department_id ? departments.find((d) => d.id === a.prev_department_id)?.name : null;
+                      const prevRank = a.prev_position_rank_id ? positionRanks.find((r) => r.id === a.prev_position_rank_id)?.name : null;
+                      const newDept = a.new_department_id ? departments.find((d) => d.id === a.new_department_id)?.name : null;
+                      const newRank = a.new_position_rank_id ? positionRanks.find((r) => r.id === a.new_position_rank_id)?.name : null;
                       return (
                         <TableRow key={a.id}>
                           <TableCell className="font-medium">{a.effective_date}</TableCell>

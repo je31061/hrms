@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,21 @@ import { useAppointmentStore } from '@/lib/stores/appointment-store';
 
 export default function NewAppointmentPage() {
   const router = useRouter();
-  const activeEmployees = useEmployeeStore((s) => s.getActiveEmployees());
+  const employees = useEmployeeStore((s) => s.employees);
+  const depts = useEmployeeStore((s) => s.departments);
+  const ranks = useEmployeeStore((s) => s.positionRanks);
+  const titles = useEmployeeStore((s) => s.positionTitles);
+  const activeEmployees = useMemo(
+    () => employees
+      .filter((e) => e.status === 'active')
+      .map((e) => ({
+        ...e,
+        department: depts.find((d) => d.id === e.department_id),
+        position_rank: ranks.find((r) => r.id === e.position_rank_id),
+        position_title: titles.find((t) => t.id === e.position_title_id),
+      })),
+    [employees, depts, ranks, titles],
+  );
   const departments = useEmployeeStore((s) => s.departments);
   const positionRanks = useEmployeeStore((s) => s.positionRanks);
   const positionTitles = useEmployeeStore((s) => s.positionTitles);

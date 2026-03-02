@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { EmployeeTable } from '@/components/employee/employee-table';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,22 @@ import Link from 'next/link';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 
 export default function EmployeesPage() {
-  const employees = useEmployeeStore((s) => s.getActiveEmployees());
+  const allEmployees = useEmployeeStore((s) => s.employees);
+  const departments = useEmployeeStore((s) => s.departments);
+  const positionRanks = useEmployeeStore((s) => s.positionRanks);
+  const positionTitles = useEmployeeStore((s) => s.positionTitles);
+
+  const employees = useMemo(
+    () => allEmployees
+      .filter((e) => e.status === 'active')
+      .map((e) => ({
+        ...e,
+        department: departments.find((d) => d.id === e.department_id),
+        position_rank: positionRanks.find((r) => r.id === e.position_rank_id),
+        position_title: positionTitles.find((t) => t.id === e.position_title_id),
+      })),
+    [allEmployees, departments, positionRanks, positionTitles],
+  );
 
   return (
     <div>

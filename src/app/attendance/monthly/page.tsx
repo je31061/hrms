@@ -16,8 +16,22 @@ export default function MonthlyAttendancePage() {
   const [month, setMonth] = useState(now.getMonth() + 1);
 
   const records = useAttendanceStore((s) => s.records);
-  const activeEmployees = useEmployeeStore((s) => s.getActiveEmployees());
-  const getDepartmentById = useEmployeeStore((s) => s.getDepartmentById);
+  const employees = useEmployeeStore((s) => s.employees);
+  const departments = useEmployeeStore((s) => s.departments);
+  const positionRanks = useEmployeeStore((s) => s.positionRanks);
+  const positionTitles = useEmployeeStore((s) => s.positionTitles);
+
+  const activeEmployees = useMemo(
+    () => employees
+      .filter((e) => e.status === 'active')
+      .map((e) => ({
+        ...e,
+        department: departments.find((d) => d.id === e.department_id),
+        position_rank: positionRanks.find((r) => r.id === e.position_rank_id),
+        position_title: positionTitles.find((t) => t.id === e.position_title_id),
+      })),
+    [employees, departments, positionRanks, positionTitles],
+  );
 
   const monthlyData = useMemo(() => {
     return activeEmployees.map((emp) => {
@@ -42,7 +56,7 @@ export default function MonthlyAttendancePage() {
         overtimeHours: Math.round(overtimeHours * 10) / 10,
       };
     }).filter((d) => d.workDays > 0);
-  }, [activeEmployees, records, year, month, getDepartmentById]);
+  }, [activeEmployees, records, year, month]);
 
   const prevMonth = () => {
     if (month === 1) { setYear(year - 1); setMonth(12); }

@@ -15,26 +15,38 @@ import { useAuthStore } from '@/lib/stores/auth-store';
 export default function ApprovalDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
 
-  const getApprovalById = useApprovalStore((s) => s.getApprovalById);
-  const getLinesByApproval = useApprovalStore((s) => s.getLinesByApproval);
+  const approvals = useApprovalStore((s) => s.approvals);
+  const approvalLines = useApprovalStore((s) => s.approvalLines);
   const approveStep = useApprovalStore((s) => s.approveStep);
   const rejectStep = useApprovalStore((s) => s.rejectStep);
-  const getEmployeeById = useEmployeeStore((s) => s.getEmployeeById);
+  const employees = useEmployeeStore((s) => s.employees);
+  const departments = useEmployeeStore((s) => s.departments);
+  const positionRanks = useEmployeeStore((s) => s.positionRanks);
   const session = useAuthStore((s) => s.session);
 
-  const approval = getApprovalById(id);
-  const lines = getLinesByApproval(id);
+  const approval = approvals.find((a) => a.id === id);
+  const lines = approvalLines.filter((l) => l.approval_id === id).sort((a, b) => a.step - b.step);
+
+  const findEmployee = (empId: string) => {
+    const emp = employees.find((e) => e.id === empId);
+    if (!emp) return undefined;
+    return {
+      ...emp,
+      department: departments.find((d) => d.id === emp.department_id),
+      position_rank: positionRanks.find((r) => r.id === emp.position_rank_id),
+    };
+  };
 
   const hydratedLines = useMemo(() => {
     return lines.map((line) => {
-      const approver = getEmployeeById(line.approver_id);
+      const approver = findEmployee(line.approver_id);
       return {
         ...line,
         approverName: approver?.name ?? line.approver_id,
         approverRank: approver?.position_rank?.name ?? '-',
       };
     });
-  }, [lines, getEmployeeById]);
+  }, [lines, employees, departments, positionRanks]);
 
   if (!approval) {
     return (
@@ -47,7 +59,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
     );
   }
 
-  const requester = getEmployeeById(approval.requester_id);
+  const requester = findEmployee(approval.requester_id);
   const statusLabel = APPROVAL_STATUS[approval.status as keyof typeof APPROVAL_STATUS] ?? approval.status;
 
   const typeLabels: Record<string, string> = {

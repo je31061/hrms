@@ -5,11 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, LogIn, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAttendanceStore } from '@/lib/stores/attendance-store';
+import { useAuthStore } from '@/lib/stores/auth-store';
 
 export function ClockButton() {
-  const [clockedIn, setClockedIn] = useState(false);
-  const [clockInTime, setClockInTime] = useState<string | null>(null);
-  const [clockOutTime, setClockOutTime] = useState<string | null>(null);
+  const session = useAuthStore((s) => s.session);
+  const employeeId = session?.employee_id ?? 'e022';
+  const clockIn = useAttendanceStore((s) => s.clockIn);
+  const clockOut = useAttendanceStore((s) => s.clockOut);
+  const getTodayRecord = useAttendanceStore((s) => s.getTodayRecord);
+
+  const todayRecord = getTodayRecord(employeeId);
+  const isClockedIn = !!todayRecord && !todayRecord.clock_out;
+
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -21,17 +29,19 @@ export function ClockButton() {
     return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   };
 
+  const formatClockTime = (isoStr: string | null) => {
+    if (!isoStr) return '--:--:--';
+    const d = new Date(isoStr);
+    return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
+
   const handleClockIn = () => {
-    const now = new Date();
-    setClockInTime(formatTime(now));
-    setClockedIn(true);
+    clockIn(employeeId);
     toast.success('출근이 기록되었습니다.');
   };
 
   const handleClockOut = () => {
-    const now = new Date();
-    setClockOutTime(formatTime(now));
-    setClockedIn(false);
+    clockOut(employeeId);
     toast.success('퇴근이 기록되었습니다.');
   };
 
@@ -48,16 +58,16 @@ export function ClockButton() {
               {currentTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
             </p>
             <div className="flex gap-4 mt-2 text-sm">
-              <span>출근: <strong>{clockInTime ?? '--:--:--'}</strong></span>
-              <span>퇴근: <strong>{clockOutTime ?? '--:--:--'}</strong></span>
+              <span>출근: <strong>{formatClockTime(todayRecord?.clock_in ?? null)}</strong></span>
+              <span>퇴근: <strong>{formatClockTime(todayRecord?.clock_out ?? null)}</strong></span>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button onClick={handleClockIn} disabled={clockedIn} size="lg">
+            <Button onClick={handleClockIn} disabled={!!todayRecord} size="lg">
               <LogIn className="h-4 w-4 mr-2" />
               출근
             </Button>
-            <Button onClick={handleClockOut} disabled={!clockedIn} variant="outline" size="lg">
+            <Button onClick={handleClockOut} disabled={!isClockedIn} variant="outline" size="lg">
               <LogOut className="h-4 w-4 mr-2" />
               퇴근
             </Button>

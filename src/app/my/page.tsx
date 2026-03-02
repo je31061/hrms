@@ -2,8 +2,12 @@
 
 import { useMemo } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
-import { useLeaveStore, demoEmployees } from '@/lib/stores/leave-store';
-import { usePayrollStore, demoEmployeeSalaries } from '@/lib/stores/payroll-store';
+import { useLeaveStore } from '@/lib/stores/leave-store';
+import { usePayrollStore } from '@/lib/stores/payroll-store';
+import { useEmployeeStore } from '@/lib/stores/employee-store';
+import { useAttendanceStore } from '@/lib/stores/attendance-store';
+import { useAppointmentStore } from '@/lib/stores/appointment-store';
+import { useAuthStore } from '@/lib/stores/auth-store';
 import {
   LEAVE_REQUEST_STATUS,
   PAYROLL_STATUS,
@@ -38,33 +42,8 @@ import {
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
-// Constants
+// Hardcoded data (training/evaluation — no store yet)
 // ---------------------------------------------------------------------------
-
-const MY_ID = 'e022';
-
-// ---------------------------------------------------------------------------
-// Hardcoded data
-// ---------------------------------------------------------------------------
-
-const myAppointments = [
-  { id: 'ma-1', date: '2020-01-01', type: 'hire', prevDept: null, prevRank: null, newDept: '개발1팀', newRank: '사원', reason: '신규 입사' },
-  { id: 'ma-2', date: '2022-01-01', type: 'promotion', prevDept: '개발1팀', prevRank: '사원', newDept: '개발1팀', newRank: '주임', reason: '정기 승진' },
-  { id: 'ma-3', date: '2024-01-01', type: 'promotion', prevDept: '개발1팀', prevRank: '주임', newDept: '개발1팀', newRank: '대리', reason: '정기 승진' },
-];
-
-const myAttendance = [
-  { id: 'at-1', date: '2026-02-27', clockIn: '08:52', clockOut: null, workHours: null, status: 'normal' },
-  { id: 'at-2', date: '2026-02-26', clockIn: '08:48', clockOut: '18:05', workHours: 9.28, status: 'normal' },
-  { id: 'at-3', date: '2026-02-25', clockIn: '09:12', clockOut: '18:30', workHours: 9.3, status: 'late' },
-  { id: 'at-4', date: '2026-02-24', clockIn: '08:55', clockOut: '18:00', workHours: 9.08, status: 'normal' },
-  { id: 'at-5', date: '2026-02-21', clockIn: '08:50', clockOut: '19:30', workHours: 10.67, status: 'normal', overtime: 2.67 },
-  { id: 'at-6', date: '2026-02-20', clockIn: '08:58', clockOut: '18:10', workHours: 9.2, status: 'normal' },
-  { id: 'at-7', date: '2026-02-19', clockIn: '08:45', clockOut: '18:00', workHours: 9.25, status: 'normal' },
-  { id: 'at-8', date: '2026-02-18', clockIn: null, clockOut: null, workHours: null, status: 'leave' },
-  { id: 'at-9', date: '2026-02-17', clockIn: '08:50', clockOut: '17:00', workHours: 8.17, status: 'early_leave' },
-  { id: 'at-10', date: '2026-02-16', clockIn: '08:55', clockOut: '18:00', workHours: 9.08, status: 'normal' },
-];
 
 const myTrainings = [
   { id: 'tr-1', title: '정보보안 교육', category: '법정교육', startDate: '2026-02-10', endDate: '2026-02-10', status: 'completed', score: 92 },
@@ -193,7 +172,11 @@ const gradeVariant = (grade: string): 'default' | 'secondary' | 'destructive' | 
 // ---------------------------------------------------------------------------
 
 export default function MyPage() {
-  const myInfo = demoEmployees.find((e) => e.id === MY_ID)!;
+  const session = useAuthStore((s) => s.session);
+  const MY_ID = session?.employee_id ?? 'e022';
+
+  const getEmployeeById = useEmployeeStore((s) => s.getEmployeeById);
+  const myEmployee = getEmployeeById(MY_ID);
 
   // Leave store
   const leaveTypes = useLeaveStore((s) => s.leaveTypes);
@@ -203,10 +186,18 @@ export default function MyPage() {
   // Payroll store
   const savedPayrolls = usePayrollStore((s) => s.savedPayrolls);
 
+  // Attendance store
+  const getRecordsByEmployee = useAttendanceStore((s) => s.getRecordsByEmployee);
+
+  // Appointment store
+  const getAppointmentsByEmployee = useAppointmentStore((s) => s.getAppointmentsByEmployee);
+  const getDepartmentById = useEmployeeStore((s) => s.getDepartmentById);
+  const getPositionRankById = useEmployeeStore((s) => s.getPositionRankById);
+
   // Derived data
   const myBalances = useMemo(
     () => leaveBalances.filter((b) => b.employee_id === MY_ID && b.year === 2026),
-    [leaveBalances],
+    [leaveBalances, MY_ID],
   );
 
   const myRequests = useMemo(
@@ -214,7 +205,7 @@ export default function MyPage() {
       leaveRequests
         .filter((r) => r.employee_id === MY_ID)
         .sort((a, b) => b.created_at.localeCompare(a.created_at)),
-    [leaveRequests],
+    [leaveRequests, MY_ID],
   );
 
   const myPayrolls = useMemo(
@@ -222,7 +213,7 @@ export default function MyPage() {
       savedPayrolls
         .filter((p) => p.employee_id === MY_ID)
         .sort((a, b) => (b.year !== a.year ? b.year - a.year : b.month - a.month)),
-    [savedPayrolls],
+    [savedPayrolls, MY_ID],
   );
 
   const annualBalance = useMemo(
@@ -241,9 +232,14 @@ export default function MyPage() {
     [myBalances, leaveTypes],
   );
 
-  const sortedAppointments = useMemo(
-    () => [...myAppointments].sort((a, b) => b.date.localeCompare(a.date)),
-    [],
+  const myAppointments = useMemo(
+    () => getAppointmentsByEmployee(MY_ID),
+    [getAppointmentsByEmployee, MY_ID],
+  );
+
+  const myAttendance = useMemo(
+    () => getRecordsByEmployee(MY_ID).slice(0, 10),
+    [getRecordsByEmployee, MY_ID],
   );
 
   // Attendance summary
@@ -255,10 +251,38 @@ export default function MyPage() {
       (a) => a.status === 'early_leave' || a.status === 'absent' || a.status === 'leave',
     ).length;
     return { total, normal, late, other };
-  }, []);
+  }, [myAttendance]);
 
-  const yearsOfService = getYearsMonths(myInfo.hire_date);
-  const baseSalary = demoEmployeeSalaries[MY_ID] ?? 0;
+  // Fallback if no employee found
+  if (!myEmployee) {
+    return (
+      <div>
+        <Breadcrumb />
+        <h1 className="text-2xl font-bold mb-6">마이페이지</h1>
+        <Card>
+          <CardContent className="pt-6 text-center text-muted-foreground">
+            <p>로그인 후 이용해주세요.</p>
+            <Link href="/login">
+              <Button className="mt-4">로그인</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const yearsOfService = getYearsMonths(myEmployee.hire_date);
+  const baseSalary = myEmployee.base_salary;
+
+  const formatClockTime = (isoStr: string | null) => {
+    if (!isoStr) return '-';
+    try {
+      const d = new Date(isoStr);
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    } catch {
+      return isoStr;
+    }
+  };
 
   return (
     <div>
@@ -275,17 +299,17 @@ export default function MyPage() {
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
                 <AvatarFallback className="text-xl font-bold">
-                  {myInfo.name.charAt(0)}
+                  {myEmployee.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <h2 className="text-xl font-bold">
-                  {myInfo.name}{' '}
+                  {myEmployee.name}{' '}
                   <span className="text-base font-normal text-muted-foreground">
-                    {myInfo.position_rank}
+                    {myEmployee.position_rank?.name ?? ''}
                   </span>
                 </h2>
-                <p className="text-sm text-muted-foreground">{myInfo.department}</p>
+                <p className="text-sm text-muted-foreground">{myEmployee.department?.name ?? ''}</p>
               </div>
             </div>
 
@@ -358,16 +382,16 @@ export default function MyPage() {
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {[
-                  { label: '사원번호', value: 'EMP-022' },
-                  { label: '이름', value: '권대리' },
-                  { label: '부서', value: '개발1팀' },
-                  { label: '직급', value: '대리' },
-                  { label: '입사일', value: '2020-01-01' },
+                  { label: '사원번호', value: myEmployee.employee_number },
+                  { label: '이름', value: myEmployee.name },
+                  { label: '부서', value: myEmployee.department?.name ?? '-' },
+                  { label: '직급', value: myEmployee.position_rank?.name ?? '-' },
+                  { label: '입사일', value: myEmployee.hire_date },
                   { label: '근속연수', value: yearsOfService },
-                  { label: '고용형태', value: '정규직' },
-                  { label: '이메일', value: 'kwon@company.com' },
-                  { label: '연락처', value: '010-2222-0022' },
-                  { label: '은행', value: '국민은행 ***-****-2022' },
+                  { label: '고용형태', value: myEmployee.employment_type === 'regular' ? '정규직' : '계약직' },
+                  { label: '이메일', value: myEmployee.email },
+                  { label: '연락처', value: myEmployee.phone ?? '-' },
+                  { label: '은행', value: `${myEmployee.bank_name ?? '-'} ${myEmployee.bank_account ?? ''}` },
                 ].map((item) => (
                   <div key={item.label} className="rounded-lg border p-4">
                     <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
@@ -400,23 +424,33 @@ export default function MyPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedAppointments.map((a) => (
-                      <TableRow key={a.id}>
-                        <TableCell className="font-medium">{a.date}</TableCell>
-                        <TableCell>
-                          <Badge variant={appointmentTypeVariant(a.type)} className="text-xs">
-                            {APPOINTMENT_TYPES[a.type as keyof typeof APPOINTMENT_TYPES] ?? a.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {a.prevDept && a.prevRank ? `${a.prevDept} / ${a.prevRank}` : '-'}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {a.newDept && a.newRank ? `${a.newDept} / ${a.newRank}` : '-'}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{a.reason}</TableCell>
+                    {myAppointments.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">인사발령 내역이 없습니다.</TableCell>
                       </TableRow>
-                    ))}
+                    ) : myAppointments.map((a) => {
+                      const prevDept = a.prev_department_id ? getDepartmentById(a.prev_department_id)?.name : null;
+                      const prevRank = a.prev_position_rank_id ? getPositionRankById(a.prev_position_rank_id)?.name : null;
+                      const newDept = a.new_department_id ? getDepartmentById(a.new_department_id)?.name : null;
+                      const newRank = a.new_position_rank_id ? getPositionRankById(a.new_position_rank_id)?.name : null;
+                      return (
+                        <TableRow key={a.id}>
+                          <TableCell className="font-medium">{a.effective_date}</TableCell>
+                          <TableCell>
+                            <Badge variant={appointmentTypeVariant(a.type)} className="text-xs">
+                              {APPOINTMENT_TYPES[a.type as keyof typeof APPOINTMENT_TYPES] ?? a.type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {prevDept && prevRank ? `${prevDept} / ${prevRank}` : '-'}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {newDept && newRank ? `${newDept} / ${newRank}` : '-'}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{a.reason}</TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -598,7 +632,7 @@ export default function MyPage() {
           <div className="grid gap-4 grid-cols-2 md:grid-cols-4 mb-6">
             <Card>
               <CardContent className="pt-4 text-center">
-                <p className="text-xs text-muted-foreground mb-1">이번 달 총 근무일</p>
+                <p className="text-xs text-muted-foreground mb-1">최근 근무일</p>
                 <p className="text-2xl font-bold">{attendanceSummary.total}일</p>
               </CardContent>
             </Card>
@@ -640,13 +674,17 @@ export default function MyPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {myAttendance.map((a) => (
+                    {myAttendance.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">근태 기록이 없습니다.</TableCell>
+                      </TableRow>
+                    ) : myAttendance.map((a) => (
                       <TableRow key={a.id}>
                         <TableCell className="font-medium">{a.date}</TableCell>
-                        <TableCell className="text-sm">{a.clockIn ?? '-'}</TableCell>
-                        <TableCell className="text-sm">{a.clockOut ?? '-'}</TableCell>
+                        <TableCell className="text-sm">{formatClockTime(a.clock_in)}</TableCell>
+                        <TableCell className="text-sm">{formatClockTime(a.clock_out)}</TableCell>
                         <TableCell className="text-sm">
-                          {a.workHours != null ? `${a.workHours.toFixed(2)}h` : '-'}
+                          {a.work_hours != null ? `${a.work_hours.toFixed(2)}h` : '-'}
                         </TableCell>
                         <TableCell>
                           <Badge

@@ -1,3 +1,5 @@
+'use client';
+
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -6,14 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { APPOINTMENT_TYPES } from '@/lib/constants/codes';
-
-const appointments = [
-  { id: '1', employee: '이과장', type: 'promotion', effectiveDate: '2026-02-17', prevRank: '과장', newRank: '차장', prevDept: '개발2팀', newDept: '개발2팀', reason: '정기 승진' },
-  { id: '2', employee: '박대리', type: 'transfer', effectiveDate: '2026-02-01', prevRank: '대리', newRank: '대리', prevDept: '인사팀', newDept: '개발1팀', reason: '조직 개편' },
-  { id: '3', employee: '김신입', type: 'hire', effectiveDate: '2026-02-19', prevRank: null, newRank: '사원', prevDept: null, newDept: '개발1팀', reason: '신규 입사' },
-  { id: '4', employee: '한부장', type: 'title_change', effectiveDate: '2026-01-15', prevRank: '부장', newRank: '부장', prevDept: 'QA팀', newDept: 'QA팀', reason: '팀장 임명', prevTitle: '팀원', newTitle: '팀장' },
-  { id: '5', employee: '송차장', type: 'resignation', effectiveDate: '2026-01-31', prevRank: '차장', newRank: null, prevDept: '영업팀', newDept: null, reason: '일신상의 사유' },
-];
+import { useAppointmentStore } from '@/lib/stores/appointment-store';
+import { useEmployeeStore } from '@/lib/stores/employee-store';
 
 const typeVariant = (type: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
   switch (type) {
@@ -27,6 +23,11 @@ const typeVariant = (type: string): 'default' | 'secondary' | 'destructive' | 'o
 };
 
 export default function AppointmentsPage() {
+  const allAppointments = useAppointmentStore((s) => s.getAllAppointments());
+  const getEmployeeById = useEmployeeStore((s) => s.getEmployeeById);
+  const getDepartmentById = useEmployeeStore((s) => s.getDepartmentById);
+  const getPositionRankById = useEmployeeStore((s) => s.getPositionRankById);
+
   return (
     <div>
       <Breadcrumb />
@@ -58,24 +59,39 @@ export default function AppointmentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {appointments.map((a) => (
-                  <TableRow key={a.id}>
-                    <TableCell className="font-medium">{a.effectiveDate}</TableCell>
-                    <TableCell className="font-medium">{a.employee}</TableCell>
-                    <TableCell>
-                      <Badge variant={typeVariant(a.type)} className="text-xs">
-                        {APPOINTMENT_TYPES[a.type as keyof typeof APPOINTMENT_TYPES] ?? a.type}
-                      </Badge>
+                {allAppointments.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      발령 내역이 없습니다.
                     </TableCell>
-                    <TableCell className="text-sm">
-                      {a.prevDept && a.prevRank ? `${a.prevDept} / ${a.prevRank}` : '-'}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {a.newDept && a.newRank ? `${a.newDept} / ${a.newRank}` : '-'}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{a.reason}</TableCell>
                   </TableRow>
-                ))}
+                ) : allAppointments.map((a) => {
+                  const emp = getEmployeeById(a.employee_id);
+                  // Find the employees array to look up even resigned employees
+                  const empName = emp?.name ?? useEmployeeStore.getState().employees.find(e => e.id === a.employee_id)?.name ?? a.employee_id;
+                  const prevDept = a.prev_department_id ? getDepartmentById(a.prev_department_id)?.name : null;
+                  const prevRank = a.prev_position_rank_id ? getPositionRankById(a.prev_position_rank_id)?.name : null;
+                  const newDept = a.new_department_id ? getDepartmentById(a.new_department_id)?.name : null;
+                  const newRank = a.new_position_rank_id ? getPositionRankById(a.new_position_rank_id)?.name : null;
+                  return (
+                    <TableRow key={a.id}>
+                      <TableCell className="font-medium">{a.effective_date}</TableCell>
+                      <TableCell className="font-medium">{empName}</TableCell>
+                      <TableCell>
+                        <Badge variant={typeVariant(a.type)} className="text-xs">
+                          {APPOINTMENT_TYPES[a.type as keyof typeof APPOINTMENT_TYPES] ?? a.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {prevDept && prevRank ? `${prevDept} / ${prevRank}` : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {newDept && newRank ? `${newDept} / ${newRank}` : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{a.reason}</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

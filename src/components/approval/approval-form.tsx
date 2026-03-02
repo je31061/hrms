@@ -9,8 +9,8 @@ import { toast } from 'sonner';
 
 interface ApprovalFormProps {
   approvalId: string;
-  onApprove?: () => void;
-  onReject?: () => void;
+  onApprove?: (comment?: string) => void;
+  onReject?: (comment?: string) => void;
 }
 
 export function ApprovalActionForm({ approvalId, onApprove, onReject }: ApprovalFormProps) {
@@ -30,8 +30,9 @@ export function ApprovalActionForm({ approvalId, onApprove, onReject }: Approval
         <Button
           variant="destructive"
           onClick={() => {
+            onReject?.(comment || undefined);
             toast.error('결재가 반려되었습니다.');
-            onReject?.();
+            setComment('');
           }}
         >
           <X className="h-4 w-4 mr-2" />
@@ -39,8 +40,9 @@ export function ApprovalActionForm({ approvalId, onApprove, onReject }: Approval
         </Button>
         <Button
           onClick={() => {
+            onApprove?.(comment || undefined);
             toast.success('결재가 승인되었습니다.');
-            onApprove?.();
+            setComment('');
           }}
         >
           <Check className="h-4 w-4 mr-2" />

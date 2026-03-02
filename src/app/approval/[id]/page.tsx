@@ -1,44 +1,73 @@
 'use client';
 
-import { use } from 'react';
+import { use, useMemo } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ApprovalFlow } from '@/components/approval/approval-flow';
 import { ApprovalActionForm } from '@/components/approval/approval-form';
 import { Separator } from '@/components/ui/separator';
-
-const demoApproval = {
-  id: '1',
-  title: '연차 신청 - 김철수',
-  type: 'leave',
-  requester: '김철수',
-  department: '개발1팀',
-  status: 'in_progress',
-  createdAt: '2026-02-18',
-  content: {
-    leaveType: '연차',
-    startDate: '2026-02-20',
-    endDate: '2026-02-20',
-    days: 1,
-    reason: '개인 사유',
-  },
-};
-
-const demoLines = [
-  { id: 'l1', approval_id: '1', approver_id: 'a1', step: 1, status: 'approved' as const, comment: '승인합니다.', acted_at: '2026-02-18T14:00:00', approverName: '이팀장', approverRank: '과장' },
-  { id: 'l2', approval_id: '1', approver_id: 'a2', step: 2, status: 'pending' as const, comment: null, acted_at: null, approverName: '최본부장', approverRank: '부장' },
-];
+import { APPROVAL_STATUS } from '@/lib/constants/codes';
+import { useApprovalStore } from '@/lib/stores/approval-store';
+import { useEmployeeStore } from '@/lib/stores/employee-store';
+import { useAuthStore } from '@/lib/stores/auth-store';
 
 export default function ApprovalDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+
+  const getApprovalById = useApprovalStore((s) => s.getApprovalById);
+  const getLinesByApproval = useApprovalStore((s) => s.getLinesByApproval);
+  const approveStep = useApprovalStore((s) => s.approveStep);
+  const rejectStep = useApprovalStore((s) => s.rejectStep);
+  const getEmployeeById = useEmployeeStore((s) => s.getEmployeeById);
+  const session = useAuthStore((s) => s.session);
+
+  const approval = getApprovalById(id);
+  const lines = getLinesByApproval(id);
+
+  const hydratedLines = useMemo(() => {
+    return lines.map((line) => {
+      const approver = getEmployeeById(line.approver_id);
+      return {
+        ...line,
+        approverName: approver?.name ?? line.approver_id,
+        approverRank: approver?.position_rank?.name ?? '-',
+      };
+    });
+  }, [lines, getEmployeeById]);
+
+  if (!approval) {
+    return (
+      <div>
+        <Breadcrumb />
+        <div className="flex items-center justify-center min-h-[400px]">
+          <p className="text-muted-foreground">결재 정보를 찾을 수 없습니다.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const requester = getEmployeeById(approval.requester_id);
+  const statusLabel = APPROVAL_STATUS[approval.status as keyof typeof APPROVAL_STATUS] ?? approval.status;
+
+  const typeLabels: Record<string, string> = {
+    leave: '휴가', appointment: '인사발령', expense: '경비', general: '일반',
+  };
+
+  // Check if current user can act on this approval
+  const currentEmployeeId = session?.employee_id;
+  const canAct = currentEmployeeId && lines.some(
+    (l) => l.approver_id === currentEmployeeId && l.status === 'pending',
+  ) && (approval.status === 'pending' || approval.status === 'in_progress');
 
   return (
     <div>
       <Breadcrumb />
       <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold">{demoApproval.title}</h1>
-        <Badge variant="secondary">진행중</Badge>
+        <h1 className="text-2xl font-bold">{approval.title}</h1>
+        <Badge variant={approval.status === 'approved' ? 'default' : approval.status === 'rejected' ? 'destructive' : 'secondary'}>
+          {statusLabel}
+        </Badge>
       </div>
 
       <div className="space-y-6 max-w-3xl">
@@ -47,7 +76,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
             <CardTitle className="text-base">결재 라인</CardTitle>
           </CardHeader>
           <CardContent>
-            <ApprovalFlow lines={demoLines} />
+            <ApprovalFlow lines={hydratedLines} />
           </CardContent>
         </Card>
 
@@ -57,31 +86,43 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><span className="text-muted-foreground">신청자:</span> <strong>{demoApproval.requester}</strong></div>
-              <div><span className="text-muted-foreground">부서:</span> <strong>{demoApproval.department}</strong></div>
-              <div><span className="text-muted-foreground">신청일:</span> <strong>{demoApproval.createdAt}</strong></div>
-              <div><span className="text-muted-foreground">유형:</span> <Badge variant="outline">휴가</Badge></div>
+              <div><span className="text-muted-foreground">신청자:</span> <strong>{requester?.name ?? approval.requester_id}</strong></div>
+              <div><span className="text-muted-foreground">부서:</span> <strong>{requester?.department?.name ?? '-'}</strong></div>
+              <div><span className="text-muted-foreground">신청일:</span> <strong>{approval.created_at}</strong></div>
+              <div><span className="text-muted-foreground">유형:</span> <Badge variant="outline">{typeLabels[approval.type] ?? approval.type}</Badge></div>
             </div>
-            <Separator />
-            <div className="space-y-2 text-sm">
-              <h4 className="font-semibold">결재 내용</h4>
-              <div className="grid grid-cols-2 gap-2">
-                <div><span className="text-muted-foreground">휴가 유형:</span> {demoApproval.content.leaveType}</div>
-                <div><span className="text-muted-foreground">기간:</span> {demoApproval.content.startDate} ~ {demoApproval.content.endDate} ({demoApproval.content.days}일)</div>
-                <div className="col-span-2"><span className="text-muted-foreground">사유:</span> {demoApproval.content.reason}</div>
-              </div>
-            </div>
+            {approval.content && (
+              <>
+                <Separator />
+                <div className="space-y-2 text-sm">
+                  <h4 className="font-semibold">결재 내용</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(approval.content).map(([key, value]) => (
+                      <div key={key}>
+                        <span className="text-muted-foreground">{key}:</span> {String(value)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">결재 처리</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ApprovalActionForm approvalId={id} />
-          </CardContent>
-        </Card>
+        {canAct && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">결재 처리</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ApprovalActionForm
+                approvalId={id}
+                onApprove={(comment) => approveStep(id, currentEmployeeId!, comment)}
+                onReject={(comment) => rejectStep(id, currentEmployeeId!, comment)}
+              />
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

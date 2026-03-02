@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useSettingsStore } from '@/lib/stores/settings-store';
+import { useAuthStore } from '@/lib/stores/auth-store';
+import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,6 +38,10 @@ export function AttendanceRegisterDialog({
 }: AttendanceRegisterDialogProps) {
   const attendanceTypes = useSettingsStore((s) => s.attendanceTypes);
   const activeTypes = attendanceTypes.filter((t) => t.is_active);
+  const session = useAuthStore((s) => s.session);
+  const employeeId = session?.employee_id ?? 'e022';
+  const getEmployeeById = useEmployeeStore((s) => s.getEmployeeById);
+  const employee = getEmployeeById(employeeId);
 
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -65,7 +71,7 @@ export function AttendanceRegisterDialog({
     const clockIn = `${form.date}T09:00:00+09:00`;
     const record: Attendance = {
       id: `att-${Date.now()}`,
-      employee_id: '1',
+      employee_id: employeeId,
       date: form.date,
       clock_in: clockIn,
       clock_out: null,
@@ -77,35 +83,7 @@ export function AttendanceRegisterDialog({
       location: form.location || null,
       purpose: form.purpose || null,
       created_at: now,
-      employee: {
-        id: '1',
-        employee_number: 'EMP-001',
-        name: '김철수',
-        name_en: null,
-        email: '',
-        phone: null,
-        birth_date: null,
-        gender: null,
-        address: null,
-        address_detail: null,
-        zip_code: null,
-        department_id: null,
-        position_rank_id: null,
-        position_title_id: null,
-        employment_type: 'regular',
-        hire_date: '',
-        resignation_date: null,
-        status: 'active',
-        base_salary: 0,
-        bank_name: null,
-        bank_account: null,
-        profile_image_url: null,
-        emergency_contact_name: null,
-        emergency_contact_phone: null,
-        emergency_contact_relation: null,
-        created_at: '',
-        updated_at: '',
-      },
+      employee: employee,
     };
 
     onRegister(record);

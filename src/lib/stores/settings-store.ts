@@ -8,6 +8,7 @@ import type {
   ApprovalTemplate,
   EvaluationCriterion,
   CondolenceLeaveRule,
+  AttendanceTypeConfig,
 } from '@/types';
 
 // ---- Display & Print Template types ----
@@ -125,6 +126,9 @@ interface SettingsState {
   holidays: Holiday[];
   holiday_auto_substitute: boolean;
 
+  // Attendance Types
+  attendanceTypes: AttendanceTypeConfig[];
+
   // Display
   display: DisplayState;
 
@@ -173,6 +177,12 @@ interface SettingsActions {
   setHolidayAutoSubstitute: (value: boolean) => void;
   addHoliday: (holiday: Holiday) => void;
   deleteHoliday: (id: string) => void;
+
+  // Attendance Types
+  addAttendanceType: (type: AttendanceTypeConfig) => void;
+  updateAttendanceType: (id: string, data: Partial<AttendanceTypeConfig>) => void;
+  deleteAttendanceType: (id: string) => void;
+  toggleAttendanceTypeActive: (id: string) => void;
 
   // Display
   updateDisplay: (data: Partial<DisplayState>) => void;
@@ -281,6 +291,16 @@ const defaultEvalCriteria: EvaluationCriterion[] = [
   { id: 'ec-5', name: '자기 개발', category: 'development', weight: 15, description: '자기 개발 및 학습 노력', is_active: true, created_at: '', updated_at: '' },
 ];
 
+const defaultAttendanceTypes: AttendanceTypeConfig[] = [
+  { id: 'atype-1', code: 'office', label: '사무실 출근', is_active: true, requires_approval: false, requires_location: false, requires_purpose: false, counts_as_work: true, sort_order: 1, is_system: true, created_at: '', updated_at: '' },
+  { id: 'atype-2', code: 'business_trip', label: '출장', is_active: true, requires_approval: true, requires_location: true, requires_purpose: true, counts_as_work: true, sort_order: 2, is_system: true, created_at: '', updated_at: '' },
+  { id: 'atype-3', code: 'field_work', label: '외근', is_active: true, requires_approval: true, requires_location: true, requires_purpose: true, counts_as_work: true, sort_order: 3, is_system: true, created_at: '', updated_at: '' },
+  { id: 'atype-4', code: 'remote', label: '재택근무', is_active: true, requires_approval: true, requires_location: false, requires_purpose: false, counts_as_work: true, sort_order: 4, is_system: true, created_at: '', updated_at: '' },
+  { id: 'atype-5', code: 'training', label: '교육/연수', is_active: true, requires_approval: true, requires_location: true, requires_purpose: true, counts_as_work: true, sort_order: 5, is_system: true, created_at: '', updated_at: '' },
+  { id: 'atype-6', code: 'dispatch', label: '파견', is_active: true, requires_approval: true, requires_location: true, requires_purpose: true, counts_as_work: true, sort_order: 6, is_system: true, created_at: '', updated_at: '' },
+  { id: 'atype-7', code: 'other', label: '기타', is_active: true, requires_approval: false, requires_location: false, requires_purpose: false, counts_as_work: false, sort_order: 7, is_system: false, created_at: '', updated_at: '' },
+];
+
 // ---- Store ----
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -351,6 +371,7 @@ export const useSettingsStore = create<SettingsStore>()(
         require_special_char: true,
         require_number: true,
       },
+      attendanceTypes: defaultAttendanceTypes,
       holidays: defaultHolidays,
       holiday_auto_substitute: true,
       display: {
@@ -477,6 +498,28 @@ export const useSettingsStore = create<SettingsStore>()(
       deleteHoliday: (id) =>
         set((s) => ({
           holidays: s.holidays.filter((h) => h.id !== id),
+        })),
+
+      addAttendanceType: (type) =>
+        set((s) => ({ attendanceTypes: [...s.attendanceTypes, type] })),
+
+      updateAttendanceType: (id, data) =>
+        set((s) => ({
+          attendanceTypes: s.attendanceTypes.map((t) =>
+            t.id === id ? { ...t, ...data, updated_at: new Date().toISOString() } : t
+          ),
+        })),
+
+      deleteAttendanceType: (id) =>
+        set((s) => ({
+          attendanceTypes: s.attendanceTypes.filter((t) => t.id !== id),
+        })),
+
+      toggleAttendanceTypeActive: (id) =>
+        set((s) => ({
+          attendanceTypes: s.attendanceTypes.map((t) =>
+            t.id === id ? { ...t, is_active: !t.is_active, updated_at: new Date().toISOString() } : t
+          ),
         })),
 
       updateDisplay: (data) =>

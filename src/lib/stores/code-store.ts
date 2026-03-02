@@ -139,6 +139,9 @@ const seedDefinitions = [
   buildGroup('DEGREE_LABELS', '학력', '학력 코드', 23, {
     high_school: '고등학교', associate: '전문학사', bachelor: '학사', master: '석사', doctorate: '박사',
   }),
+  buildGroup('ATTENDANCE_TYPES', '근태유형', '근태 유형 코드 (출장/외근/재택 등)', 24, {
+    office: '사무실 출근', business_trip: '출장', field_work: '외근', remote: '재택근무', training: '교육/연수', dispatch: '파견', other: '기타',
+  }),
 ];
 
 const defaultGroups: CodeGroup[] = seedDefinitions.map((d) => d.group);

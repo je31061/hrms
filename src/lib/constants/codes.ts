@@ -134,6 +134,16 @@ export const WORKFLOW_ASSIGNEE_ROLES = {
   finance: '재무담당자',
 } as const;
 
+export const ATTENDANCE_TYPES = {
+  office: '사무실 출근',
+  business_trip: '출장',
+  field_work: '외근',
+  remote: '재택근무',
+  training: '교육/연수',
+  dispatch: '파견',
+  other: '기타',
+} as const;
+
 export const APPROVAL_DOCUMENT_TYPES = {
   leave: '휴가',
   expense: '경비',

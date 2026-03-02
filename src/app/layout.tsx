@@ -1,14 +1,11 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import { Sidebar } from '@/components/layout/sidebar';
-import { Header } from '@/components/layout/header';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { HelpWorkflow } from '@/components/layout/help-workflow';
 import { ThemeProvider } from 'next-themes';
-import { DisplaySettingsApplier } from '@/components/layout/display-settings-applier';
-import { PageViewTracker } from '@/components/layout/page-view-tracker';
+import { AuthGuard } from '@/components/layout/auth-guard';
+import { ConditionalLayout } from '@/components/layout/conditional-layout';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -35,15 +32,12 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <TooltipProvider>
-            <DisplaySettingsApplier />
-            <PageViewTracker />
-            <Sidebar />
-            <Header />
-            <main className="ml-60 mt-14 min-h-[calc(100vh-3.5rem)] p-6">
-              {children}
-            </main>
+            <AuthGuard>
+              <ConditionalLayout>
+                {children}
+              </ConditionalLayout>
+            </AuthGuard>
             <Toaster position="top-right" />
-            <HelpWorkflow />
           </TooltipProvider>
         </ThemeProvider>
       </body>

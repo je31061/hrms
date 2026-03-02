@@ -8,40 +8,40 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
   {
     id: 'demo-admin',
     email: 'admin@demo.com',
-    name: '김관리',
+    name: '김영수',
     role: 'admin',
-    employee_id: 'e010',
-    department: '경영지원팀',
-    position: '팀장',
+    employee_id: 'e004',
+    department: '경영지원본부',
+    position: '본부장',
     password: 'demo1234',
   },
   {
     id: 'demo-hr',
     email: 'hr@demo.com',
-    name: '이인사',
+    name: '박지현',
     role: 'hr_manager',
-    employee_id: 'e011',
+    employee_id: 'e010',
     department: '인사팀',
-    position: '과장',
+    position: '팀장',
     password: 'demo1234',
   },
   {
     id: 'demo-manager',
     email: 'manager@demo.com',
-    name: '박부장',
+    name: '문성호',
     role: 'dept_manager',
-    employee_id: 'e020',
-    department: '개발팀',
-    position: '부장',
+    employee_id: 'e022',
+    department: '연구개발팀',
+    position: '팀장',
     password: 'demo1234',
   },
   {
     id: 'demo-employee',
     email: 'employee@demo.com',
-    name: '정사원',
+    name: '하정민',
     role: 'employee',
-    employee_id: 'e022',
-    department: '개발팀',
+    employee_id: 'e020',
+    department: '해외영업팀',
     position: '사원',
     password: 'demo1234',
   },
@@ -102,6 +102,15 @@ export const useAuthStore = create<AuthState>()(
         set({ session: null });
       },
     }),
-    { name: 'hrms-auth' }
+    {
+      name: 'hrms-auth',
+      version: 2,
+      migrate: (persisted: unknown, version: number) => {
+        if (version < 2) {
+          return { session: null };
+        }
+        return persisted as Record<string, unknown>;
+      },
+    }
   )
 );

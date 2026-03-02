@@ -5,10 +5,8 @@ export const POSITION_RANKS = [
   { name: '차장', level: 4 },
   { name: '부장', level: 5 },
   { name: '이사', level: 6 },
-  { name: '상무', level: 7 },
-  { name: '전무', level: 8 },
-  { name: '부사장', level: 9 },
-  { name: '사장', level: 10 },
+  { name: '대표이사', level: 7 },
+  { name: '회장', level: 8 },
 ] as const;
 
 export const POSITION_TITLES = [
@@ -17,7 +15,9 @@ export const POSITION_TITLES = [
   { name: '팀장', level: 3 },
   { name: '실장', level: 4 },
   { name: '본부장', level: 5 },
-  { name: '대표이사', level: 6 },
+  { name: '소장', level: 6 },
+  { name: '대표이사', level: 7 },
+  { name: '회장', level: 8 },
 ] as const;
 
 export const EMPLOYMENT_TYPES = {

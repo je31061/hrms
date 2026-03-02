@@ -18,6 +18,9 @@ export default function CompanyInfoSettings() {
     ceo_name: '',
     address: '',
     industry: '',
+    phone: '',
+    fax: '',
+    website: '',
   });
 
   useEffect(() => {
@@ -72,6 +75,22 @@ export default function CompanyInfoSettings() {
               onChange={(e) => handleChange('industry', e.target.value)}
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">전화번호</Label>
+            <Input
+              id="phone"
+              value={form.phone}
+              onChange={(e) => handleChange('phone', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="fax">팩스</Label>
+            <Input
+              id="fax"
+              value={form.fax}
+              onChange={(e) => handleChange('fax', e.target.value)}
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="address">주소</Label>
@@ -79,6 +98,14 @@ export default function CompanyInfoSettings() {
             id="address"
             value={form.address}
             onChange={(e) => handleChange('address', e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="website">웹사이트</Label>
+          <Input
+            id="website"
+            value={form.website}
+            onChange={(e) => handleChange('website', e.target.value)}
           />
         </div>
         <div className="flex justify-end">

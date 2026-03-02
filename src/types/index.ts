@@ -217,6 +217,23 @@ export interface PositionTitle {
   is_active: boolean;
 }
 
+export interface JobCategory {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface SalaryGrade {
+  id: string;
+  rank_id: string;
+  step: number;
+  base_amount: number;
+  is_active: boolean;
+}
+
 export interface Employee {
   id: string;
   employee_number: string;

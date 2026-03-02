@@ -3,45 +3,21 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import {
-  LayoutDashboard,
-  UserCircle,
-  Network,
-  Users,
-  Clock,
-  CalendarDays,
-  Banknote,
-  ArrowRightLeft,
-  FileCheck,
-  Briefcase,
-  GraduationCap,
-  Star,
-  ListChecks,
-  ShieldAlert,
-  Settings,
-} from 'lucide-react';
+import { Network } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
-const menuItems = [
-  { href: '/', label: '대시보드', icon: LayoutDashboard },
-  { href: '/my', label: '마이페이지', icon: UserCircle },
-  { href: '/organization', label: '조직도', icon: Network },
-  { href: '/employees', label: '인사정보', icon: Users },
-  { href: '/attendance', label: '근태관리', icon: Clock },
-  { href: '/leave', label: '휴가관리', icon: CalendarDays },
-  { href: '/payroll', label: '급여관리', icon: Banknote },
-  { href: '/appointments', label: '인사발령', icon: ArrowRightLeft },
-  { href: '/approval', label: '전자결재', icon: FileCheck },
-  { href: '/recruitment', label: '채용관리', icon: Briefcase },
-  { href: '/training', label: '교육관리', icon: GraduationCap },
-  { href: '/evaluation', label: '평가관리', icon: Star },
-  { href: '/workflows', label: '업무프로세스', icon: ListChecks },
-  { href: '/audit-log', label: '감사로그', icon: ShieldAlert },
-  { href: '/settings', label: '설정', icon: Settings },
-];
+import { ALL_MENU_ITEMS } from '@/lib/constants/menu-items';
+import { useSettingsStore } from '@/lib/stores/settings-store';
+import { useAuthStore } from '@/lib/stores/auth-store';
 
 export function Sidebar() {
   const pathname = usePathname();
+  const session = useAuthStore((s) => s.session);
+  const menuPermissions = useSettingsStore((s) => s.menuPermissions);
+
+  const role = session?.role ?? 'employee';
+  const allowedHrefs = menuPermissions?.[role] ?? ALL_MENU_ITEMS.map((m) => m.href);
+
+  const visibleItems = ALL_MENU_ITEMS.filter((item) => allowedHrefs.includes(item.href));
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-60 border-r bg-background">
@@ -53,7 +29,7 @@ export function Sidebar() {
       </div>
       <ScrollArea className="h-[calc(100vh-3.5rem)]">
         <nav className="space-y-1 p-3">
-          {menuItems.map((item) => {
+          {visibleItems.map((item) => {
             const isActive =
               item.href === '/'
                 ? pathname === '/'

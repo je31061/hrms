@@ -9,6 +9,7 @@ import type {
   EvaluationCriterion,
   CondolenceLeaveRule,
   AttendanceTypeConfig,
+  UserRole,
 } from '@/types';
 
 // ---- Display & Print Template types ----
@@ -49,6 +50,9 @@ interface SettingsState {
     ceo_name: string;
     address: string;
     industry: string;
+    phone: string;
+    fax: string;
+    website: string;
   };
 
   // Work schedule
@@ -134,6 +138,9 @@ interface SettingsState {
 
   // Print Template
   printTemplate: PrintTemplateState;
+
+  // Menu Permissions (role → allowed menu href[])
+  menuPermissions: Record<UserRole, string[]>;
 }
 
 interface SettingsActions {
@@ -189,6 +196,9 @@ interface SettingsActions {
 
   // Print Template
   updatePrintTemplate: (data: Partial<PrintTemplateState>) => void;
+
+  // Menu Permissions
+  updateMenuPermissions: (role: UserRole, hrefs: string[]) => void;
 }
 
 export type SettingsStore = SettingsState & SettingsActions;
@@ -308,11 +318,14 @@ export const useSettingsStore = create<SettingsStore>()(
     (set) => ({
       // --- Initial State ---
       company: {
-        name: '(주)테스트컴퍼니',
-        business_number: '123-45-67890',
-        ceo_name: '홍길동',
-        address: '서울특별시 강남구 테헤란로 123',
-        industry: 'IT/소프트웨어',
+        name: '주식회사 파나시아',
+        business_number: '603-81-29289',
+        ceo_name: '이수태 (회장), 이민걸·정진택 (공동대표이사)',
+        address: '부산광역시 강서구 미음산단3로 55 (미음동)',
+        industry: '선박 구성 부분품 제조업',
+        phone: '051-831-1010',
+        fax: '070-831-1399',
+        website: 'www.worldpanasia.com',
       },
       work: {
         default_start_time: '09:00',
@@ -382,6 +395,12 @@ export const useSettingsStore = create<SettingsStore>()(
         rows_per_page: 10,
         date_format: 'yyyy-MM-dd',
         number_format: 'comma',
+      },
+      menuPermissions: {
+        admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/evaluation', '/workflows', '/audit-log', '/settings'],
+        hr_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/evaluation', '/workflows'],
+        dept_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/approval', '/evaluation'],
+        employee: ['/', '/my', '/attendance', '/leave', '/approval'],
       },
       printTemplate: {
         header_title: '급여명세서',
@@ -527,9 +546,32 @@ export const useSettingsStore = create<SettingsStore>()(
 
       updatePrintTemplate: (data) =>
         set((s) => ({ printTemplate: { ...s.printTemplate, ...data } })),
+
+      updateMenuPermissions: (role, hrefs) =>
+        set((s) => ({ menuPermissions: { ...s.menuPermissions, [role]: hrefs } })),
     }),
     {
       name: 'hrms-settings',
+      version: 3,
+      migrate: (persisted: unknown, version: number) => {
+        if (version < 2) {
+          return {};
+        }
+        if (version < 3) {
+          // Add menuPermissions to existing data
+          const state = persisted as Record<string, unknown>;
+          return {
+            ...state,
+            menuPermissions: {
+              admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/evaluation', '/workflows', '/audit-log', '/settings'],
+              hr_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/evaluation', '/workflows'],
+              dept_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/approval', '/evaluation'],
+              employee: ['/', '/my', '/attendance', '/leave', '/approval'],
+            },
+          };
+        }
+        return persisted as Record<string, unknown>;
+      },
     }
   )
 );

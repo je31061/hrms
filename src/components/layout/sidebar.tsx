@@ -20,9 +20,9 @@ export function Sidebar() {
   const visibleItems = ALL_MENU_ITEMS.filter((item) => allowedHrefs.includes(item.href));
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-60 border-r bg-background">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-60 border-r bg-gradient-to-b from-background to-muted/30">
       <div className="flex h-14 items-center border-b px-4">
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg">
+        <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight">
           <Network className="h-6 w-6 text-primary" />
           <span>HRMS</span>
         </Link>
@@ -39,9 +39,9 @@ export function Sidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150 hover:translate-x-0.5',
                   isActive
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary/10 text-primary border-l-2 border-primary font-semibold'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >

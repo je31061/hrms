@@ -16,6 +16,13 @@ const eventBadge: Record<string, { label: string; variant: 'default' | 'secondar
   birthday: { label: '생일', variant: 'secondary' },
 };
 
+const eventDotColor: Record<string, string> = {
+  hire: 'bg-accent-green',
+  leave: 'bg-accent-amber',
+  appointment: 'bg-accent-blue',
+  birthday: 'bg-accent-purple',
+};
+
 interface RecentEventsProps {
   events: Event[];
 }
@@ -35,6 +42,7 @@ export function RecentEvents({ events }: RecentEventsProps) {
           ) : (
             events.map((event) => (
               <div key={event.id} className="flex items-center gap-3 text-sm">
+                <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${eventDotColor[event.type] ?? 'bg-muted-foreground'}`} />
                 <Badge variant={eventBadge[event.type]?.variant ?? 'outline'}>
                   {eventBadge[event.type]?.label ?? event.type}
                 </Badge>

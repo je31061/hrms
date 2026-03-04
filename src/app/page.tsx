@@ -42,10 +42,10 @@ export default function DashboardPage() {
   }, [leaveRequests, today]);
 
   const statsData = [
-    { title: '전체 임직원', value: String(activeEmployees.length), icon: Users, description: `정규직 ${regularCount} / 계약직 ${contractCount}` },
-    { title: '금일 출근', value: String(todayAttendance.length), icon: Clock, description: `출근율 ${attendanceRate}%` },
-    { title: '휴가 중', value: String(onLeaveToday), icon: CalendarDays, description: '승인된 휴가 기준' },
-    { title: '진행 중 채용', value: '3', icon: Briefcase, description: '총 지원자 45명' },
+    { title: '전체 임직원', value: String(activeEmployees.length), icon: Users, color: 'blue' as const, description: `정규직 ${regularCount} / 계약직 ${contractCount}` },
+    { title: '금일 출근', value: String(todayAttendance.length), icon: Clock, color: 'green' as const, description: `출근율 ${attendanceRate}%` },
+    { title: '휴가 중', value: String(onLeaveToday), icon: CalendarDays, color: 'amber' as const, description: '승인된 휴가 기준' },
+    { title: '진행 중 채용', value: '3', icon: Briefcase, color: 'purple' as const, description: '총 지원자 45명' },
   ];
 
   // Department headcount — level 2 departments

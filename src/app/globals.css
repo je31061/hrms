@@ -38,6 +38,14 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-green: var(--accent-green);
+  --color-accent-amber: var(--accent-amber);
+  --color-accent-purple: var(--accent-purple);
+  --color-accent-blue-subtle: var(--accent-blue-subtle);
+  --color-accent-green-subtle: var(--accent-green-subtle);
+  --color-accent-amber-subtle: var(--accent-amber-subtle);
+  --color-accent-purple-subtle: var(--accent-purple-subtle);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -55,7 +63,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: oklch(0.55 0.2 260);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -66,7 +74,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: oklch(0.55 0.2 260);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -74,12 +82,20 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary: oklch(0.55 0.2 260);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: oklch(0.55 0.2 260);
+  --accent-blue: oklch(0.55 0.2 260);
+  --accent-green: oklch(0.6 0.16 155);
+  --accent-amber: oklch(0.75 0.16 75);
+  --accent-purple: oklch(0.55 0.2 300);
+  --accent-blue-subtle: oklch(0.95 0.04 260);
+  --accent-green-subtle: oklch(0.95 0.04 155);
+  --accent-amber-subtle: oklch(0.95 0.04 75);
+  --accent-purple-subtle: oklch(0.95 0.04 300);
 }
 
 .dark {
@@ -89,8 +105,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.7 0.18 260);
+  --primary-foreground: oklch(0.15 0.02 260);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -100,7 +116,7 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.7 0.18 260);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -108,12 +124,20 @@
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary: oklch(0.7 0.18 260);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.7 0.18 260);
+  --accent-blue: oklch(0.7 0.18 260);
+  --accent-green: oklch(0.7 0.14 155);
+  --accent-amber: oklch(0.8 0.14 75);
+  --accent-purple: oklch(0.7 0.18 300);
+  --accent-blue-subtle: oklch(0.25 0.04 260);
+  --accent-green-subtle: oklch(0.25 0.04 155);
+  --accent-amber-subtle: oklch(0.25 0.04 75);
+  --accent-purple-subtle: oklch(0.25 0.04 300);
 }
 
 @layer base {
@@ -196,6 +220,15 @@ html.density-spacious .density-gap { gap: 1.5rem; }
   @page {
     margin: 20mm;
   }
+}
+
+/* Org chart dot grid canvas */
+.org-chart-canvas {
+  background-image: radial-gradient(circle, oklch(0.7 0 0 / 20%) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.dark .org-chart-canvas {
+  background-image: radial-gradient(circle, oklch(0.5 0 0 / 15%) 1px, transparent 1px);
 }
 
 /* Print page settings - applied via DisplaySettingsApplier to <html> */

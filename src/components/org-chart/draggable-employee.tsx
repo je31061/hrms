@@ -1,7 +1,7 @@
 'use client';
 
 import type { DragEvent } from 'react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Employee, DragPayload } from '@/types';
 
 // 1x1 transparent image to hide native drag ghost
@@ -57,7 +57,10 @@ export function DraggableEmployee({
         isSimulating ? 'cursor-grab active:cursor-grabbing' : ''
       }`}
     >
-      <Avatar className="h-5 w-5">
+      <Avatar className="h-6 w-6">
+        {employee.profile_image_url && (
+          <AvatarImage src={employee.profile_image_url} alt={employee.name} />
+        )}
         <AvatarFallback className="text-[10px]">{employee.name.charAt(0)}</AvatarFallback>
       </Avatar>
       <span>{employee.name}</span>

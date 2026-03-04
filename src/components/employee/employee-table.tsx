@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -92,6 +92,9 @@ export function EmployeeTable({ employees }: EmployeeTableProps) {
                   <TableCell>
                     <Link href={`/employees/${emp.id}`} className="flex items-center gap-2 hover:underline">
                       <Avatar className="h-7 w-7">
+                        {emp.profile_image_url && (
+                          <AvatarImage src={emp.profile_image_url} alt={emp.name} />
+                        )}
                         <AvatarFallback className="text-xs">{emp.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <span className="font-medium">{emp.name}</span>

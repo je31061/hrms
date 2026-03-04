@@ -7,10 +7,20 @@ import { AttendanceTable } from '@/components/attendance/attendance-table';
 import { AttendanceRegisterDialog } from '@/components/attendance/attendance-register-dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus } from 'lucide-react';
+import { Calendar, Plus, Building2, Plane, MapPin, Laptop, Clock, UserX, Palmtree } from 'lucide-react';
 import Link from 'next/link';
 import { useAttendanceStore } from '@/lib/stores/attendance-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
+
+const statConfig = [
+  { key: 'office', label: '출근', icon: Building2, iconClass: 'bg-accent-blue-subtle text-accent-blue' },
+  { key: 'business_trip', label: '출장', icon: Plane, iconClass: 'bg-accent-purple-subtle text-accent-purple' },
+  { key: 'field_work', label: '외근', icon: MapPin, iconClass: 'bg-accent-green-subtle text-accent-green' },
+  { key: 'remote', label: '재택', icon: Laptop, iconClass: 'bg-accent-amber-subtle text-accent-amber' },
+  { key: 'late', label: '지각', icon: Clock, iconClass: 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400' },
+  { key: 'absent', label: '결근', icon: UserX, iconClass: 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400' },
+  { key: 'leave', label: '휴가', icon: Palmtree, iconClass: 'bg-accent-green-subtle text-accent-green' },
+] as const;
 
 export default function AttendancePage() {
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -84,48 +94,21 @@ export default function AttendancePage() {
         <ClockButton />
 
         <div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
-          <Card>
-            <CardContent className="pt-4 text-center">
-              <p className="text-sm text-muted-foreground">출근</p>
-              <p className="text-2xl font-bold">{stats.office}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 text-center">
-              <p className="text-sm text-muted-foreground">출장</p>
-              <p className="text-2xl font-bold">{stats.business_trip}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 text-center">
-              <p className="text-sm text-muted-foreground">외근</p>
-              <p className="text-2xl font-bold">{stats.field_work}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 text-center">
-              <p className="text-sm text-muted-foreground">재택</p>
-              <p className="text-2xl font-bold">{stats.remote}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 text-center">
-              <p className="text-sm text-muted-foreground">지각</p>
-              <p className="text-2xl font-bold text-destructive">{stats.late}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 text-center">
-              <p className="text-sm text-muted-foreground">결근</p>
-              <p className="text-2xl font-bold text-destructive">{stats.absent}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 text-center">
-              <p className="text-sm text-muted-foreground">휴가</p>
-              <p className="text-2xl font-bold">{stats.leave}</p>
-            </CardContent>
-          </Card>
+          {statConfig.map(({ key, label, icon: Icon, iconClass }) => {
+            const val = stats[key as keyof typeof stats];
+            const isNegative = key === 'late' || key === 'absent';
+            return (
+              <Card key={key}>
+                <CardContent className="pt-4 text-center space-y-2">
+                  <div className={`mx-auto w-fit p-2 rounded-lg ${iconClass}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">{label}</p>
+                  <p className={`text-2xl font-bold ${isNegative && val > 0 ? 'text-destructive' : ''}`}>{val}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         <div>

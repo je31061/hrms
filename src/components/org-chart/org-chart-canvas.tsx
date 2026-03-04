@@ -84,7 +84,7 @@ export function OrgChartCanvas({
     : '드래그: 이동 · 스크롤: 확대/축소 · 우클릭: 정보';
 
   return (
-    <div className="relative border rounded-lg bg-muted/30 overflow-hidden" style={{ height: '600px' }}>
+    <div className="relative border rounded-lg org-chart-canvas overflow-hidden" style={{ height: '600px' }}>
       {/* Zoom controls */}
       <div className="absolute top-3 right-3 z-10 flex flex-col gap-1">
         <Button variant="outline" size="icon" className="h-8 w-8 bg-background" onClick={zoomIn} title="확대">
@@ -182,6 +182,7 @@ function TreeBranch({
         title={leader?.name}
         rank={leader?.position_rank?.name}
         employeeCount={count}
+        leader={leader}
         employees={employees}
         departmentId={department.id}
         isSimulating={isSimulating}
@@ -195,7 +196,7 @@ function TreeBranch({
       {hasChildren && (
         <>
           {/* Vertical line down from parent */}
-          <div className="w-px h-6 bg-border" />
+          <div className="w-px h-6 bg-gradient-to-b from-border to-border/50" />
 
           {/* Horizontal line spanning children */}
           <div className="relative flex">

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { Department } from '@/types';
-import { ChevronRight, ChevronDown, Building2, Users } from 'lucide-react';
+import { ChevronRight, Building2, Users } from 'lucide-react';
 import Link from 'next/link';
 
 interface OrgTreeProps {
@@ -33,11 +33,10 @@ function TreeNode({ department, employeeCounts, level = 0 }: TreeNodeProps) {
       >
         {hasChildren ? (
           <button onClick={() => setIsOpen(!isOpen)} className="p-0.5">
-            {isOpen ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            )}
+            <ChevronRight className={cn(
+              'h-4 w-4 text-muted-foreground transition-transform duration-200',
+              isOpen && 'rotate-90',
+            )} />
           </button>
         ) : (
           <span className="w-5" />
@@ -49,7 +48,7 @@ function TreeNode({ department, employeeCounts, level = 0 }: TreeNodeProps) {
         >
           {department.name}
         </Link>
-        <span className="text-xs text-muted-foreground flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <span className="text-xs text-muted-foreground flex items-center gap-1">
           <Users className="h-3 w-3" />
           {count}명
         </span>

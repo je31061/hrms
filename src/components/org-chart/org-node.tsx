@@ -2,8 +2,9 @@
 
 import { useState, type DragEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage, AvatarGroup, AvatarGroupCount } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -15,7 +16,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { Building2, Mail, Phone, User, ExternalLink } from 'lucide-react';
+import { Building2, Mail, Phone, User, ExternalLink, ChevronDown } from 'lucide-react';
 import { DraggableEmployee } from './draggable-employee';
 import type { Employee, DragPayload } from '@/types';
 
@@ -31,8 +32,7 @@ interface OrgNodeProps {
   title?: string;
   rank?: string;
   employeeCount?: number;
-  isExpanded?: boolean;
-  onToggle?: () => void;
+  leader?: Employee;
   employees?: Employee[];
   departmentId?: string;
   isSimulating?: boolean;
@@ -47,8 +47,7 @@ export function OrgNode({
   title,
   rank,
   employeeCount,
-  isExpanded,
-  onToggle,
+  leader,
   employees,
   departmentId,
   isSimulating,
@@ -60,6 +59,7 @@ export function OrgNode({
   const router = useRouter();
   const hasEmployees = employees && employees.length > 0;
   const [isDragOver, setIsDragOver] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const handleDragStart = (e: DragEvent) => {
     if (!isSimulating || !departmentId) return;
@@ -111,6 +111,16 @@ export function OrgNode({
     }
   };
 
+  const handleCardClick = () => {
+    if (hasEmployees) {
+      setExpanded((prev) => !prev);
+    }
+  };
+
+  // Avatars for collapsed preview (max 4)
+  const previewEmployees = employees?.slice(0, 4) ?? [];
+  const remainingCount = (employees?.length ?? 0) - previewEmployees.length;
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -122,24 +132,81 @@ export function OrgNode({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`border rounded-lg p-3 bg-background shadow-sm min-w-[160px] cursor-pointer hover:shadow-md transition-shadow ${
-              isSimulating ? 'cursor-grab active:cursor-grabbing' : ''
-            } ${isDragOver ? 'ring-2 ring-primary bg-primary/5' : ''} ${
-              isModified ? 'border-l-4 border-l-amber-500' : ''
-            }`}
-            onClick={onToggle}
+            className={cn(
+              'border rounded-lg p-3 bg-background shadow-sm min-w-[180px] cursor-pointer hover:shadow-md transition-all',
+              isSimulating && 'cursor-grab active:cursor-grabbing',
+              isDragOver && 'ring-2 ring-primary bg-primary/5',
+              isModified && 'border-l-4 border-l-amber-500',
+            )}
+            onClick={handleCardClick}
           >
-            <p className="font-semibold text-sm text-center">{name}</p>
-            {title && <p className="text-xs text-muted-foreground text-center">{title}</p>}
-            {rank && <p className="text-xs text-muted-foreground text-center">{rank}</p>}
-            {employeeCount !== undefined && (
-              <Badge variant="secondary" className="mt-1 mx-auto block w-fit text-xs">
-                {employeeCount}명
-              </Badge>
+            {/* Header: department name + count badge */}
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <p className="font-semibold text-sm">{name}</p>
+              {employeeCount !== undefined && (
+                <Badge variant="secondary" className="text-xs shrink-0">
+                  {employeeCount}명
+                </Badge>
+              )}
+            </div>
+
+            {/* Leader section */}
+            {leader && (
+              <div className="flex items-center gap-2 mb-2">
+                <Avatar className="h-7 w-7">
+                  {leader.profile_image_url && (
+                    <AvatarImage src={leader.profile_image_url} alt={leader.name} />
+                  )}
+                  <AvatarFallback className="text-[10px]">{leader.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium truncate">{leader.name}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    {leader.position_title?.name ?? ''}{leader.position_title?.name && leader.position_rank?.name ? ' · ' : ''}{leader.position_rank?.name ?? ''}
+                  </p>
+                </div>
+              </div>
+            )}
+            {!leader && title && (
+              <div className="mb-2">
+                <p className="text-xs text-muted-foreground text-center">{title}</p>
+                {rank && <p className="text-xs text-muted-foreground text-center">{rank}</p>}
+              </div>
+            )}
+
+            {/* Collapsed: avatar group preview */}
+            {!expanded && hasEmployees && (
+              <div className="flex items-center justify-between">
+                <AvatarGroup>
+                  {previewEmployees.map((emp) => (
+                    <Avatar key={emp.id} className="h-5 w-5" size="sm">
+                      {emp.profile_image_url && (
+                        <AvatarImage src={emp.profile_image_url} alt={emp.name} />
+                      )}
+                      <AvatarFallback className="text-[8px]">{emp.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  ))}
+                  {remainingCount > 0 && (
+                    <AvatarGroupCount className="text-[8px] !size-5">
+                      +{remainingCount}
+                    </AvatarGroupCount>
+                  )}
+                </AvatarGroup>
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform duration-200" />
+              </div>
+            )}
+
+            {/* Expanded chevron indicator */}
+            {expanded && hasEmployees && (
+              <div className="flex justify-center mt-1">
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground rotate-180 transition-transform duration-200" />
+              </div>
             )}
           </div>
-          {isExpanded && hasEmployees && (
-            <div className="mt-2 space-y-1">
+
+          {/* Expanded panel: full team list */}
+          {expanded && hasEmployees && (
+            <div className="mt-1 w-full min-w-[180px] border rounded-lg bg-background shadow-sm p-2 space-y-1 animate-in slide-in-from-top-1 duration-200">
               {employees.map((emp) =>
                 isSimulating ? (
                   <DraggableEmployee
@@ -151,14 +218,19 @@ export function OrgNode({
                     onDragPreviewEnd={onDragPreviewEnd}
                   />
                 ) : (
-                  <div key={emp.id} className="flex items-center gap-2 text-xs px-2 py-1 rounded hover:bg-muted">
-                    <Avatar className="h-5 w-5">
+                  <div key={emp.id} className="flex items-center gap-2 text-xs px-1.5 py-1 rounded hover:bg-muted">
+                    <Avatar className="h-6 w-6">
+                      {emp.profile_image_url && (
+                        <AvatarImage src={emp.profile_image_url} alt={emp.name} />
+                      )}
                       <AvatarFallback className="text-[10px]">{emp.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <span>{emp.name}</span>
-                    {emp.position_rank && (
-                      <span className="text-muted-foreground">{emp.position_rank.name}</span>
-                    )}
+                    <div className="min-w-0 flex-1">
+                      <span className="font-medium">{emp.name}</span>
+                      <span className="text-muted-foreground ml-1">
+                        {emp.position_title?.name ? `${emp.position_title.name} · ` : ''}{emp.position_rank?.name ?? ''}
+                      </span>
+                    </div>
                   </div>
                 ),
               )}
@@ -192,6 +264,9 @@ export function OrgNode({
                 <ContextMenuSub key={emp.id}>
                   <ContextMenuSubTrigger>
                     <Avatar className="h-5 w-5 mr-1">
+                      {emp.profile_image_url && (
+                        <AvatarImage src={emp.profile_image_url} alt={emp.name} />
+                      )}
                       <AvatarFallback className="text-[10px]">{emp.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <span>{emp.name}</span>

@@ -137,7 +137,7 @@ const makeEmployee = (
   base_salary: 0,
   bank_name: null,
   bank_account: null,
-  profile_image_url: null,
+  profile_image_url: `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`,
   emergency_contact_name: null,
   emergency_contact_phone: null,
   emergency_contact_relation: null,
@@ -337,8 +337,9 @@ export default function OrganizationPage() {
       // Entering simulation: clone original data
       setSimTree(cloneTree(demoTree));
       setSimEmployeesByDept({ ...originalEmployeesByDept });
-      setMoves([]);
     }
+    // Always clear moves on toggle (entering or exiting)
+    setMoves([]);
     setIsSimulating(on);
   }, []);
 
@@ -382,7 +383,7 @@ export default function OrganizationPage() {
                 employeesByDept={activeEmployeesByDept}
                 isSimulating={isSimulating}
                 onDropItem={handleDropItem}
-                modifiedDeptIds={modifiedDeptIds}
+                modifiedDeptIds={isSimulating ? modifiedDeptIds : undefined}
                 onDragPreviewStart={handleDragPreviewStart}
                 onDragPreviewEnd={handleDragPreviewEnd}
               />

@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import EffectiveDateFields from '@/components/shared/effective-date-fields';
 
 interface WorkScheduleDialogProps {
   open: boolean;
@@ -39,6 +40,8 @@ interface FormState {
   core_end_time: string;
   break_minutes: number;
   weekly_hours: number;
+  effective_from: string;
+  effective_to: string;
   settings: Record<string, unknown>;
 }
 
@@ -51,6 +54,8 @@ const defaultForm: FormState = {
   core_end_time: '',
   break_minutes: 60,
   weekly_hours: 40,
+  effective_from: '',
+  effective_to: '',
   settings: {},
 };
 
@@ -81,6 +86,8 @@ export default function WorkScheduleDialog({
         core_end_time: schedule.core_end_time ?? '',
         break_minutes: schedule.break_minutes,
         weekly_hours: schedule.weekly_hours,
+        effective_from: schedule.effective_from ?? '',
+        effective_to: schedule.effective_to ?? '',
         settings: { ...schedule.settings },
       });
     } else {
@@ -146,6 +153,8 @@ export default function WorkScheduleDialog({
       weekly_hours: form.weekly_hours,
       is_default: schedule?.is_default ?? false,
       is_active: schedule?.is_active ?? true,
+      effective_from: form.effective_from || null,
+      effective_to: form.effective_to || null,
       settings: form.settings,
       created_at: schedule?.created_at ?? now,
       updated_at: now,
@@ -262,6 +271,13 @@ export default function WorkScheduleDialog({
               />
             </div>
           </div>
+
+          <EffectiveDateFields
+            effectiveFrom={form.effective_from}
+            effectiveTo={form.effective_to}
+            onFromChange={(v) => updateField('effective_from', v)}
+            onToChange={(v) => updateField('effective_to', v)}
+          />
 
           {/* Type-specific settings */}
           {form.type !== 'fixed' && (

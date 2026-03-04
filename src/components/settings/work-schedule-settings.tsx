@@ -19,9 +19,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Star } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, History } from 'lucide-react';
 import { toast } from 'sonner';
 import WorkScheduleDialog from './work-schedule-dialog';
+import { useChangeHistory } from '@/lib/hooks/use-change-history';
+import { computeFieldChanges } from '@/lib/utils/diff';
+import EffectiveStatusBadge from '@/components/shared/effective-status-badge';
+import ChangeHistoryDialog from '@/components/shared/change-history-dialog';
 
 export default function WorkScheduleSettings() {
   const work = useSettingsStore((s) => s.work);
@@ -52,9 +56,13 @@ export default function WorkScheduleSettings() {
     holiday_overtime_rate: 2.0,
   });
 
+  const { recordChange } = useChangeHistory();
+
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<WorkSchedule | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyTarget, setHistoryTarget] = useState<WorkSchedule | null>(null);
 
   useEffect(() => {
     setBasicForm({
@@ -100,20 +108,35 @@ export default function WorkScheduleSettings() {
       toast.error('기본 근무유형은 삭제할 수 없습니다.');
       return;
     }
-    if (window.confirm(`"${schedule.name}" 근무유형을 삭제하시겠습니까?`)) {
+    if (window.confirm(`"${schedule.name}" 근무유형을 미사용 처리하시겠습니까?`)) {
       deleteWorkSchedule(schedule.id);
-      toast.success('근무유형이 삭제되었습니다.');
+      recordChange('work_schedule', schedule.id, schedule.name, 'delete', [
+        { field: 'is_active', label: '활성', before: '예', after: '아니오' },
+      ]);
+      toast.success('근무유형이 미사용 처리되었습니다.');
     }
   };
 
   const handleDialogSave = (schedule: WorkSchedule) => {
     if (editingSchedule) {
+      const changes = computeFieldChanges(
+        editingSchedule as unknown as Record<string, unknown>,
+        schedule as unknown as Record<string, unknown>,
+        { name: '유형명', type: '근무유형', start_time: '출근시간', end_time: '퇴근시간', weekly_hours: '주당시간', effective_from: '시작일', effective_to: '종료일' },
+      );
       updateWorkSchedule(schedule.id, schedule);
+      if (changes.length > 0) recordChange('work_schedule', schedule.id, schedule.name, 'update', changes);
       toast.success('근무유형이 수정되었습니다.');
     } else {
       addWorkSchedule(schedule);
+      recordChange('work_schedule', schedule.id, schedule.name, 'create', []);
       toast.success('근무유형이 추가되었습니다.');
     }
+  };
+
+  const handleShowHistory = (schedule: WorkSchedule) => {
+    setHistoryTarget(schedule);
+    setHistoryOpen(true);
   };
 
   const handleSetDefault = (id: string) => {
@@ -213,6 +236,8 @@ export default function WorkScheduleSettings() {
                 <TableHead>코어타임</TableHead>
                 <TableHead>주당시간</TableHead>
                 <TableHead>기본</TableHead>
+                <TableHead>시작일</TableHead>
+                <TableHead>종료일</TableHead>
                 <TableHead>상태</TableHead>
                 <TableHead>관리</TableHead>
               </TableRow>
@@ -249,25 +274,20 @@ export default function WorkScheduleSettings() {
                       />
                     </button>
                   </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{ws.effective_from ?? '-'}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{ws.effective_to ?? '-'}</TableCell>
                   <TableCell>
-                    <Badge variant={ws.is_active ? 'default' : 'secondary'}>
-                      {ws.is_active ? '활성' : '비활성'}
-                    </Badge>
+                    <EffectiveStatusBadge is_active={ws.is_active} effective_from={ws.effective_from} effective_to={ws.effective_to} />
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEditSchedule(ws)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => handleEditSchedule(ws)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteSchedule(ws)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => handleShowHistory(ws)}>
+                        <History className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteSchedule(ws)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -276,7 +296,7 @@ export default function WorkScheduleSettings() {
               ))}
               {workSchedules.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center text-muted-foreground">
                     등록된 근무유형이 없습니다.
                   </TableCell>
                 </TableRow>
@@ -434,6 +454,16 @@ export default function WorkScheduleSettings() {
         schedule={editingSchedule}
         onSave={handleDialogSave}
       />
+
+      {historyTarget && (
+        <ChangeHistoryDialog
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
+          entityType="work_schedule"
+          entityId={historyTarget.id}
+          entityLabel={historyTarget.name}
+        />
+      )}
     </div>
   );
 }

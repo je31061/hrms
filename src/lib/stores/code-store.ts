@@ -13,6 +13,8 @@ export interface CodeGroup {
   sort_order: number;
   is_active: boolean;
   is_system: boolean;
+  effective_from: string | null;
+  effective_to: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -25,6 +27,8 @@ export interface CodeItem {
   sort_order: number;
   is_active: boolean;
   is_system: boolean;
+  effective_from: string | null;
+  effective_to: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -50,6 +54,8 @@ function buildGroup(
       sort_order,
       is_active: true,
       is_system: true,
+      effective_from: null,
+      effective_to: null,
       created_at: now,
       updated_at: now,
     },
@@ -61,6 +67,8 @@ function buildGroup(
       sort_order: idx + 1,
       is_active: true,
       is_system: true,
+      effective_from: null,
+      effective_to: null,
       created_at: now,
       updated_at: now,
     })),
@@ -188,7 +196,7 @@ export const useCodeStore = create<CodeStore>()(
         set((s) => ({
           codeGroups: [
             ...s.codeGroups,
-            { ...group, id, is_system: false, created_at: now, updated_at: now },
+            { ...group, id, is_system: false, effective_from: null, effective_to: null, created_at: now, updated_at: now },
           ],
         }));
       },
@@ -203,9 +211,15 @@ export const useCodeStore = create<CodeStore>()(
       deleteCodeGroup: (id) => {
         const group = get().codeGroups.find((g) => g.id === id);
         if (!group || group.is_system) return false;
+        const today = new Date().toISOString().split('T')[0];
+        const now = new Date().toISOString();
         set((s) => ({
-          codeGroups: s.codeGroups.filter((g) => g.id !== id),
-          codeItems: s.codeItems.filter((i) => i.group_id !== id),
+          codeGroups: s.codeGroups.map((g) =>
+            g.id === id ? { ...g, is_active: false, effective_to: today, updated_at: now } : g,
+          ),
+          codeItems: s.codeItems.map((i) =>
+            i.group_id === id ? { ...i, is_active: false, effective_to: today, updated_at: now } : i,
+          ),
         }));
         return true;
       },
@@ -225,7 +239,7 @@ export const useCodeStore = create<CodeStore>()(
         set((s) => ({
           codeItems: [
             ...s.codeItems,
-            { ...item, id, is_system: false, created_at: now, updated_at: now },
+            { ...item, id, is_system: false, effective_from: null, effective_to: null, created_at: now, updated_at: now },
           ],
         }));
       },
@@ -240,8 +254,12 @@ export const useCodeStore = create<CodeStore>()(
       deleteCodeItem: (id) => {
         const item = get().codeItems.find((i) => i.id === id);
         if (!item || item.is_system) return false;
+        const today = new Date().toISOString().split('T')[0];
+        const now = new Date().toISOString();
         set((s) => ({
-          codeItems: s.codeItems.filter((i) => i.id !== id),
+          codeItems: s.codeItems.map((i) =>
+            i.id === id ? { ...i, is_active: false, effective_to: today, updated_at: now } : i,
+          ),
         }));
         return true;
       },

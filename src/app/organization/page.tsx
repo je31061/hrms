@@ -29,6 +29,8 @@ const demoTree: Department[] = [
     level: 1,
     sort_order: 1,
     is_active: true,
+    effective_from: null,
+    effective_to: null,
     created_at: '',
     updated_at: '',
     children: [
@@ -40,12 +42,14 @@ const demoTree: Department[] = [
         level: 2,
         sort_order: 1,
         is_active: true,
+        effective_from: null,
+        effective_to: null,
         created_at: '',
         updated_at: '',
         children: [
-          { id: '00000000-0000-0000-0000-000000000005', name: '인사팀', code: 'HR', parent_id: '00000000-0000-0000-0000-000000000002', level: 3, sort_order: 1, is_active: true, created_at: '', updated_at: '' },
-          { id: '00000000-0000-0000-0000-000000000006', name: '재무팀', code: 'FIN', parent_id: '00000000-0000-0000-0000-000000000002', level: 3, sort_order: 2, is_active: true, created_at: '', updated_at: '' },
-          { id: '00000000-0000-0000-0000-000000000007', name: '총무팀', code: 'GA', parent_id: '00000000-0000-0000-0000-000000000002', level: 3, sort_order: 3, is_active: true, created_at: '', updated_at: '' },
+          { id: '00000000-0000-0000-0000-000000000005', name: '인사팀', code: 'HR', parent_id: '00000000-0000-0000-0000-000000000002', level: 3, sort_order: 1, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
+          { id: '00000000-0000-0000-0000-000000000006', name: '재무팀', code: 'FIN', parent_id: '00000000-0000-0000-0000-000000000002', level: 3, sort_order: 2, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
+          { id: '00000000-0000-0000-0000-000000000007', name: '총무팀', code: 'GA', parent_id: '00000000-0000-0000-0000-000000000002', level: 3, sort_order: 3, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
         ],
       },
       {
@@ -56,12 +60,14 @@ const demoTree: Department[] = [
         level: 2,
         sort_order: 2,
         is_active: true,
+        effective_from: null,
+        effective_to: null,
         created_at: '',
         updated_at: '',
         children: [
-          { id: '00000000-0000-0000-0000-000000000008', name: '개발1팀', code: 'DEV1', parent_id: '00000000-0000-0000-0000-000000000003', level: 3, sort_order: 1, is_active: true, created_at: '', updated_at: '' },
-          { id: '00000000-0000-0000-0000-000000000009', name: '개발2팀', code: 'DEV2', parent_id: '00000000-0000-0000-0000-000000000003', level: 3, sort_order: 2, is_active: true, created_at: '', updated_at: '' },
-          { id: '00000000-0000-0000-0000-000000000010', name: 'QA팀', code: 'QA', parent_id: '00000000-0000-0000-0000-000000000003', level: 3, sort_order: 3, is_active: true, created_at: '', updated_at: '' },
+          { id: '00000000-0000-0000-0000-000000000008', name: '개발1팀', code: 'DEV1', parent_id: '00000000-0000-0000-0000-000000000003', level: 3, sort_order: 1, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
+          { id: '00000000-0000-0000-0000-000000000009', name: '개발2팀', code: 'DEV2', parent_id: '00000000-0000-0000-0000-000000000003', level: 3, sort_order: 2, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
+          { id: '00000000-0000-0000-0000-000000000010', name: 'QA팀', code: 'QA', parent_id: '00000000-0000-0000-0000-000000000003', level: 3, sort_order: 3, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
         ],
       },
       {
@@ -72,11 +78,13 @@ const demoTree: Department[] = [
         level: 2,
         sort_order: 3,
         is_active: true,
+        effective_from: null,
+        effective_to: null,
         created_at: '',
         updated_at: '',
         children: [
-          { id: '00000000-0000-0000-0000-000000000011', name: '국내영업팀', code: 'DS', parent_id: '00000000-0000-0000-0000-000000000004', level: 3, sort_order: 1, is_active: true, created_at: '', updated_at: '' },
-          { id: '00000000-0000-0000-0000-000000000012', name: '해외영업팀', code: 'IS', parent_id: '00000000-0000-0000-0000-000000000004', level: 3, sort_order: 2, is_active: true, created_at: '', updated_at: '' },
+          { id: '00000000-0000-0000-0000-000000000011', name: '국내영업팀', code: 'DS', parent_id: '00000000-0000-0000-0000-000000000004', level: 3, sort_order: 1, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
+          { id: '00000000-0000-0000-0000-000000000012', name: '해외영업팀', code: 'IS', parent_id: '00000000-0000-0000-0000-000000000004', level: 3, sort_order: 2, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
         ],
       },
     ],
@@ -135,8 +143,8 @@ const makeEmployee = (
   emergency_contact_relation: null,
   created_at: '',
   updated_at: '',
-  position_rank: { id: '', name: rankName, level: 0, is_active: true },
-  position_title: titleName ? { id: '', name: titleName, level: 0, is_active: true } : undefined,
+  position_rank: { id: '', name: rankName, level: 0, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
+  position_title: titleName ? { id: '', name: titleName, level: 0, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' } : undefined,
 });
 
 const originalEmployeesByDept: Record<string, Employee[]> = {
@@ -393,6 +401,8 @@ export default function OrganizationPage() {
                       level: 3,
                       sort_order: 0,
                       is_active: true,
+                      effective_from: null,
+                      effective_to: null,
                       created_at: '',
                       updated_at: '',
                     }}

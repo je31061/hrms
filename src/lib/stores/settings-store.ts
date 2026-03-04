@@ -218,6 +218,8 @@ const defaultWorkSchedules: WorkSchedule[] = [
     weekly_hours: 40,
     is_default: true,
     is_active: true,
+    effective_from: null,
+    effective_to: null,
     settings: {},
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -234,6 +236,8 @@ const defaultWorkSchedules: WorkSchedule[] = [
     weekly_hours: 40,
     is_default: false,
     is_active: true,
+    effective_from: null,
+    effective_to: null,
     settings: { earliest_start: '07:00', latest_start: '10:00' },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -250,6 +254,8 @@ const defaultWorkSchedules: WorkSchedule[] = [
     weekly_hours: 40,
     is_default: false,
     is_active: true,
+    effective_from: null,
+    effective_to: null,
     settings: { settlement_period: '1month' },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -302,13 +308,13 @@ const defaultEvalCriteria: EvaluationCriterion[] = [
 ];
 
 const defaultAttendanceTypes: AttendanceTypeConfig[] = [
-  { id: 'atype-1', code: 'office', label: '사무실 출근', is_active: true, requires_approval: false, requires_location: false, requires_purpose: false, counts_as_work: true, sort_order: 1, is_system: true, created_at: '', updated_at: '' },
-  { id: 'atype-2', code: 'business_trip', label: '출장', is_active: true, requires_approval: true, requires_location: true, requires_purpose: true, counts_as_work: true, sort_order: 2, is_system: true, created_at: '', updated_at: '' },
-  { id: 'atype-3', code: 'field_work', label: '외근', is_active: true, requires_approval: true, requires_location: true, requires_purpose: true, counts_as_work: true, sort_order: 3, is_system: true, created_at: '', updated_at: '' },
-  { id: 'atype-4', code: 'remote', label: '재택근무', is_active: true, requires_approval: true, requires_location: false, requires_purpose: false, counts_as_work: true, sort_order: 4, is_system: true, created_at: '', updated_at: '' },
-  { id: 'atype-5', code: 'training', label: '교육/연수', is_active: true, requires_approval: true, requires_location: true, requires_purpose: true, counts_as_work: true, sort_order: 5, is_system: true, created_at: '', updated_at: '' },
-  { id: 'atype-6', code: 'dispatch', label: '파견', is_active: true, requires_approval: true, requires_location: true, requires_purpose: true, counts_as_work: true, sort_order: 6, is_system: true, created_at: '', updated_at: '' },
-  { id: 'atype-7', code: 'other', label: '기타', is_active: true, requires_approval: false, requires_location: false, requires_purpose: false, counts_as_work: false, sort_order: 7, is_system: false, created_at: '', updated_at: '' },
+  { id: 'atype-1', code: 'office', label: '사무실 출근', is_active: true, effective_from: null, effective_to: null, requires_approval: false, requires_location: false, requires_purpose: false, counts_as_work: true, sort_order: 1, is_system: true, created_at: '', updated_at: '' },
+  { id: 'atype-2', code: 'business_trip', label: '출장', is_active: true, effective_from: null, effective_to: null, requires_approval: true, requires_location: true, requires_purpose: true, counts_as_work: true, sort_order: 2, is_system: true, created_at: '', updated_at: '' },
+  { id: 'atype-3', code: 'field_work', label: '외근', is_active: true, effective_from: null, effective_to: null, requires_approval: true, requires_location: true, requires_purpose: true, counts_as_work: true, sort_order: 3, is_system: true, created_at: '', updated_at: '' },
+  { id: 'atype-4', code: 'remote', label: '재택근무', is_active: true, effective_from: null, effective_to: null, requires_approval: true, requires_location: false, requires_purpose: false, counts_as_work: true, sort_order: 4, is_system: true, created_at: '', updated_at: '' },
+  { id: 'atype-5', code: 'training', label: '교육/연수', is_active: true, effective_from: null, effective_to: null, requires_approval: true, requires_location: true, requires_purpose: true, counts_as_work: true, sort_order: 5, is_system: true, created_at: '', updated_at: '' },
+  { id: 'atype-6', code: 'dispatch', label: '파견', is_active: true, effective_from: null, effective_to: null, requires_approval: true, requires_location: true, requires_purpose: true, counts_as_work: true, sort_order: 6, is_system: true, created_at: '', updated_at: '' },
+  { id: 'atype-7', code: 'other', label: '기타', is_active: true, effective_from: null, effective_to: null, requires_approval: false, requires_location: false, requires_purpose: false, counts_as_work: false, sort_order: 7, is_system: false, created_at: '', updated_at: '' },
 ];
 
 // ---- Store ----
@@ -437,7 +443,11 @@ export const useSettingsStore = create<SettingsStore>()(
 
       deleteWorkSchedule: (id) =>
         set((s) => ({
-          workSchedules: s.workSchedules.filter((ws) => ws.id !== id),
+          workSchedules: s.workSchedules.map((ws) =>
+            ws.id === id
+              ? { ...ws, is_active: false, effective_to: new Date().toISOString().split('T')[0], updated_at: new Date().toISOString() }
+              : ws,
+          ),
         })),
 
       setDefaultWorkSchedule: (id) =>
@@ -531,7 +541,11 @@ export const useSettingsStore = create<SettingsStore>()(
 
       deleteAttendanceType: (id) =>
         set((s) => ({
-          attendanceTypes: s.attendanceTypes.filter((t) => t.id !== id),
+          attendanceTypes: s.attendanceTypes.map((t) =>
+            t.id === id
+              ? { ...t, is_active: false, effective_to: new Date().toISOString().split('T')[0], updated_at: new Date().toISOString() }
+              : t,
+          ),
         })),
 
       toggleAttendanceTypeActive: (id) =>
@@ -552,15 +566,14 @@ export const useSettingsStore = create<SettingsStore>()(
     }),
     {
       name: 'hrms-settings',
-      version: 3,
+      version: 4,
       migrate: (persisted: unknown, version: number) => {
         if (version < 2) {
           return {};
         }
+        let state = persisted as Record<string, unknown>;
         if (version < 3) {
-          // Add menuPermissions to existing data
-          const state = persisted as Record<string, unknown>;
-          return {
+          state = {
             ...state,
             menuPermissions: {
               admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/evaluation', '/workflows', '/audit-log', '/settings'],
@@ -570,7 +583,21 @@ export const useSettingsStore = create<SettingsStore>()(
             },
           };
         }
-        return persisted as Record<string, unknown>;
+        if (version < 4) {
+          // v3→v4: Add effective_from/to to WorkSchedule and AttendanceTypeConfig
+          const addEffective = (items: Record<string, unknown>[]) =>
+            items.map((item) => ({
+              ...item,
+              effective_from: (item as Record<string, unknown>).effective_from ?? null,
+              effective_to: (item as Record<string, unknown>).effective_to ?? null,
+            }));
+          state = {
+            ...state,
+            workSchedules: addEffective((state.workSchedules as Record<string, unknown>[]) ?? []),
+            attendanceTypes: addEffective((state.attendanceTypes as Record<string, unknown>[]) ?? []),
+          };
+        }
+        return state;
       },
     }
   )

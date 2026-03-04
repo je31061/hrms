@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { EMPLOYMENT_TYPES, GENDER_LABELS } from '@/lib/constants/positions';
+import { isCurrentlyEffective } from '@/lib/utils/effective-status';
 import type { Employee, PositionRank, PositionTitle, Department } from '@/types';
 
 const employeeSchema = z.object({
@@ -156,9 +157,11 @@ export function EmployeeForm({
             <Select onValueChange={(v) => setValue('department_id', v)}>
               <SelectTrigger><SelectValue placeholder="부서 선택" /></SelectTrigger>
               <SelectContent>
-                {departments.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                ))}
+                {departments
+                  .filter((d) => isCurrentlyEffective(d.is_active, d.effective_from, d.effective_to))
+                  .map((d) => (
+                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -167,9 +170,11 @@ export function EmployeeForm({
             <Select onValueChange={(v) => setValue('position_rank_id', v)}>
               <SelectTrigger><SelectValue placeholder="직급 선택" /></SelectTrigger>
               <SelectContent>
-                {positionRanks.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                ))}
+                {positionRanks
+                  .filter((r) => isCurrentlyEffective(r.is_active, r.effective_from, r.effective_to))
+                  .map((r) => (
+                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -178,9 +183,11 @@ export function EmployeeForm({
             <Select onValueChange={(v) => setValue('position_title_id', v)}>
               <SelectTrigger><SelectValue placeholder="직책 선택" /></SelectTrigger>
               <SelectContent>
-                {positionTitles.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                ))}
+                {positionTitles
+                  .filter((t) => isCurrentlyEffective(t.is_active, t.effective_from, t.effective_to))
+                  .map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>

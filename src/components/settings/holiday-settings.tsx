@@ -26,8 +26,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, History } from 'lucide-react';
 import { toast } from 'sonner';
+import { useChangeHistory } from '@/lib/hooks/use-change-history';
+import ChangeHistoryDialog from '@/components/shared/change-history-dialog';
 
 function getHolidayBadgeVariant(type: HolidayType): 'default' | 'secondary' | 'outline' {
   switch (type) {
@@ -49,12 +51,16 @@ export default function HolidaySettings() {
   const addHoliday = useSettingsStore((s) => s.addHoliday);
   const deleteHoliday = useSettingsStore((s) => s.deleteHoliday);
 
+  const { recordChange } = useChangeHistory();
+
   const [autoSubstitute, setAutoSubstitute] = useState(holidayAutoSubstitute);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newHolidayForm, setNewHolidayForm] = useState({
     date: '',
     name: '',
   });
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyTarget, setHistoryTarget] = useState<Holiday | null>(null);
 
   const sortedHolidays = useMemo(
     () => [...holidays].sort((a, b) => a.date.localeCompare(b.date)),
@@ -69,8 +75,14 @@ export default function HolidaySettings() {
   const handleDelete = (id: string, name: string) => {
     if (window.confirm(`"${name}" 공휴일을 삭제하시겠습니까?`)) {
       deleteHoliday(id);
+      recordChange('holiday', id, name, 'delete', []);
       toast.success('공휴일이 삭제되었습니다.');
     }
+  };
+
+  const handleShowHistory = (h: Holiday) => {
+    setHistoryTarget(h);
+    setHistoryOpen(true);
   };
 
   const openAddDialog = () => {
@@ -98,6 +110,7 @@ export default function HolidaySettings() {
     };
 
     addHoliday(newHoliday);
+    recordChange('holiday', newHoliday.id, newHoliday.name, 'create', []);
     toast.success('공휴일이 추가되었습니다.');
     setDialogOpen(false);
   };
@@ -160,19 +173,24 @@ export default function HolidaySettings() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      disabled={h.type === 'legal'}
-                      title={
-                        h.type === 'legal'
-                          ? '법정공휴일은 삭제할 수 없습니다'
-                          : '삭제'
-                      }
-                      onClick={() => handleDelete(h.id, h.name)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => handleShowHistory(h)}>
+                        <History className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={h.type === 'legal'}
+                        title={
+                          h.type === 'legal'
+                            ? '법정공휴일은 삭제할 수 없습니다'
+                            : '삭제'
+                        }
+                        onClick={() => handleDelete(h.id, h.name)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -187,6 +205,16 @@ export default function HolidaySettings() {
           </Table>
         </CardContent>
       </Card>
+
+      {historyTarget && (
+        <ChangeHistoryDialog
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
+          entityType="holiday"
+          entityId={historyTarget.id}
+          entityLabel={historyTarget.name}
+        />
+      )}
 
       {/* Add Holiday Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

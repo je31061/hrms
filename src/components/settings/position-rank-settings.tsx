@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
+import { useChangeHistory } from '@/lib/hooks/use-change-history';
+import { computeFieldChanges } from '@/lib/utils/diff';
 import type { PositionRank } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,36 +16,71 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, History } from 'lucide-react';
 import { toast } from 'sonner';
+import EffectiveStatusBadge from '@/components/shared/effective-status-badge';
+import EffectiveDateFields from '@/components/shared/effective-date-fields';
+import ChangeHistoryDialog from '@/components/shared/change-history-dialog';
+
+const FIELD_LABELS: Record<string, string> = {
+  name: '직급명',
+  level: '레벨',
+  is_active: '활성',
+  effective_from: '시작일',
+  effective_to: '종료일',
+};
 
 export default function PositionRankSettings() {
   const positionRanks = useEmployeeStore((s) => s.positionRanks);
   const addPositionRank = useEmployeeStore((s) => s.addPositionRank);
   const updatePositionRank = useEmployeeStore((s) => s.updatePositionRank);
   const deletePositionRank = useEmployeeStore((s) => s.deletePositionRank);
+  const { recordChange } = useChangeHistory();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<PositionRank | null>(null);
-  const [form, setForm] = useState({ name: '', level: 1, is_active: true });
+  const [form, setForm] = useState({
+    name: '',
+    level: 1,
+    is_active: true,
+    effective_from: '',
+    effective_to: '',
+  });
+
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyTarget, setHistoryTarget] = useState<PositionRank | null>(null);
 
   const handleAdd = () => {
     setEditing(null);
-    setForm({ name: '', level: positionRanks.length + 1, is_active: true });
+    setForm({ name: '', level: positionRanks.length + 1, is_active: true, effective_from: '', effective_to: '' });
     setDialogOpen(true);
   };
 
   const handleEdit = (rank: PositionRank) => {
     setEditing(rank);
-    setForm({ name: rank.name, level: rank.level, is_active: rank.is_active });
+    setForm({
+      name: rank.name,
+      level: rank.level,
+      is_active: rank.is_active,
+      effective_from: rank.effective_from ?? '',
+      effective_to: rank.effective_to ?? '',
+    });
     setDialogOpen(true);
   };
 
   const handleDelete = (rank: PositionRank) => {
-    if (window.confirm(`"${rank.name}" 직급을 삭제하시겠습니까?`)) {
+    if (window.confirm(`"${rank.name}" 직급을 미사용 처리하시겠습니까?`)) {
       deletePositionRank(rank.id);
-      toast.success('직급이 삭제되었습니다.');
+      recordChange('position_rank', rank.id, rank.name, 'delete', [
+        { field: 'is_active', label: '활성', before: '예', after: '아니오' },
+      ]);
+      toast.success('직급이 미사용 처리되었습니다.');
     }
+  };
+
+  const handleShowHistory = (rank: PositionRank) => {
+    setHistoryTarget(rank);
+    setHistoryOpen(true);
   };
 
   const handleSave = () => {
@@ -52,8 +89,25 @@ export default function PositionRankSettings() {
       return;
     }
 
+    const now = new Date().toISOString();
+
     if (editing) {
-      updatePositionRank(editing.id, { name: form.name, level: form.level, is_active: form.is_active });
+      const newData: Partial<PositionRank> = {
+        name: form.name,
+        level: form.level,
+        is_active: form.is_active,
+        effective_from: form.effective_from || null,
+        effective_to: form.effective_to || null,
+      };
+      const changes = computeFieldChanges(
+        editing as unknown as Record<string, unknown>,
+        { ...newData, effective_from: form.effective_from || null, effective_to: form.effective_to || null } as unknown as Record<string, unknown>,
+        FIELD_LABELS,
+      );
+      updatePositionRank(editing.id, newData);
+      if (changes.length > 0) {
+        recordChange('position_rank', editing.id, form.name, 'update', changes);
+      }
       toast.success('직급이 수정되었습니다.');
     } else {
       const newRank: PositionRank = {
@@ -61,8 +115,13 @@ export default function PositionRankSettings() {
         name: form.name,
         level: form.level,
         is_active: form.is_active,
+        effective_from: form.effective_from || null,
+        effective_to: form.effective_to || null,
+        created_at: now,
+        updated_at: now,
       };
       addPositionRank(newRank);
+      recordChange('position_rank', newRank.id, newRank.name, 'create', []);
       toast.success('직급이 추가되었습니다.');
     }
     setDialogOpen(false);
@@ -84,7 +143,9 @@ export default function PositionRankSettings() {
               <TableRow>
                 <TableHead>직급명</TableHead>
                 <TableHead>레벨</TableHead>
-                <TableHead>활성</TableHead>
+                <TableHead>시작일</TableHead>
+                <TableHead>종료일</TableHead>
+                <TableHead>상태</TableHead>
                 <TableHead>관리</TableHead>
               </TableRow>
             </TableHeader>
@@ -93,16 +154,22 @@ export default function PositionRankSettings() {
                 <TableRow key={rank.id}>
                   <TableCell className="font-medium">{rank.name}</TableCell>
                   <TableCell>{rank.level}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{rank.effective_from ?? '-'}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{rank.effective_to ?? '-'}</TableCell>
                   <TableCell>
-                    <Switch
-                      checked={rank.is_active}
-                      onCheckedChange={(checked) => updatePositionRank(rank.id, { is_active: checked })}
+                    <EffectiveStatusBadge
+                      is_active={rank.is_active}
+                      effective_from={rank.effective_from}
+                      effective_to={rank.effective_to}
                     />
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(rank)}>
                         <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleShowHistory(rank)}>
+                        <History className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(rank)}>
                         <Trash2 className="h-4 w-4" />
@@ -113,7 +180,7 @@ export default function PositionRankSettings() {
               ))}
               {positionRanks.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     등록된 직급이 없습니다.
                   </TableCell>
                 </TableRow>
@@ -149,6 +216,12 @@ export default function PositionRankSettings() {
                 onChange={(e) => setForm((p) => ({ ...p, level: Number(e.target.value) }))}
               />
             </div>
+            <EffectiveDateFields
+              effectiveFrom={form.effective_from}
+              effectiveTo={form.effective_to}
+              onFromChange={(v) => setForm((p) => ({ ...p, effective_from: v }))}
+              onToChange={(v) => setForm((p) => ({ ...p, effective_to: v }))}
+            />
             <div className="flex items-center justify-between">
               <Label htmlFor="rank-active">활성</Label>
               <Switch
@@ -164,6 +237,16 @@ export default function PositionRankSettings() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {historyTarget && (
+        <ChangeHistoryDialog
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
+          entityType="position_rank"
+          entityId={historyTarget.id}
+          entityLabel={historyTarget.name}
+        />
+      )}
     </div>
   );
 }

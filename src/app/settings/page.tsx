@@ -17,6 +17,7 @@ import WorkflowTemplateSettings from '@/components/settings/workflow-template-se
 import AttendanceTypeSettings from '@/components/settings/attendance-type-settings';
 import CodeManagementSettings from '@/components/settings/code-management-settings';
 import AuditLogSettings from '@/components/settings/audit-log-settings';
+import ChangeHistorySettings from '@/components/settings/change-history-settings';
 import DepartmentSettings from '@/components/settings/department-settings';
 import PositionRankSettings from '@/components/settings/position-rank-settings';
 import PositionTitleSettings from '@/components/settings/position-title-settings';
@@ -53,6 +54,7 @@ export default function SettingsPage() {
           <TabsTrigger value="attendance-type">근태유형설정</TabsTrigger>
           <TabsTrigger value="codes">코드관리</TabsTrigger>
           <TabsTrigger value="audit-log">감사로그설정</TabsTrigger>
+          <TabsTrigger value="change-history">변경이력</TabsTrigger>
         </TabsList>
 
         <TabsContent value="company">
@@ -117,6 +119,9 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="audit-log">
           <AuditLogSettings />
+        </TabsContent>
+        <TabsContent value="change-history">
+          <ChangeHistorySettings />
         </TabsContent>
       </Tabs>
     </div>

@@ -22,92 +22,92 @@ import type {
 // ---------------------------------------------------------------------------
 
 const seedDepartments: Department[] = [
-  { id: 'dept-01', name: '대표이사실', code: 'CEO', parent_id: null, level: 1, sort_order: 1, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-02', name: '경영지원본부', code: 'MGT', parent_id: null, level: 1, sort_order: 2, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-03', name: '영업본부', code: 'SALES', parent_id: null, level: 1, sort_order: 3, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-04', name: '기술연구소', code: 'RND', parent_id: null, level: 1, sort_order: 4, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-05', name: '스크러버사업부', code: 'SCR', parent_id: null, level: 1, sort_order: 5, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-06', name: 'BWTS사업부', code: 'BWTS', parent_id: null, level: 1, sort_order: 6, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-07', name: '연료공급사업부', code: 'FUEL', parent_id: null, level: 1, sort_order: 7, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-08', name: '계측제어사업부', code: 'IC', parent_id: null, level: 1, sort_order: 8, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-09', name: '생산본부', code: 'PROD', parent_id: null, level: 1, sort_order: 9, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-10', name: '품질관리팀', code: 'QC', parent_id: null, level: 1, sort_order: 10, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-11', name: '조달구매본부', code: 'PURCH', parent_id: null, level: 1, sort_order: 11, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-12', name: '스마트서비스본부', code: 'SMART', parent_id: null, level: 1, sort_order: 12, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-13', name: 'HSE실', code: 'HSE', parent_id: null, level: 1, sort_order: 13, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-01', name: '대표이사실', code: 'CEO', parent_id: null, level: 1, sort_order: 1, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-02', name: '경영지원본부', code: 'MGT', parent_id: null, level: 1, sort_order: 2, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-03', name: '영업본부', code: 'SALES', parent_id: null, level: 1, sort_order: 3, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-04', name: '기술연구소', code: 'RND', parent_id: null, level: 1, sort_order: 4, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-05', name: '스크러버사업부', code: 'SCR', parent_id: null, level: 1, sort_order: 5, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-06', name: 'BWTS사업부', code: 'BWTS', parent_id: null, level: 1, sort_order: 6, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-07', name: '연료공급사업부', code: 'FUEL', parent_id: null, level: 1, sort_order: 7, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-08', name: '계측제어사업부', code: 'IC', parent_id: null, level: 1, sort_order: 8, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-09', name: '생산본부', code: 'PROD', parent_id: null, level: 1, sort_order: 9, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-10', name: '품질관리팀', code: 'QC', parent_id: null, level: 1, sort_order: 10, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-11', name: '조달구매본부', code: 'PURCH', parent_id: null, level: 1, sort_order: 11, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-12', name: '스마트서비스본부', code: 'SMART', parent_id: null, level: 1, sort_order: 12, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-13', name: 'HSE실', code: 'HSE', parent_id: null, level: 1, sort_order: 13, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
   // Sub-departments under 경영지원본부
-  { id: 'dept-14', name: '인사팀', code: 'HR', parent_id: 'dept-02', level: 2, sort_order: 1, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-15', name: '재무회계팀', code: 'FIN', parent_id: 'dept-02', level: 2, sort_order: 2, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-16', name: '총무팀', code: 'GA', parent_id: 'dept-02', level: 2, sort_order: 3, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-14', name: '인사팀', code: 'HR', parent_id: 'dept-02', level: 2, sort_order: 1, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-15', name: '재무회계팀', code: 'FIN', parent_id: 'dept-02', level: 2, sort_order: 2, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-16', name: '총무팀', code: 'GA', parent_id: 'dept-02', level: 2, sort_order: 3, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
   // Sub-departments under 영업본부
-  { id: 'dept-17', name: '국내영업팀', code: 'DOM', parent_id: 'dept-03', level: 2, sort_order: 1, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-18', name: '해외영업팀', code: 'INTL', parent_id: 'dept-03', level: 2, sort_order: 2, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-17', name: '국내영업팀', code: 'DOM', parent_id: 'dept-03', level: 2, sort_order: 1, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-18', name: '해외영업팀', code: 'INTL', parent_id: 'dept-03', level: 2, sort_order: 2, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
   // Sub-department under 기술연구소
-  { id: 'dept-19', name: '연구개발팀', code: 'RD', parent_id: 'dept-04', level: 2, sort_order: 1, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-19', name: '연구개발팀', code: 'RD', parent_id: 'dept-04', level: 2, sort_order: 1, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
   // Sub-departments under 생산본부
-  { id: 'dept-20', name: '생산1팀', code: 'PROD1', parent_id: 'dept-09', level: 2, sort_order: 1, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-21', name: '생산2팀', code: 'PROD2', parent_id: 'dept-09', level: 2, sort_order: 2, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-20', name: '생산1팀', code: 'PROD1', parent_id: 'dept-09', level: 2, sort_order: 1, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-21', name: '생산2팀', code: 'PROD2', parent_id: 'dept-09', level: 2, sort_order: 2, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
   // Sub-departments under HSE실
-  { id: 'dept-22', name: '안전팀', code: 'SAFE', parent_id: 'dept-13', level: 2, sort_order: 1, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
-  { id: 'dept-23', name: '공무팀', code: 'MAINT', parent_id: 'dept-13', level: 2, sort_order: 2, is_active: true, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-22', name: '안전팀', code: 'SAFE', parent_id: 'dept-13', level: 2, sort_order: 1, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'dept-23', name: '공무팀', code: 'MAINT', parent_id: 'dept-13', level: 2, sort_order: 2, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
 ];
 
 const seedPositionRanks: PositionRank[] = [
-  { id: 'rank-1', name: '사원', level: 1, is_active: true },
-  { id: 'rank-2', name: '대리', level: 2, is_active: true },
-  { id: 'rank-3', name: '과장', level: 3, is_active: true },
-  { id: 'rank-4', name: '차장', level: 4, is_active: true },
-  { id: 'rank-5', name: '부장', level: 5, is_active: true },
-  { id: 'rank-6', name: '이사', level: 6, is_active: true },
-  { id: 'rank-7', name: '대표이사', level: 7, is_active: true },
-  { id: 'rank-8', name: '회장', level: 8, is_active: true },
+  { id: 'rank-1', name: '사원', level: 1, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'rank-2', name: '대리', level: 2, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'rank-3', name: '과장', level: 3, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'rank-4', name: '차장', level: 4, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'rank-5', name: '부장', level: 5, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'rank-6', name: '이사', level: 6, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'rank-7', name: '대표이사', level: 7, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'rank-8', name: '회장', level: 8, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
 ];
 
 const seedPositionTitles: PositionTitle[] = [
-  { id: 'title-1', name: '팀원', level: 1, is_active: true },
-  { id: 'title-2', name: '파트장', level: 2, is_active: true },
-  { id: 'title-3', name: '팀장', level: 3, is_active: true },
-  { id: 'title-4', name: '실장', level: 4, is_active: true },
-  { id: 'title-5', name: '본부장', level: 5, is_active: true },
-  { id: 'title-6', name: '소장', level: 6, is_active: true },
-  { id: 'title-7', name: '대표이사', level: 7, is_active: true },
-  { id: 'title-8', name: '회장', level: 8, is_active: true },
+  { id: 'title-1', name: '팀원', level: 1, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'title-2', name: '파트장', level: 2, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'title-3', name: '팀장', level: 3, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'title-4', name: '실장', level: 4, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'title-5', name: '본부장', level: 5, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'title-6', name: '소장', level: 6, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'title-7', name: '대표이사', level: 7, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'title-8', name: '회장', level: 8, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
 ];
 
 const seedJobCategories: JobCategory[] = [
-  { id: 'jc-1', name: '기술직', code: 'TECH', description: '기술 관련 직무', sort_order: 1, is_active: true },
-  { id: 'jc-2', name: '사무직', code: 'OFFICE', description: '사무 관련 직무', sort_order: 2, is_active: true },
-  { id: 'jc-3', name: '생산직', code: 'MANUF', description: '생산 관련 직무', sort_order: 3, is_active: true },
-  { id: 'jc-4', name: '영업직', code: 'SALES', description: '영업 관련 직무', sort_order: 4, is_active: true },
-  { id: 'jc-5', name: '연구직', code: 'RESEARCH', description: '연구 관련 직무', sort_order: 5, is_active: true },
+  { id: 'jc-1', name: '기술직', code: 'TECH', description: '기술 관련 직무', sort_order: 1, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'jc-2', name: '사무직', code: 'OFFICE', description: '사무 관련 직무', sort_order: 2, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'jc-3', name: '생산직', code: 'MANUF', description: '생산 관련 직무', sort_order: 3, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'jc-4', name: '영업직', code: 'SALES', description: '영업 관련 직무', sort_order: 4, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'jc-5', name: '연구직', code: 'RESEARCH', description: '연구 관련 직무', sort_order: 5, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
 ];
 
 const seedSalaryGrades: SalaryGrade[] = [
   // 사원 (rank-1)
-  { id: 'sg-01', rank_id: 'rank-1', step: 1, base_amount: 2800000, is_active: true },
-  { id: 'sg-02', rank_id: 'rank-1', step: 2, base_amount: 2900000, is_active: true },
-  { id: 'sg-03', rank_id: 'rank-1', step: 3, base_amount: 3000000, is_active: true },
+  { id: 'sg-01', rank_id: 'rank-1', step: 1, base_amount: 2800000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'sg-02', rank_id: 'rank-1', step: 2, base_amount: 2900000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'sg-03', rank_id: 'rank-1', step: 3, base_amount: 3000000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
   // 대리 (rank-2)
-  { id: 'sg-04', rank_id: 'rank-2', step: 1, base_amount: 3500000, is_active: true },
-  { id: 'sg-05', rank_id: 'rank-2', step: 2, base_amount: 3600000, is_active: true },
-  { id: 'sg-06', rank_id: 'rank-2', step: 3, base_amount: 3700000, is_active: true },
+  { id: 'sg-04', rank_id: 'rank-2', step: 1, base_amount: 3500000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'sg-05', rank_id: 'rank-2', step: 2, base_amount: 3600000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'sg-06', rank_id: 'rank-2', step: 3, base_amount: 3700000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
   // 과장 (rank-3)
-  { id: 'sg-07', rank_id: 'rank-3', step: 1, base_amount: 4200000, is_active: true },
-  { id: 'sg-08', rank_id: 'rank-3', step: 2, base_amount: 4400000, is_active: true },
-  { id: 'sg-09', rank_id: 'rank-3', step: 3, base_amount: 4600000, is_active: true },
+  { id: 'sg-07', rank_id: 'rank-3', step: 1, base_amount: 4200000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'sg-08', rank_id: 'rank-3', step: 2, base_amount: 4400000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'sg-09', rank_id: 'rank-3', step: 3, base_amount: 4600000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
   // 차장 (rank-4)
-  { id: 'sg-10', rank_id: 'rank-4', step: 1, base_amount: 5000000, is_active: true },
-  { id: 'sg-11', rank_id: 'rank-4', step: 2, base_amount: 5300000, is_active: true },
+  { id: 'sg-10', rank_id: 'rank-4', step: 1, base_amount: 5000000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'sg-11', rank_id: 'rank-4', step: 2, base_amount: 5300000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
   // 부장 (rank-5)
-  { id: 'sg-12', rank_id: 'rank-5', step: 1, base_amount: 6000000, is_active: true },
-  { id: 'sg-13', rank_id: 'rank-5', step: 2, base_amount: 6500000, is_active: true },
+  { id: 'sg-12', rank_id: 'rank-5', step: 1, base_amount: 6000000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'sg-13', rank_id: 'rank-5', step: 2, base_amount: 6500000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
   // 이사 (rank-6)
-  { id: 'sg-14', rank_id: 'rank-6', step: 1, base_amount: 8000000, is_active: true },
-  { id: 'sg-15', rank_id: 'rank-6', step: 2, base_amount: 9000000, is_active: true },
+  { id: 'sg-14', rank_id: 'rank-6', step: 1, base_amount: 8000000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'sg-15', rank_id: 'rank-6', step: 2, base_amount: 9000000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
   // 대표이사 (rank-7)
-  { id: 'sg-16', rank_id: 'rank-7', step: 1, base_amount: 12000000, is_active: true },
+  { id: 'sg-16', rank_id: 'rank-7', step: 1, base_amount: 12000000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
   // 회장 (rank-8)
-  { id: 'sg-17', rank_id: 'rank-8', step: 1, base_amount: 15000000, is_active: true },
+  { id: 'sg-17', rank_id: 'rank-8', step: 1, base_amount: 15000000, is_active: true, effective_from: null, effective_to: null, created_at: '2020-01-01', updated_at: '2020-01-01' },
 ];
 
 // Helper to build employee
@@ -318,7 +318,11 @@ export const useEmployeeStore = create<EmployeeStore>()(
 
       deleteDepartment: (id) =>
         set((s) => ({
-          departments: s.departments.filter((d) => d.id !== id),
+          departments: s.departments.map((d) =>
+            d.id === id
+              ? { ...d, is_active: false, effective_to: new Date().toISOString().split('T')[0], updated_at: new Date().toISOString() }
+              : d,
+          ),
         })),
 
       // Position Ranks
@@ -328,13 +332,17 @@ export const useEmployeeStore = create<EmployeeStore>()(
       updatePositionRank: (id, data) =>
         set((s) => ({
           positionRanks: s.positionRanks.map((r) =>
-            r.id === id ? { ...r, ...data } : r,
+            r.id === id ? { ...r, ...data, updated_at: new Date().toISOString() } : r,
           ),
         })),
 
       deletePositionRank: (id) =>
         set((s) => ({
-          positionRanks: s.positionRanks.filter((r) => r.id !== id),
+          positionRanks: s.positionRanks.map((r) =>
+            r.id === id
+              ? { ...r, is_active: false, effective_to: new Date().toISOString().split('T')[0], updated_at: new Date().toISOString() }
+              : r,
+          ),
         })),
 
       // Position Titles
@@ -344,13 +352,17 @@ export const useEmployeeStore = create<EmployeeStore>()(
       updatePositionTitle: (id, data) =>
         set((s) => ({
           positionTitles: s.positionTitles.map((t) =>
-            t.id === id ? { ...t, ...data } : t,
+            t.id === id ? { ...t, ...data, updated_at: new Date().toISOString() } : t,
           ),
         })),
 
       deletePositionTitle: (id) =>
         set((s) => ({
-          positionTitles: s.positionTitles.filter((t) => t.id !== id),
+          positionTitles: s.positionTitles.map((t) =>
+            t.id === id
+              ? { ...t, is_active: false, effective_to: new Date().toISOString().split('T')[0], updated_at: new Date().toISOString() }
+              : t,
+          ),
         })),
 
       // Job Categories
@@ -360,13 +372,17 @@ export const useEmployeeStore = create<EmployeeStore>()(
       updateJobCategory: (id, data) =>
         set((s) => ({
           jobCategories: s.jobCategories.map((c) =>
-            c.id === id ? { ...c, ...data } : c,
+            c.id === id ? { ...c, ...data, updated_at: new Date().toISOString() } : c,
           ),
         })),
 
       deleteJobCategory: (id) =>
         set((s) => ({
-          jobCategories: s.jobCategories.filter((c) => c.id !== id),
+          jobCategories: s.jobCategories.map((c) =>
+            c.id === id
+              ? { ...c, is_active: false, effective_to: new Date().toISOString().split('T')[0], updated_at: new Date().toISOString() }
+              : c,
+          ),
         })),
 
       // Salary Grades
@@ -376,13 +392,17 @@ export const useEmployeeStore = create<EmployeeStore>()(
       updateSalaryGrade: (id, data) =>
         set((s) => ({
           salaryGrades: s.salaryGrades.map((g) =>
-            g.id === id ? { ...g, ...data } : g,
+            g.id === id ? { ...g, ...data, updated_at: new Date().toISOString() } : g,
           ),
         })),
 
       deleteSalaryGrade: (id) =>
         set((s) => ({
-          salaryGrades: s.salaryGrades.filter((g) => g.id !== id),
+          salaryGrades: s.salaryGrades.map((g) =>
+            g.id === id
+              ? { ...g, is_active: false, effective_to: new Date().toISOString().split('T')[0], updated_at: new Date().toISOString() }
+              : g,
+          ),
         })),
 
       addCareerHistory: (item) =>
@@ -427,10 +447,34 @@ export const useEmployeeStore = create<EmployeeStore>()(
     }),
     {
       name: 'hrms-employees',
-      version: 2,
+      version: 3,
       migrate: (persisted: unknown, version: number) => {
         if (version < 2) {
           return {};
+        }
+        if (version < 3) {
+          // v2→v3: Add effective_from/to, created_at, updated_at to entities missing them
+          const state = persisted as Record<string, unknown>;
+          const addEffectiveDates = (items: Record<string, unknown>[]) =>
+            items.map((item) => ({
+              ...item,
+              effective_from: (item as Record<string, unknown>).effective_from ?? null,
+              effective_to: (item as Record<string, unknown>).effective_to ?? null,
+              created_at: (item as Record<string, unknown>).created_at ?? '2020-01-01',
+              updated_at: (item as Record<string, unknown>).updated_at ?? '2020-01-01',
+            }));
+          return {
+            ...state,
+            positionRanks: addEffectiveDates((state.positionRanks as Record<string, unknown>[]) ?? []),
+            positionTitles: addEffectiveDates((state.positionTitles as Record<string, unknown>[]) ?? []),
+            jobCategories: addEffectiveDates((state.jobCategories as Record<string, unknown>[]) ?? []),
+            salaryGrades: addEffectiveDates((state.salaryGrades as Record<string, unknown>[]) ?? []),
+            departments: ((state.departments as Record<string, unknown>[]) ?? []).map((d) => ({
+              ...d,
+              effective_from: d.effective_from ?? null,
+              effective_to: d.effective_to ?? null,
+            })),
+          };
         }
         return persisted as Record<string, unknown>;
       },

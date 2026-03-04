@@ -39,6 +39,8 @@ export interface WorkSchedule {
   weekly_hours: number;
   is_default: boolean;
   is_active: boolean;
+  effective_from: string | null;
+  effective_to: string | null;
   settings: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -106,6 +108,8 @@ export interface AttendanceTypeConfig {
   code: string;
   label: string;
   is_active: boolean;
+  effective_from: string | null;
+  effective_to: string | null;
   requires_approval: boolean;
   requires_location: boolean;
   requires_purpose: boolean;
@@ -197,6 +201,8 @@ export interface Department {
   level: number;
   sort_order: number;
   is_active: boolean;
+  effective_from: string | null;
+  effective_to: string | null;
   created_at: string;
   updated_at: string;
   children?: Department[];
@@ -208,6 +214,10 @@ export interface PositionRank {
   name: string;
   level: number;
   is_active: boolean;
+  effective_from: string | null;
+  effective_to: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface PositionTitle {
@@ -215,6 +225,10 @@ export interface PositionTitle {
   name: string;
   level: number;
   is_active: boolean;
+  effective_from: string | null;
+  effective_to: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface JobCategory {
@@ -224,6 +238,10 @@ export interface JobCategory {
   description: string | null;
   sort_order: number;
   is_active: boolean;
+  effective_from: string | null;
+  effective_to: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface SalaryGrade {
@@ -232,6 +250,10 @@ export interface SalaryGrade {
   step: number;
   base_amount: number;
   is_active: boolean;
+  effective_from: string | null;
+  effective_to: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Employee {
@@ -586,4 +608,44 @@ export interface Evaluation {
   employee?: Employee;
   evaluator?: Employee;
   period?: EvaluationPeriod;
+}
+
+// Change History types
+export type ChangeHistoryEntityType =
+  | 'department'
+  | 'position_rank'
+  | 'position_title'
+  | 'job_category'
+  | 'salary_grade'
+  | 'work_schedule'
+  | 'holiday'
+  | 'attendance_type'
+  | 'code_group'
+  | 'code_item';
+
+export type ChangeHistoryActionType = 'create' | 'update' | 'delete';
+
+export interface FieldChange {
+  field: string;
+  label: string;
+  before: string;
+  after: string;
+}
+
+export interface ChangeHistoryEntry {
+  id: string;
+  entity_type: ChangeHistoryEntityType;
+  entity_id: string;
+  entity_label: string;
+  action: ChangeHistoryActionType;
+  changes: FieldChange[];
+  changed_by: string;
+  changed_by_name: string;
+  changed_at: string;
+}
+
+export interface ChangeHistorySettings {
+  enabled: boolean;
+  max_entries: number;
+  retention_days: number;
 }

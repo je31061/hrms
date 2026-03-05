@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { useState, useMemo } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   HelpCircle,
@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ArrowRight,
   ArrowDown,
+  Search,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -32,6 +33,13 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+
+// ── Helpers ──
+
+function matchesSearch(text: string, term: string): boolean {
+  return text.toLowerCase().includes(term.toLowerCase());
+}
 
 // ── Workflow diagram data ──
 
@@ -196,30 +204,53 @@ const moduleGuides: ModuleGuide[] = [
 function FlowNodeCard({
   node,
   isActive,
+  isHighlighted,
+  isDimmed,
+  onClick,
 }: {
   node: FlowNode;
   isActive: boolean;
+  isHighlighted?: boolean;
+  isDimmed?: boolean;
+  onClick?: () => void;
 }) {
   const Icon = node.icon;
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       className={cn(
-        'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+        'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         isActive
-          ? 'border-primary bg-primary text-primary-foreground'
-          : 'border-border bg-card text-card-foreground'
+          ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
+          : 'border-border bg-card text-card-foreground',
+        isHighlighted && 'ring-2 ring-primary/50',
+        isDimmed && 'opacity-40'
       )}
     >
       <Icon className="h-3.5 w-3.5 shrink-0" />
       <span>{node.label}</span>
-    </div>
+    </button>
   );
 }
 
-function WorkflowDiagram({ pathname }: { pathname: string }) {
+function WorkflowDiagram({
+  pathname,
+  search,
+  onNodeClick,
+}: {
+  pathname: string;
+  search: string;
+  onNodeClick: (href: string) => void;
+}) {
   const isNodeActive = (node: FlowNode) => {
     if (node.href === '/') return pathname === '/';
     return pathname.startsWith(node.href);
+  };
+
+  const isNodeMatch = (node: FlowNode) => {
+    if (!search) return false;
+    return matchesSearch(node.label, search);
   };
 
   return (
@@ -237,7 +268,13 @@ function WorkflowDiagram({ pathname }: { pathname: string }) {
                   {nodeIdx > 0 && (
                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
                   )}
-                  <FlowNodeCard node={node} isActive={isNodeActive(node)} />
+                  <FlowNodeCard
+                    node={node}
+                    isActive={isNodeActive(node)}
+                    isHighlighted={search ? isNodeMatch(node) : false}
+                    isDimmed={search ? !isNodeMatch(node) : false}
+                    onClick={() => onNodeClick(node.href)}
+                  />
                 </div>
               ))}
             </div>
@@ -248,16 +285,33 @@ function WorkflowDiagram({ pathname }: { pathname: string }) {
   );
 }
 
-function GuideItem({ guide, pathname }: { guide: ModuleGuide; pathname: string }) {
-  const [open, setOpen] = useState(false);
+function GuideItem({
+  guide,
+  pathname,
+  forceOpen,
+  onNavigate,
+}: {
+  guide: ModuleGuide;
+  pathname: string;
+  forceOpen?: boolean;
+  onNavigate: (href: string) => void;
+}) {
+  const [manualOpen, setManualOpen] = useState(false);
   const Icon = guide.icon;
   const isActive = guide.href === '/' ? pathname === '/' : pathname.startsWith(guide.href);
+  const isOpen = forceOpen || manualOpen;
 
   return (
-    <div className={cn('rounded-lg border transition-colors', isActive && 'border-primary/50')}>
+    <div
+      className={cn(
+        'rounded-lg border transition-colors',
+        isActive && 'border-primary/50',
+        forceOpen && 'border-primary bg-primary/5'
+      )}
+    >
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => setManualOpen(!manualOpen)}
         className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium hover:bg-muted/50 rounded-lg transition-colors"
       >
         <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-primary' : 'text-muted-foreground')} />
@@ -265,17 +319,25 @@ function GuideItem({ guide, pathname }: { guide: ModuleGuide; pathname: string }
         <ChevronDown
           className={cn(
             'h-4 w-4 text-muted-foreground transition-transform',
-            open && 'rotate-180'
+            isOpen && 'rotate-180'
           )}
         />
       </button>
-      {open && (
+      {isOpen && (
         <div className="border-t px-3 py-2.5 text-sm">
           <p className="text-muted-foreground leading-relaxed">{guide.description}</p>
           <div className="mt-2 rounded-md bg-muted/50 px-2.5 py-2 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">흐름: </span>
             {guide.workflow}
           </div>
+          <button
+            type="button"
+            onClick={() => onNavigate(guide.href)}
+            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+          >
+            {guide.label} 페이지로 이동
+            <ArrowRight className="h-3 w-3" />
+          </button>
         </div>
       )}
     </div>
@@ -286,7 +348,32 @@ function GuideItem({ guide, pathname }: { guide: ModuleGuide; pathname: string }
 
 export function HelpWorkflow() {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const pathname = usePathname();
+  const router = useRouter();
+
+  const filteredGuides = useMemo(() => {
+    if (!search) return moduleGuides;
+    return moduleGuides.filter(
+      (g) =>
+        matchesSearch(g.label, search) ||
+        matchesSearch(g.description, search) ||
+        matchesSearch(g.workflow, search)
+    );
+  }, [search]);
+
+  const handleNavigate = (href: string) => {
+    setOpen(false);
+    setSearch('');
+    router.push(href);
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setSearch('');
+    }
+  };
 
   return (
     <>
@@ -308,7 +395,7 @@ export function HelpWorkflow() {
       </button>
 
       {/* Sheet panel */}
-      <Sheet open={open} onOpenChange={setOpen}>
+      <Sheet open={open} onOpenChange={handleOpenChange}>
         <SheetContent side="right" className="sm:max-w-md w-full p-0 flex flex-col">
           <SheetHeader className="px-4 pt-4 pb-2 border-b">
             <SheetTitle className="text-lg">업무 도움말</SheetTitle>
@@ -317,19 +404,53 @@ export function HelpWorkflow() {
             </SheetDescription>
           </SheetHeader>
 
+          {/* Search input - fixed above scroll area */}
+          <div className="px-4 py-2 border-b">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="모듈 검색..."
+                className="pl-9"
+              />
+            </div>
+            {search && (
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                검색 결과: {filteredGuides.length}건
+              </p>
+            )}
+          </div>
+
           <ScrollArea className="flex-1">
             <div className="flex flex-col gap-4 p-4">
               {/* Workflow diagram */}
-              <WorkflowDiagram pathname={pathname} />
+              <WorkflowDiagram
+                pathname={pathname}
+                search={search}
+                onNodeClick={handleNavigate}
+              />
 
               {/* Module guides */}
               <div>
                 <h3 className="mb-2 text-sm font-semibold text-foreground">모듈별 가이드</h3>
-                <div className="flex flex-col gap-2">
-                  {moduleGuides.map((guide) => (
-                    <GuideItem key={guide.href} guide={guide} pathname={pathname} />
-                  ))}
-                </div>
+                {filteredGuides.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    검색 결과 없음
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {filteredGuides.map((guide) => (
+                      <GuideItem
+                        key={guide.href}
+                        guide={guide}
+                        pathname={pathname}
+                        forceOpen={!!search}
+                        onNavigate={handleNavigate}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </ScrollArea>

@@ -3,8 +3,9 @@
 import { useMemo } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { EmployeeTable } from '@/components/employee/employee-table';
+import { StatsCard } from '@/components/dashboard/stats-card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Users, UserCheck, UserX, UserMinus } from 'lucide-react';
 import Link from 'next/link';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 
@@ -26,6 +27,11 @@ export default function EmployeesPage() {
     [allEmployees, departments, positionRanks, positionTitles],
   );
 
+  const totalCount = allEmployees.length;
+  const activeCount = allEmployees.filter((e) => e.status === 'active').length;
+  const onLeaveCount = allEmployees.filter((e) => e.status === 'on_leave').length;
+  const resignedCount = allEmployees.filter((e) => e.status === 'resigned').length;
+
   return (
     <div>
       <Breadcrumb />
@@ -38,6 +44,14 @@ export default function EmployeesPage() {
           </Button>
         </Link>
       </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatsCard title="전체 인원" value={totalCount} icon={Users} color="blue" />
+        <StatsCard title="재직" value={activeCount} icon={UserCheck} color="green" />
+        <StatsCard title="휴직" value={onLeaveCount} icon={UserMinus} color="amber" />
+        <StatsCard title="퇴직" value={resignedCount} icon={UserX} color="purple" />
+      </div>
+
       <EmployeeTable employees={employees} />
     </div>
   );

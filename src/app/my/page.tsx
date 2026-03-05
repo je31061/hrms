@@ -28,7 +28,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import {
@@ -39,6 +39,8 @@ import {
   Clock,
   GraduationCap,
   ArrowRight,
+  FileText,
+  Award,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -311,6 +313,7 @@ export default function MyPage() {
             {/* Left: Avatar + Name */}
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
+                <AvatarImage src={`https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(myEmployee.name)}`} alt={myEmployee.name} />
                 <AvatarFallback className="text-xl font-bold">
                   {myEmployee.name.charAt(0)}
                 </AvatarFallback>
@@ -328,25 +331,40 @@ export default function MyPage() {
 
             {/* Right: Quick Stats */}
             <div className="flex flex-wrap gap-6">
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">근속</p>
-                <p className="text-sm font-semibold">{yearsOfService}</p>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-accent-blue-subtle text-accent-blue">
+                  <Briefcase className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">근속</p>
+                  <p className="text-sm font-semibold">{yearsOfService}</p>
+                </div>
               </div>
               <Separator orientation="vertical" className="h-10 hidden md:block" />
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">연차 잔여</p>
-                <p className="text-sm font-semibold">
-                  {annualBalance
-                    ? `${annualBalance.remaining_days} / ${annualBalance.total_days}일`
-                    : '-'}
-                </p>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-accent-green-subtle text-accent-green">
+                  <CalendarDays className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">연차 잔여</p>
+                  <p className="text-sm font-semibold">
+                    {annualBalance
+                      ? `${annualBalance.remaining_days} / ${annualBalance.total_days}일`
+                      : '-'}
+                  </p>
+                </div>
               </div>
               <Separator orientation="vertical" className="h-10 hidden md:block" />
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">이번달 급여</p>
-                <p className="text-sm font-semibold">
-                  {latestPayroll ? fmtWon(latestPayroll.net_pay) : '-'}
-                </p>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-accent-amber-subtle text-accent-amber">
+                  <Banknote className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">이번달 급여</p>
+                  <p className="text-sm font-semibold">
+                    {latestPayroll ? fmtWon(latestPayroll.net_pay) : '-'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -414,6 +432,34 @@ export default function MyPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* 증명서 발급 */}
+          <Card className="mt-6">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-accent-purple-subtle text-accent-purple">
+                  <Award className="h-4 w-4" />
+                </div>
+                <CardTitle className="text-base">증명서 발급</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-3">
+                <Link href={`/employees/${MY_ID}/certificates/employment`}>
+                  <Button variant="outline" className="gap-2">
+                    <FileText className="h-4 w-4" />
+                    재직증명서
+                  </Button>
+                </Link>
+                <Link href={`/employees/${MY_ID}/certificates/career`}>
+                  <Button variant="outline" className="gap-2">
+                    <FileText className="h-4 w-4" />
+                    경력증명서
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ============================================================== */}
@@ -477,13 +523,24 @@ export default function MyPage() {
         <TabsContent value="leave">
           {/* Balance cards */}
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mb-6">
-            {activeBalances.map((b) => {
+            {activeBalances.map((b, idx) => {
               const lt = leaveTypes.find((t) => t.id === b.leave_type_id);
               const rate = b.total_days > 0 ? Math.round((b.used_days / b.total_days) * 100) : 0;
+              const colorSet = [
+                { bg: 'bg-accent-blue-subtle', fg: 'text-accent-blue' },
+                { bg: 'bg-accent-amber-subtle', fg: 'text-accent-amber' },
+                { bg: 'bg-accent-purple-subtle', fg: 'text-accent-purple' },
+                { bg: 'bg-accent-green-subtle', fg: 'text-accent-green' },
+              ][idx % 4];
               return (
                 <Card key={b.id}>
                   <CardContent className="pt-4">
-                    <p className="text-sm text-muted-foreground mb-1">{lt?.name ?? '-'}</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm text-muted-foreground">{lt?.name ?? '-'}</p>
+                      <div className={`p-1.5 rounded-lg ${colorSet.bg} ${colorSet.fg}`}>
+                        <CalendarDays className="h-3.5 w-3.5" />
+                      </div>
+                    </div>
                     <div className="flex items-baseline gap-2 mb-2">
                       <span className="text-2xl font-bold">{b.remaining_days}</span>
                       <span className="text-sm text-muted-foreground">
@@ -644,27 +701,47 @@ export default function MyPage() {
           {/* Summary cards */}
           <div className="grid gap-4 grid-cols-2 md:grid-cols-4 mb-6">
             <Card>
-              <CardContent className="pt-4 text-center">
-                <p className="text-xs text-muted-foreground mb-1">최근 근무일</p>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs text-muted-foreground">최근 근무일</p>
+                  <div className="p-1.5 rounded-lg bg-accent-blue-subtle text-accent-blue">
+                    <Clock className="h-3.5 w-3.5" />
+                  </div>
+                </div>
                 <p className="text-2xl font-bold">{attendanceSummary.total}일</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-4 text-center">
-                <p className="text-xs text-muted-foreground mb-1">정상출근</p>
-                <p className="text-2xl font-bold text-green-600">{attendanceSummary.normal}일</p>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs text-muted-foreground">정상출근</p>
+                  <div className="p-1.5 rounded-lg bg-accent-green-subtle text-accent-green">
+                    <Clock className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+                <p className="text-2xl font-bold">{attendanceSummary.normal}일</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-4 text-center">
-                <p className="text-xs text-muted-foreground mb-1">지각</p>
-                <p className="text-2xl font-bold text-red-600">{attendanceSummary.late}일</p>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs text-muted-foreground">지각</p>
+                  <div className="p-1.5 rounded-lg bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400">
+                    <Clock className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+                <p className="text-2xl font-bold">{attendanceSummary.late}일</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-4 text-center">
-                <p className="text-xs text-muted-foreground mb-1">조퇴/결근/휴가</p>
-                <p className="text-2xl font-bold text-orange-600">{attendanceSummary.other}일</p>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs text-muted-foreground">조퇴/결근/휴가</p>
+                  <div className="p-1.5 rounded-lg bg-accent-amber-subtle text-accent-amber">
+                    <Clock className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+                <p className="text-2xl font-bold">{attendanceSummary.other}일</p>
               </CardContent>
             </Card>
           </div>

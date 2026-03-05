@@ -8,7 +8,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Pencil } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Pencil, FileText, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { DEGREE_LABELS } from '@/lib/constants/positions';
@@ -52,12 +58,36 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
       <Breadcrumb />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">사원 상세</h1>
-        <Link href={`/employees/${id}/edit`}>
-          <Button variant="outline">
-            <Pencil className="h-4 w-4 mr-2" />
-            수정
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <FileText className="h-4 w-4 mr-2" />
+                증명서 발급
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={`/employees/${id}/certificates/employment`}>재직증명서</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/employees/${id}/certificates/career`}>경력증명서</Link>
+              </DropdownMenuItem>
+              {employee.status === 'resigned' && (
+                <DropdownMenuItem asChild>
+                  <Link href={`/employees/${id}/certificates/retirement`}>퇴직증명서</Link>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Link href={`/employees/${id}/edit`}>
+            <Button variant="outline">
+              <Pencil className="h-4 w-4 mr-2" />
+              수정
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <EmployeeCard employee={employee} />

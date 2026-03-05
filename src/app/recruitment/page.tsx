@@ -1,8 +1,9 @@
 import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { StatsCard } from '@/components/dashboard/stats-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, Calendar } from 'lucide-react';
+import { Plus, Users, Calendar, Briefcase, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { JOB_POSTING_STATUS } from '@/lib/constants/codes';
 
@@ -22,7 +23,18 @@ const statusVariant = (s: string): 'default' | 'secondary' | 'destructive' | 'ou
   }
 };
 
+const borderColor: Record<string, string> = {
+  open: 'border-l-accent-green',
+  draft: 'border-l-accent-amber',
+  closed: 'border-l-gray-400',
+  cancelled: 'border-l-red-400',
+};
+
 export default function RecruitmentPage() {
+  const openCount = postings.filter((p) => p.status === 'open').length;
+  const totalApplicants = postings.reduce((s, p) => s + p.applicants, 0);
+  const totalHeadcount = postings.reduce((s, p) => s + p.headcount, 0);
+
   return (
     <div>
       <Breadcrumb />
@@ -36,10 +48,16 @@ export default function RecruitmentPage() {
         </Link>
       </div>
 
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <StatsCard title="전체 공고" value={postings.length} icon={FileText} color="blue" />
+        <StatsCard title="진행중" value={openCount} icon={Briefcase} color="green" />
+        <StatsCard title="총 지원자" value={totalApplicants} icon={Users} color="purple" description={`채용 예정 ${totalHeadcount}명`} />
+      </div>
+
       <div className="grid gap-4">
         {postings.map((posting) => (
           <Link key={posting.id} href={`/recruitment/${posting.id}`}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <Card className={`hover:shadow-md transition-shadow cursor-pointer border-l-4 ${borderColor[posting.status] ?? ''}`}>
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between">
                   <div>

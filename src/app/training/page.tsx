@@ -1,8 +1,9 @@
 import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { StatsCard } from '@/components/dashboard/stats-card';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar, MapPin, Users, User } from 'lucide-react';
+import { Plus, Calendar, MapPin, Users, User, GraduationCap, BookOpen, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { TRAINING_STATUS } from '@/lib/constants/codes';
 
@@ -22,7 +23,18 @@ const statusVariant = (s: string): 'default' | 'secondary' | 'destructive' | 'ou
   }
 };
 
+const trainingBorderColor: Record<string, string> = {
+  in_progress: 'border-l-accent-blue',
+  planned: 'border-l-accent-amber',
+  completed: 'border-l-accent-green',
+  cancelled: 'border-l-red-400',
+};
+
 export default function TrainingPage() {
+  const inProgressCount = programs.filter((p) => p.status === 'in_progress').length;
+  const plannedCount = programs.filter((p) => p.status === 'planned').length;
+  const completedCount = programs.filter((p) => p.status === 'completed').length;
+
   return (
     <div>
       <Breadcrumb />
@@ -34,10 +46,17 @@ export default function TrainingPage() {
         </Button>
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatsCard title="전체 과정" value={programs.length} icon={GraduationCap} color="blue" />
+        <StatsCard title="진행중" value={inProgressCount} icon={BookOpen} color="purple" />
+        <StatsCard title="예정" value={plannedCount} icon={Calendar} color="amber" />
+        <StatsCard title="완료" value={completedCount} icon={CheckCircle} color="green" />
+      </div>
+
       <div className="grid gap-4">
         {programs.map((prog) => (
           <Link key={prog.id} href={`/training/${prog.id}`}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <Card className={`hover:shadow-md transition-shadow cursor-pointer border-l-4 ${trainingBorderColor[prog.status] ?? ''}`}>
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between">
                   <div>

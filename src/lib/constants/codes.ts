@@ -151,3 +151,9 @@ export const APPROVAL_DOCUMENT_TYPES = {
   overtime: '시간외근무',
   business_trip: '출장',
 } as const;
+
+export const CERTIFICATE_TYPES = {
+  employment: '재직증명서',
+  career: '경력증명서',
+  retirement: '퇴직증명서',
+} as const;

@@ -124,8 +124,10 @@ export default function AuditLogPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">전체 로그</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">전체 로그</CardTitle>
+            <div className="p-2 rounded-lg bg-accent-blue-subtle text-accent-blue">
+              <FileText className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{logs.length.toLocaleString()}</div>
@@ -133,8 +135,10 @@ export default function AuditLogPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">오늘 페이지 조회</CardTitle>
-            <MousePointerClick className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">오늘 페이지 조회</CardTitle>
+            <div className="p-2 rounded-lg bg-accent-green-subtle text-accent-green">
+              <MousePointerClick className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{todayPageViews}</div>
@@ -142,8 +146,10 @@ export default function AuditLogPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">오늘 액션</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">오늘 액션</CardTitle>
+            <div className="p-2 rounded-lg bg-accent-purple-subtle text-accent-purple">
+              <Activity className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{todayActions}</div>
@@ -151,8 +157,10 @@ export default function AuditLogPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">접속 사용자</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">접속 사용자</CardTitle>
+            <div className="p-2 rounded-lg bg-accent-amber-subtle text-accent-amber">
+              <Users className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{uniqueUsers}</div>

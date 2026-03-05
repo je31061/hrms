@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Settings, X } from 'lucide-react';
+import { Plus, Settings, X, CalendarDays, Thermometer, Heart, MoreHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -87,12 +87,24 @@ export default function LeavePage() {
 
       {/* Balance Cards */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mb-6">
-        {activeBalances.map((b) => {
+        {activeBalances.map((b, idx) => {
           const rate = b.total_days > 0 ? Math.round((b.used_days / b.total_days) * 100) : 0;
+          const iconConfig = [
+            { icon: CalendarDays, bg: 'bg-accent-blue-subtle', fg: 'text-accent-blue' },
+            { icon: Thermometer, bg: 'bg-accent-amber-subtle', fg: 'text-accent-amber' },
+            { icon: Heart, bg: 'bg-accent-purple-subtle', fg: 'text-accent-purple' },
+            { icon: MoreHorizontal, bg: 'bg-accent-green-subtle', fg: 'text-accent-green' },
+          ][idx % 4];
+          const IconComp = iconConfig.icon;
           return (
             <Card key={b.id}>
               <CardContent className="pt-4">
-                <p className="text-sm text-muted-foreground mb-1">{b.leave_type?.name}</p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-muted-foreground">{b.leave_type?.name}</p>
+                  <div className={`p-2 rounded-lg ${iconConfig.bg} ${iconConfig.fg}`}>
+                    <IconComp className="h-4 w-4" />
+                  </div>
+                </div>
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-2xl font-bold">{b.remaining_days}</span>
                   <span className="text-sm text-muted-foreground">

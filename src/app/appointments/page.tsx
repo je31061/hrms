@@ -2,11 +2,12 @@
 
 import { useMemo } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { StatsCard } from '@/components/dashboard/stats-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, FileText, TrendingUp, ArrowRightLeft } from 'lucide-react';
 import Link from 'next/link';
 import { APPOINTMENT_TYPES } from '@/lib/constants/codes';
 import { useAppointmentStore } from '@/lib/stores/appointment-store';
@@ -23,6 +24,15 @@ const typeVariant = (type: string): 'default' | 'secondary' | 'destructive' | 'o
   }
 };
 
+const typeDotColor: Record<string, string> = {
+  promotion: 'bg-accent-green',
+  hire: 'bg-accent-blue',
+  transfer: 'bg-accent-purple',
+  title_change: 'bg-accent-amber',
+  resignation: 'bg-red-500',
+  other: 'bg-gray-400',
+};
+
 export default function AppointmentsPage() {
   const appointments = useAppointmentStore((s) => s.appointments);
   const employees = useEmployeeStore((s) => s.employees);
@@ -33,6 +43,9 @@ export default function AppointmentsPage() {
     () => [...appointments].sort((a, b) => b.effective_date.localeCompare(a.effective_date)),
     [appointments],
   );
+
+  const promotionCount = appointments.filter((a) => a.type === 'promotion').length;
+  const transferCount = appointments.filter((a) => a.type === 'transfer').length;
 
   return (
     <div>
@@ -45,6 +58,12 @@ export default function AppointmentsPage() {
             발령 등록
           </Button>
         </Link>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <StatsCard title="전체 발령" value={appointments.length} icon={FileText} color="blue" />
+        <StatsCard title="승진" value={promotionCount} icon={TrendingUp} color="green" />
+        <StatsCard title="전보" value={transferCount} icon={ArrowRightLeft} color="purple" />
       </div>
 
       <Card>
@@ -83,7 +102,8 @@ export default function AppointmentsPage() {
                       <TableCell className="font-medium">{a.effective_date}</TableCell>
                       <TableCell className="font-medium">{empName}</TableCell>
                       <TableCell>
-                        <Badge variant={typeVariant(a.type)} className="text-xs">
+                        <Badge variant={typeVariant(a.type)} className="text-xs gap-1">
+                          <span className={`inline-block h-2 w-2 rounded-full ${typeDotColor[a.type] ?? typeDotColor.other}`} />
                           {APPOINTMENT_TYPES[a.type as keyof typeof APPOINTMENT_TYPES] ?? a.type}
                         </Badge>
                       </TableCell>

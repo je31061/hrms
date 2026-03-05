@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calculator, FileText, CheckCircle, Trash2 } from 'lucide-react';
+import { Calculator, FileText, CheckCircle, Trash2, DollarSign, TrendingUp, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -84,20 +84,35 @@ export default function PayrollPage() {
       {/* Summary Cards */}
       <div className="grid gap-4 grid-cols-3 mb-6">
         <Card>
-          <CardContent className="pt-4 text-center">
-            <p className="text-sm text-muted-foreground">총 지급액</p>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">총 지급액</CardTitle>
+            <div className="p-2 rounded-lg bg-accent-green-subtle text-accent-green">
+              <DollarSign className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
             <p className="text-xl font-bold">{fmtWon(totalEarnings)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4 text-center">
-            <p className="text-sm text-muted-foreground">총 공제액</p>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">총 공제액</CardTitle>
+            <div className="p-2 rounded-lg bg-accent-blue-subtle text-accent-blue">
+              <TrendingUp className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
             <p className="text-xl font-bold text-destructive">{fmtWon(totalDeductions)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4 text-center">
-            <p className="text-sm text-muted-foreground">총 실수령액</p>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">총 실수령액</CardTitle>
+            <div className="p-2 rounded-lg bg-accent-purple-subtle text-accent-purple">
+              <Users className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
             <p className="text-xl font-bold text-primary">{fmtWon(totalNetPay)}</p>
           </CardContent>
         </Card>

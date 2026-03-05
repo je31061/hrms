@@ -2,11 +2,13 @@
 
 import { useMemo, useCallback } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { StatsCard } from '@/components/dashboard/stats-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { APPROVAL_STATUS } from '@/lib/constants/codes';
+import { FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useApprovalStore } from '@/lib/stores/approval-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
@@ -106,10 +108,22 @@ export default function ApprovalPage() {
     );
   }
 
+  const totalCount = approvals.length;
+  const pendingCount = approvals.filter((a) => a.status === 'pending').length;
+  const approvedCount = approvals.filter((a) => a.status === 'approved').length;
+  const rejectedCount = approvals.filter((a) => a.status === 'rejected').length;
+
   return (
     <div>
       <Breadcrumb />
       <h1 className="text-2xl font-bold mb-6">전자결재</h1>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatsCard title="전체" value={totalCount} icon={FileText} color="blue" />
+        <StatsCard title="대기" value={pendingCount} icon={Clock} color="amber" />
+        <StatsCard title="승인" value={approvedCount} icon={CheckCircle} color="green" />
+        <StatsCard title="반려" value={rejectedCount} icon={XCircle} color="purple" />
+      </div>
 
       <Tabs defaultValue="pending">
         <TabsList>

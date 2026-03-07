@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Users, Clock, CalendarDays, Briefcase } from 'lucide-react';
+import { Users, Clock, CalendarDays, UserRoundPlus } from 'lucide-react';
 import { StatsCard } from '@/components/dashboard/stats-card';
 import { HeadcountChart } from '@/components/dashboard/headcount-chart';
+import { HireResignChart } from '@/components/dashboard/hire-resign-chart';
 import { RecentEvents } from '@/components/dashboard/recent-events';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
@@ -20,6 +21,7 @@ export default function DashboardPage() {
   const appointments = useAppointmentStore((s) => s.appointments);
 
   const today = new Date().toISOString().split('T')[0];
+  const currentYear = new Date().getFullYear();
 
   const activeEmployees = useMemo(
     () => employees.filter((e) => e.status === 'active'),
@@ -41,11 +43,25 @@ export default function DashboardPage() {
     ).length;
   }, [leaveRequests, today]);
 
+  // Hire / resign stats for current year
+  const { hiresThisYear, resignsThisYear, turnoverRate } = useMemo(() => {
+    const yearStr = String(currentYear);
+    const hires = employees.filter(
+      (e) => e.hire_date.startsWith(yearStr),
+    ).length;
+    const resigns = employees.filter(
+      (e) => e.resignation_date && e.resignation_date.startsWith(yearStr),
+    ).length;
+    const avgHeadcount = activeEmployees.length + resigns / 2;
+    const rate = avgHeadcount > 0 ? Math.round((resigns / avgHeadcount) * 1000) / 10 : 0;
+    return { hiresThisYear: hires, resignsThisYear: resigns, turnoverRate: rate };
+  }, [employees, activeEmployees, currentYear]);
+
   const statsData = [
-    { title: '전체 임직원', value: String(activeEmployees.length), icon: Users, color: 'blue' as const, description: `정규직 ${regularCount} / 계약직 ${contractCount}` },
+    { title: '전체 임직원', value: String(activeEmployees.length), icon: Users, color: 'blue' as const, description: `정규직 ${regularCount} / 비정규 ${contractCount}` },
     { title: '금일 출근', value: String(todayAttendance.length), icon: Clock, color: 'green' as const, description: `출근율 ${attendanceRate}%` },
     { title: '휴가 중', value: String(onLeaveToday), icon: CalendarDays, color: 'amber' as const, description: '승인된 휴가 기준' },
-    { title: '진행 중 채용', value: '3', icon: Briefcase, color: 'purple' as const, description: '총 지원자 45명' },
+    { title: '금년 입퇴사', value: `+${hiresThisYear} / -${resignsThisYear}`, icon: UserRoundPlus, color: 'purple' as const, description: `이직률 ${turnoverRate}%` },
   ];
 
   // Department headcount — level 2 departments
@@ -57,12 +73,28 @@ export default function DashboardPage() {
     }).filter((d) => d.count > 0);
   }, [departments, activeEmployees]);
 
+  // Hire-resign trend (last 12 months)
+  const hireResignData = useMemo(() => {
+    const now = new Date();
+    const months: { month: string; hires: number; resignations: number }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = `${d.getMonth() + 1}월`;
+      const hires = employees.filter((e) => e.hire_date.startsWith(ym)).length;
+      const resignations = employees.filter((e) => e.resignation_date?.startsWith(ym)).length;
+      months.push({ month: label, hires, resignations });
+    }
+    return months;
+  }, [employees]);
+
   // Recent events — appointments + leave requests, most recent 5
   const recentEvents = useMemo(() => {
     const events: { id: string; type: 'hire' | 'appointment' | 'leave' | 'birthday'; title: string; date: string; description: string }[] = [];
 
-    // From appointments
-    for (const a of appointments.slice(0, 10)) {
+    // From appointments (sorted desc, take recent)
+    const sortedAppts = [...appointments].sort((a, b) => b.effective_date.localeCompare(a.effective_date));
+    for (const a of sortedAppts.slice(0, 15)) {
       const emp = activeEmployees.find((e) => e.id === a.employee_id) ??
         employees.find((e) => e.id === a.employee_id);
       const empName = emp?.name ?? a.employee_id;
@@ -75,6 +107,8 @@ export default function DashboardPage() {
       } else if (a.type === 'transfer') {
         const newDept = departments.find((d) => d.id === a.new_department_id)?.name ?? '';
         events.push({ id: a.id, type: 'appointment', title: `${empName} ${newDept} 전보`, date: a.effective_date, description: '' });
+      } else if (a.type === 'resignation') {
+        events.push({ id: a.id, type: 'appointment', title: `${empName} 퇴사`, date: a.effective_date, description: a.reason ?? '' });
       }
     }
 
@@ -104,8 +138,12 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 mb-6">
         <HeadcountChart data={headcountData} />
+        <HireResignChart data={hireResignData} />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-1">
         <RecentEvents events={recentEvents} />
       </div>
     </div>

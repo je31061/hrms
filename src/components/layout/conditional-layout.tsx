@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { HelpWorkflow } from '@/components/layout/help-workflow';
+import { CommandPalette } from '@/components/layout/command-palette';
 import { DisplaySettingsApplier } from '@/components/layout/display-settings-applier';
 import { PageViewTracker } from '@/components/layout/page-view-tracker';
 
@@ -26,6 +27,7 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
       <main className="ml-60 mt-14 min-h-[calc(100vh-3.5rem)] p-6">
         {children}
       </main>
+      <CommandPalette />
       <HelpWorkflow />
     </>
   );

@@ -649,3 +649,22 @@ export interface ChangeHistorySettings {
   max_entries: number;
   retention_days: number;
 }
+
+// HR Issue types
+export type IssueType = 'grievance' | 'safety' | 'policy_violation' | 'payroll_dispute' | 'harassment' | 'other';
+export type IssuePriority = 'low' | 'medium' | 'high' | 'critical';
+export type IssueStatus = 'open' | 'in_progress' | 'under_review' | 'resolved' | 'closed';
+
+export interface HrIssue {
+  id: string;
+  title: string;
+  description: string;
+  type: IssueType;
+  priority: IssuePriority;
+  status: IssueStatus;
+  reporter_id: string | null;
+  assignee_id: string | null;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+}

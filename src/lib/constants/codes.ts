@@ -157,3 +157,27 @@ export const CERTIFICATE_TYPES = {
   career: '경력증명서',
   retirement: '퇴직증명서',
 } as const;
+
+export const ISSUE_TYPES = {
+  grievance: '직원 고충',
+  safety: '안전 보고',
+  policy_violation: '정책 위반',
+  payroll_dispute: '급여 이의',
+  harassment: '괴롭힘 신고',
+  other: '기타',
+} as const;
+
+export const ISSUE_PRIORITY = {
+  low: '낮음',
+  medium: '보통',
+  high: '높음',
+  critical: '긴급',
+} as const;
+
+export const ISSUE_STATUS = {
+  open: '접수',
+  in_progress: '처리중',
+  under_review: '검토중',
+  resolved: '해결',
+  closed: '종결',
+} as const;

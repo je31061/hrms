@@ -14,6 +14,7 @@ import {
   ListChecks,
   ShieldAlert,
   Settings,
+  AlertTriangle,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -37,6 +38,7 @@ export const ALL_MENU_ITEMS: MenuItem[] = [
   { href: '/training', label: '교육관리', icon: GraduationCap, description: '교육/연수 관리' },
   { href: '/evaluation', label: '평가관리', icon: Star, description: '인사평가 관리' },
   { href: '/workflows', label: '업무프로세스', icon: ListChecks, description: '업무 워크플로우' },
+  { href: '/issues', label: 'HR이슈', icon: AlertTriangle, description: 'HR 이슈 관리' },
   { href: '/audit-log', label: '감사로그', icon: ShieldAlert, description: '시스템 감사 로그' },
   { href: '/settings', label: '설정', icon: Settings, description: '시스템 설정' },
 ];

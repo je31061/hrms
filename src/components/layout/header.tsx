@@ -10,7 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, Search, User } from 'lucide-react';
+import { openCommandPalette } from '@/components/layout/command-palette';
 import Link from 'next/link';
 
 export function Header() {
@@ -25,7 +26,17 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-60 right-0 z-30 flex h-14 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-6">
-      <div />
+      <Button
+        variant="outline"
+        className="hidden sm:flex items-center gap-2 text-muted-foreground text-sm h-9 px-3"
+        onClick={() => openCommandPalette()}
+      >
+        <Search className="h-4 w-4" />
+        <span>검색...</span>
+        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+          <span className="text-xs">⌘</span>K
+        </kbd>
+      </Button>
       <div className="flex items-center gap-4">
         {user && (
           <DropdownMenu>

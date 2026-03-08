@@ -17,212 +17,105 @@ import {
   moveEmployee,
   recomputeCounts,
 } from '@/lib/tree-utils';
+import { useEmployeeStore } from '@/lib/stores/employee-store';
 import type { Department, Employee, DragPayload, SimulationMove } from '@/types';
 
-// Demo data - in production from Supabase
-const demoTree: Department[] = [
-  {
-    id: '00000000-0000-0000-0000-000000000001',
-    name: '대표이사',
-    code: 'CEO',
-    parent_id: null,
-    level: 1,
-    sort_order: 1,
-    is_active: true,
-    effective_from: null,
-    effective_to: null,
-    created_at: '',
-    updated_at: '',
-    children: [
-      {
-        id: '00000000-0000-0000-0000-000000000002',
-        name: '경영지원본부',
-        code: 'MGT',
-        parent_id: '00000000-0000-0000-0000-000000000001',
-        level: 2,
-        sort_order: 1,
-        is_active: true,
-        effective_from: null,
-        effective_to: null,
-        created_at: '',
-        updated_at: '',
-        children: [
-          { id: '00000000-0000-0000-0000-000000000005', name: '인사팀', code: 'HR', parent_id: '00000000-0000-0000-0000-000000000002', level: 3, sort_order: 1, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
-          { id: '00000000-0000-0000-0000-000000000006', name: '재무팀', code: 'FIN', parent_id: '00000000-0000-0000-0000-000000000002', level: 3, sort_order: 2, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
-          { id: '00000000-0000-0000-0000-000000000007', name: '총무팀', code: 'GA', parent_id: '00000000-0000-0000-0000-000000000002', level: 3, sort_order: 3, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
-        ],
-      },
-      {
-        id: '00000000-0000-0000-0000-000000000003',
-        name: '개발본부',
-        code: 'DEV',
-        parent_id: '00000000-0000-0000-0000-000000000001',
-        level: 2,
-        sort_order: 2,
-        is_active: true,
-        effective_from: null,
-        effective_to: null,
-        created_at: '',
-        updated_at: '',
-        children: [
-          { id: '00000000-0000-0000-0000-000000000008', name: '개발1팀', code: 'DEV1', parent_id: '00000000-0000-0000-0000-000000000003', level: 3, sort_order: 1, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
-          { id: '00000000-0000-0000-0000-000000000009', name: '개발2팀', code: 'DEV2', parent_id: '00000000-0000-0000-0000-000000000003', level: 3, sort_order: 2, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
-          { id: '00000000-0000-0000-0000-000000000010', name: 'QA팀', code: 'QA', parent_id: '00000000-0000-0000-0000-000000000003', level: 3, sort_order: 3, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
-        ],
-      },
-      {
-        id: '00000000-0000-0000-0000-000000000004',
-        name: '영업본부',
-        code: 'SALES',
-        parent_id: '00000000-0000-0000-0000-000000000001',
-        level: 2,
-        sort_order: 3,
-        is_active: true,
-        effective_from: null,
-        effective_to: null,
-        created_at: '',
-        updated_at: '',
-        children: [
-          { id: '00000000-0000-0000-0000-000000000011', name: '국내영업팀', code: 'DS', parent_id: '00000000-0000-0000-0000-000000000004', level: 3, sort_order: 1, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
-          { id: '00000000-0000-0000-0000-000000000012', name: '해외영업팀', code: 'IS', parent_id: '00000000-0000-0000-0000-000000000004', level: 3, sort_order: 2, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
-        ],
-      },
-    ],
-  },
-];
+/** Build a tree from flat department list using parent_id */
+function buildDeptTree(departments: Department[]): Department[] {
+  const map = new Map<string, Department>();
+  const roots: Department[] = [];
 
-const originalEmployeeCounts: Record<string, number> = {
-  '00000000-0000-0000-0000-000000000001': 1,
-  '00000000-0000-0000-0000-000000000002': 2,
-  '00000000-0000-0000-0000-000000000003': 3,
-  '00000000-0000-0000-0000-000000000004': 2,
-  '00000000-0000-0000-0000-000000000005': 8,
-  '00000000-0000-0000-0000-000000000006': 6,
-  '00000000-0000-0000-0000-000000000007': 5,
-  '00000000-0000-0000-0000-000000000008': 25,
-  '00000000-0000-0000-0000-000000000009': 20,
-  '00000000-0000-0000-0000-000000000010': 12,
-  '00000000-0000-0000-0000-000000000011': 15,
-  '00000000-0000-0000-0000-000000000012': 10,
-};
+  for (const dept of departments) {
+    map.set(dept.id, { ...dept, children: [] });
+  }
 
-// Demo employee data per department
-const makeEmployee = (
-  id: string,
-  name: string,
-  email: string,
-  phone: string,
-  deptId: string,
-  rankName: string,
-  titleName?: string,
-): Employee => ({
-  id,
-  employee_number: `EMP-${id.slice(-3)}`,
-  name,
-  name_en: null,
-  email,
-  phone,
-  birth_date: null,
-  gender: null,
-  address: null,
-  address_detail: null,
-  zip_code: null,
-  department_id: deptId,
-  position_rank_id: null,
-  position_title_id: null,
-  employment_type: 'regular',
-  hire_date: '2020-01-01',
-  resignation_date: null,
-  status: 'active',
-  base_salary: 0,
-  bank_name: null,
-  bank_account: null,
-  profile_image_url: `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`,
-  emergency_contact_name: null,
-  emergency_contact_phone: null,
-  emergency_contact_relation: null,
-  created_at: '',
-  updated_at: '',
-  position_rank: { id: '', name: rankName, level: 0, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' },
-  position_title: titleName ? { id: '', name: titleName, level: 0, is_active: true, effective_from: null, effective_to: null, created_at: '', updated_at: '' } : undefined,
-});
+  for (const dept of map.values()) {
+    if (dept.parent_id && map.has(dept.parent_id)) {
+      map.get(dept.parent_id)!.children!.push(dept);
+    } else {
+      roots.push(dept);
+    }
+  }
 
-const originalEmployeesByDept: Record<string, Employee[]> = {
-  '00000000-0000-0000-0000-000000000001': [
-    makeEmployee('e001', '김대표', 'ceo@company.com', '010-1234-0001', '00000000-0000-0000-0000-000000000001', '대표이사', '대표이사'),
-  ],
-  '00000000-0000-0000-0000-000000000002': [
-    makeEmployee('e002', '이본부장', 'lee.mgt@company.com', '010-1234-0002', '00000000-0000-0000-0000-000000000002', '이사', '본부장'),
-    makeEmployee('e003', '박부장', 'park.mgt@company.com', '010-1234-0003', '00000000-0000-0000-0000-000000000002', '부장'),
-  ],
-  '00000000-0000-0000-0000-000000000003': [
-    makeEmployee('e004', '최본부장', 'choi.dev@company.com', '010-1234-0004', '00000000-0000-0000-0000-000000000003', '이사', '본부장'),
-    makeEmployee('e005', '정부장', 'jung.dev@company.com', '010-1234-0005', '00000000-0000-0000-0000-000000000003', '부장'),
-    makeEmployee('e006', '한차장', 'han.dev@company.com', '010-1234-0006', '00000000-0000-0000-0000-000000000003', '차장'),
-  ],
-  '00000000-0000-0000-0000-000000000004': [
-    makeEmployee('e007', '강본부장', 'kang.sales@company.com', '010-1234-0007', '00000000-0000-0000-0000-000000000004', '이사', '본부장'),
-    makeEmployee('e008', '윤부장', 'yoon.sales@company.com', '010-1234-0008', '00000000-0000-0000-0000-000000000004', '부장'),
-  ],
-  '00000000-0000-0000-0000-000000000005': [
-    makeEmployee('e010', '서팀장', 'seo.hr@company.com', '010-1234-0010', '00000000-0000-0000-0000-000000000005', '과장', '팀장'),
-    makeEmployee('e011', '임대리', 'lim.hr@company.com', '010-1234-0011', '00000000-0000-0000-0000-000000000005', '대리'),
-    makeEmployee('e012', '조사원', 'cho.hr@company.com', '010-1234-0012', '00000000-0000-0000-0000-000000000005', '사원'),
-  ],
-  '00000000-0000-0000-0000-000000000006': [
-    makeEmployee('e013', '장팀장', 'jang.fin@company.com', '010-1234-0013', '00000000-0000-0000-0000-000000000006', '과장', '팀장'),
-    makeEmployee('e014', '유대리', 'yu.fin@company.com', '010-1234-0014', '00000000-0000-0000-0000-000000000006', '대리'),
-  ],
-  '00000000-0000-0000-0000-000000000007': [
-    makeEmployee('e015', '오팀장', 'oh.ga@company.com', '010-1234-0015', '00000000-0000-0000-0000-000000000007', '과장', '팀장'),
-    makeEmployee('e016', '배사원', 'bae.ga@company.com', '010-1234-0016', '00000000-0000-0000-0000-000000000007', '사원'),
-  ],
-  '00000000-0000-0000-0000-000000000008': [
-    makeEmployee('e020', '문팀장', 'moon.dev1@company.com', '010-1234-0020', '00000000-0000-0000-0000-000000000008', '차장', '팀장'),
-    makeEmployee('e021', '신과장', 'shin.dev1@company.com', '010-1234-0021', '00000000-0000-0000-0000-000000000008', '과장'),
-    makeEmployee('e022', '권대리', 'kwon.dev1@company.com', '010-1234-0022', '00000000-0000-0000-0000-000000000008', '대리'),
-  ],
-  '00000000-0000-0000-0000-000000000009': [
-    makeEmployee('e025', '황팀장', 'hwang.dev2@company.com', '010-1234-0025', '00000000-0000-0000-0000-000000000009', '차장', '팀장'),
-    makeEmployee('e026', '안과장', 'an.dev2@company.com', '010-1234-0026', '00000000-0000-0000-0000-000000000009', '과장'),
-  ],
-  '00000000-0000-0000-0000-000000000010': [
-    makeEmployee('e030', '송팀장', 'song.qa@company.com', '010-1234-0030', '00000000-0000-0000-0000-000000000010', '과장', '팀장'),
-    makeEmployee('e031', '전대리', 'jeon.qa@company.com', '010-1234-0031', '00000000-0000-0000-0000-000000000010', '대리'),
-  ],
-  '00000000-0000-0000-0000-000000000011': [
-    makeEmployee('e035', '홍팀장', 'hong.ds@company.com', '010-1234-0035', '00000000-0000-0000-0000-000000000011', '차장', '팀장'),
-    makeEmployee('e036', '고대리', 'go.ds@company.com', '010-1234-0036', '00000000-0000-0000-0000-000000000011', '대리'),
-  ],
-  '00000000-0000-0000-0000-000000000012': [
-    makeEmployee('e040', '노팀장', 'no.is@company.com', '010-1234-0040', '00000000-0000-0000-0000-000000000012', '과장', '팀장'),
-    makeEmployee('e041', '하사원', 'ha.is@company.com', '010-1234-0041', '00000000-0000-0000-0000-000000000012', '사원'),
-  ],
-};
+  const sortChildren = (nodes: Department[]) => {
+    nodes.sort((a, b) => a.sort_order - b.sort_order);
+    for (const node of nodes) {
+      if (node.children?.length) sortChildren(node.children);
+    }
+  };
+  sortChildren(roots);
 
-const deptCards = [
-  { id: '00000000-0000-0000-0000-000000000005', name: '인사팀', code: 'HR', count: 8 },
-  { id: '00000000-0000-0000-0000-000000000006', name: '재무팀', code: 'FIN', count: 6 },
-  { id: '00000000-0000-0000-0000-000000000007', name: '총무팀', code: 'GA', count: 5 },
-  { id: '00000000-0000-0000-0000-000000000008', name: '개발1팀', code: 'DEV1', count: 25 },
-  { id: '00000000-0000-0000-0000-000000000009', name: '개발2팀', code: 'DEV2', count: 20 },
-  { id: '00000000-0000-0000-0000-000000000010', name: 'QA팀', code: 'QA', count: 12 },
-  { id: '00000000-0000-0000-0000-000000000011', name: '국내영업팀', code: 'DS', count: 15 },
-  { id: '00000000-0000-0000-0000-000000000012', name: '해외영업팀', code: 'IS', count: 10 },
-];
+  return roots;
+}
+
+/** Group employees by department and enrich with position_rank/title objects */
+function buildEmployeesByDept(
+  employees: Employee[],
+  positionRanks: { id: string; name: string; level: number; is_active: boolean; effective_from: string | null; effective_to: string | null; created_at: string; updated_at: string }[],
+  positionTitles: { id: string; name: string; level: number; is_active: boolean; effective_from: string | null; effective_to: string | null; created_at: string; updated_at: string }[],
+): Record<string, Employee[]> {
+  const rankMap = new Map(positionRanks.map((r) => [r.id, r]));
+  const titleMap = new Map(positionTitles.map((t) => [t.id, t]));
+  const result: Record<string, Employee[]> = {};
+
+  for (const emp of employees) {
+    if (emp.status !== 'active' || !emp.department_id) continue;
+    const enriched: Employee = {
+      ...emp,
+      position_rank: emp.position_rank_id ? rankMap.get(emp.position_rank_id) : undefined,
+      position_title: emp.position_title_id ? titleMap.get(emp.position_title_id) : undefined,
+      profile_image_url: emp.profile_image_url ?? `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(emp.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`,
+    };
+    if (!result[emp.department_id]) result[emp.department_id] = [];
+    result[emp.department_id].push(enriched);
+  }
+
+  // Sort each dept's employees: higher rank level first
+  for (const deptId of Object.keys(result)) {
+    result[deptId].sort((a, b) => (b.position_rank?.level ?? 0) - (a.position_rank?.level ?? 0));
+  }
+
+  return result;
+}
 
 export default function OrganizationPage() {
+  const departments = useEmployeeStore((s) => s.departments);
+  const employees = useEmployeeStore((s) => s.employees);
+  const positionRanks = useEmployeeStore((s) => s.positionRanks);
+  const positionTitles = useEmployeeStore((s) => s.positionTitles);
+
+  // Build tree & employee data from store
+  const deptTree = useMemo(() => buildDeptTree(departments), [departments]);
+  const empsByDept = useMemo(
+    () => buildEmployeesByDept(employees, positionRanks, positionTitles),
+    [employees, positionRanks, positionTitles],
+  );
+  const empCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const [deptId, emps] of Object.entries(empsByDept)) {
+      counts[deptId] = emps.length;
+    }
+    return counts;
+  }, [empsByDept]);
+
+  // Leaf departments for card view
+  const leafDepts = useMemo(() => {
+    return departments
+      .filter((d) => !departments.some((c) => c.parent_id === d.id))
+      .sort((a, b) => a.sort_order - b.sort_order);
+  }, [departments]);
+
   // Simulation state
   const [isSimulating, setIsSimulating] = useState(false);
-  const [simTree, setSimTree] = useState<Department[]>(() => cloneTree(demoTree));
-  const [simEmployeesByDept, setSimEmployeesByDept] = useState<Record<string, Employee[]>>(() => ({ ...originalEmployeesByDept }));
+  const [simTree, setSimTree] = useState<Department[]>(() => cloneTree(deptTree));
+  const [simEmployeesByDept, setSimEmployeesByDept] = useState<Record<string, Employee[]>>(() => ({ ...empsByDept }));
   const [moves, setMoves] = useState<SimulationMove[]>([]);
   const [dragPayload, setDragPayload] = useState<DragPayload | null>(null);
 
   // Active data: original when not simulating, sim data when simulating
-  const activeTree = isSimulating ? simTree : demoTree;
-  const activeEmployeesByDept = isSimulating ? simEmployeesByDept : originalEmployeesByDept;
-  const activeEmployeeCounts = isSimulating ? recomputeCounts(simEmployeesByDept) : originalEmployeeCounts;
+  const activeTree = isSimulating ? simTree : deptTree;
+  const activeEmployeesByDept = isSimulating ? simEmployeesByDept : empsByDept;
+  const activeEmployeeCounts = isSimulating ? recomputeCounts(simEmployeesByDept) : empCounts;
 
   // Set of department IDs that have been modified
   const modifiedDeptIds = useMemo(() => {
@@ -230,7 +123,6 @@ export default function OrganizationPage() {
     for (const move of moves) {
       ids.add(move.fromDepartmentId);
       ids.add(move.toDepartmentId);
-      // For department moves, also mark the moved department itself
       if (move.type === 'department') {
         ids.add(move.itemId);
       }
@@ -240,22 +132,15 @@ export default function OrganizationPage() {
 
   const handleDropItem = useCallback((payload: DragPayload, targetDeptId: string) => {
     if (payload.type === 'department') {
-      // Prevent moving to self
       if (payload.id === targetDeptId) return;
-
-      // Prevent circular reference: can't move a dept to its own descendant
       if (isAncestorOf(simTree, payload.id, targetDeptId)) return;
 
-      // Find source and target department names
-      const sourceDept = findDepartment(simTree, payload.sourceDepartmentId);
-      const targetDept = findDepartment(simTree, targetDeptId);
-      // Find current parent of the department being moved
       const movingDept = findDepartment(simTree, payload.id);
+      const targetDept = findDepartment(simTree, targetDeptId);
       const currentParentId = movingDept?.parent_id;
-      // Don't reparent if already a child of target
       if (currentParentId === targetDeptId) return;
 
-      const fromName = sourceDept ? findDepartment(simTree, currentParentId ?? '')?.name ?? '최상위' : '최상위';
+      const fromName = currentParentId ? findDepartment(simTree, currentParentId)?.name ?? '최상위' : '최상위';
       const toName = targetDept?.name ?? '';
 
       const newTree = reparentDepartment(simTree, payload.id, targetDeptId);
@@ -274,7 +159,6 @@ export default function OrganizationPage() {
       };
       setMoves((prev) => [...prev, move]);
     } else {
-      // Employee move
       if (payload.sourceDepartmentId === targetDeptId) return;
 
       const fromDept = findDepartment(simTree, payload.sourceDepartmentId);
@@ -299,17 +183,16 @@ export default function OrganizationPage() {
   }, [simTree, simEmployeesByDept]);
 
   const handleReset = useCallback(() => {
-    setSimTree(cloneTree(demoTree));
-    setSimEmployeesByDept({ ...originalEmployeesByDept });
+    setSimTree(cloneTree(deptTree));
+    setSimEmployeesByDept({ ...empsByDept });
     setMoves([]);
-  }, []);
+  }, [deptTree, empsByDept]);
 
   const handleUndoLast = useCallback(() => {
     if (moves.length === 0) return;
-    // Safe undo: replay all moves except the last one from original state
     const newMoves = moves.slice(0, -1);
-    let tree = cloneTree(demoTree);
-    let emps: Record<string, Employee[]> = { ...originalEmployeesByDept };
+    let tree = cloneTree(deptTree);
+    let emps: Record<string, Employee[]> = { ...empsByDept };
 
     for (const m of newMoves) {
       if (m.type === 'department') {
@@ -322,7 +205,7 @@ export default function OrganizationPage() {
     setSimTree(tree);
     setSimEmployeesByDept(emps);
     setMoves(newMoves);
-  }, [moves]);
+  }, [moves, deptTree, empsByDept]);
 
   const handleDragPreviewStart = useCallback((payload: DragPayload) => {
     setDragPayload(payload);
@@ -334,14 +217,12 @@ export default function OrganizationPage() {
 
   const handleToggleSimulation = useCallback((on: boolean) => {
     if (on) {
-      // Entering simulation: clone original data
-      setSimTree(cloneTree(demoTree));
-      setSimEmployeesByDept({ ...originalEmployeesByDept });
+      setSimTree(cloneTree(deptTree));
+      setSimEmployeesByDept({ ...empsByDept });
     }
-    // Always clear moves on toggle (entering or exiting)
     setMoves([]);
     setIsSimulating(on);
-  }, []);
+  }, [deptTree, empsByDept]);
 
   return (
     <div>
@@ -391,23 +272,11 @@ export default function OrganizationPage() {
             <TabsContent value="cards" className="mt-4">
               <h2 className="text-lg font-semibold mb-4">부서 현황</h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {deptCards.map((dept) => (
+                {leafDepts.map((dept) => (
                   <DepartmentCard
                     key={dept.id}
-                    department={{
-                      id: dept.id,
-                      name: dept.name,
-                      code: dept.code,
-                      parent_id: null,
-                      level: 3,
-                      sort_order: 0,
-                      is_active: true,
-                      effective_from: null,
-                      effective_to: null,
-                      created_at: '',
-                      updated_at: '',
-                    }}
-                    employeeCount={dept.count}
+                    department={dept}
+                    employeeCount={empCounts[dept.id] ?? 0}
                   />
                 ))}
               </div>

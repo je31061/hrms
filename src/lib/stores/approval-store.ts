@@ -54,8 +54,8 @@ const seedApprovalLines: ApprovalLine[] = [
   { id: 'apl-8', approval_id: 'apr-4', approver_id: 'e002', step: 2, status: 'approved', comment: '승인.', acted_at: '2026-02-10T09:00:00' },
 
   // apr-5: rejected (step 1 rejected)
-  { id: 'apl-9', approval_id: 'apr-5', approver_id: 'e008', step: 1, status: 'rejected', comment: '해당 기간 출장 불가합니다.', acted_at: '2026-02-07T15:00:00' },
-  { id: 'apl-10', approval_id: 'apr-5', approver_id: 'e007', step: 2, status: 'pending', comment: null, acted_at: null },
+  { id: 'apl-9', approval_id: 'apr-5', approver_id: 'e016', step: 1, status: 'rejected', comment: '해당 기간 출장 불가합니다.', acted_at: '2026-02-07T15:00:00' },
+  { id: 'apl-10', approval_id: 'apr-5', approver_id: 'e004', step: 2, status: 'pending', comment: null, acted_at: null },
 ];
 
 // ---------------------------------------------------------------------------

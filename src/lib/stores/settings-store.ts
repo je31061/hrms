@@ -403,10 +403,10 @@ export const useSettingsStore = create<SettingsStore>()(
         number_format: 'comma',
       },
       menuPermissions: {
-        admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/evaluation', '/workflows', '/audit-log', '/settings'],
-        hr_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/evaluation', '/workflows'],
-        dept_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/approval', '/evaluation'],
-        employee: ['/', '/my', '/attendance', '/leave', '/approval'],
+        admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/evaluation', '/workflows', '/issues', '/audit-log', '/settings'],
+        hr_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/evaluation', '/workflows', '/issues'],
+        dept_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/approval', '/evaluation', '/issues'],
+        employee: ['/', '/my', '/attendance', '/leave', '/approval', '/issues'],
       },
       printTemplate: {
         header_title: '급여명세서',
@@ -566,7 +566,7 @@ export const useSettingsStore = create<SettingsStore>()(
     }),
     {
       name: 'hrms-settings',
-      version: 4,
+      version: 5,
       migrate: (persisted: unknown, version: number) => {
         if (version < 2) {
           return {};
@@ -596,6 +596,18 @@ export const useSettingsStore = create<SettingsStore>()(
             workSchedules: addEffective((state.workSchedules as Record<string, unknown>[]) ?? []),
             attendanceTypes: addEffective((state.attendanceTypes as Record<string, unknown>[]) ?? []),
           };
+        }
+        if (version < 5) {
+          // v4→v5: Add /issues route to menu permissions for all roles
+          const perms = state.menuPermissions as Record<string, string[]> | undefined;
+          if (perms) {
+            for (const role of Object.keys(perms)) {
+              if (!perms[role].includes('/issues')) {
+                perms[role] = [...perms[role], '/issues'];
+              }
+            }
+            state = { ...state, menuPermissions: perms };
+          }
         }
         return state;
       },

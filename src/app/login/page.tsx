@@ -589,7 +589,8 @@ export default function LoginPage() {
   const [mounted, setMounted] = useState(false);
   const [hoveredRole, setHoveredRole] = useState<UserRole | null>(null);
   const router = useRouter();
-  const demoMode = !isSupabaseConfigured();
+  // 데모 모드: Supabase Auth에 사용자가 등록되기 전까지 항상 데모 모드 사용
+  const demoMode = true;
 
   const loginDemo = useAuthStore((s) => s.loginDemo);
   const loginDemoByRole = useAuthStore((s) => s.loginDemoByRole);

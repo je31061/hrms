@@ -8,10 +8,8 @@ function isSupabaseConfigured(): boolean {
 }
 
 export async function updateSession(request: NextRequest) {
-  // Skip auth when Supabase is not configured (demo mode)
-  if (!isSupabaseConfigured()) {
-    return NextResponse.next({ request });
-  }
+  // 데모 모드: Supabase Auth 사용자 등록 전까지 항상 스킵
+  return NextResponse.next({ request });
 
   let supabaseResponse = NextResponse.next({
     request,

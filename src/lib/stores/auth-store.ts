@@ -45,6 +45,16 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     position: '사원',
     password: 'demo1234',
   },
+  {
+    id: 'demo-finance',
+    email: 'jang@demo.com',
+    name: '장미경',
+    role: 'employee',
+    employee_id: 'e013',
+    department: '재무회계팀',
+    position: '과장',
+    password: 'demo1234',
+  },
 ];
 
 interface AuthState {

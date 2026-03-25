@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useSettingsStore } from '@/lib/stores/settings-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
@@ -31,12 +31,28 @@ interface AttendanceRegisterDialogProps {
   onRegister: (record: Attendance) => void;
 }
 
+function generateTimeOptions(min: string, max: string, intervalMin = 30): string[] {
+  const [minH, minM] = min.split(':').map(Number);
+  const [maxH, maxM] = max.split(':').map(Number);
+  const options: string[] = [];
+  let cur = minH * 60 + minM;
+  const end = maxH * 60 + maxM;
+  while (cur <= end) {
+    const h = Math.floor(cur / 60);
+    const m = cur % 60;
+    options.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+    cur += intervalMin;
+  }
+  return options;
+}
+
 export function AttendanceRegisterDialog({
   open,
   onOpenChange,
   onRegister,
 }: AttendanceRegisterDialogProps) {
   const attendanceTypes = useSettingsStore((s) => s.attendanceTypes);
+  const work = useSettingsStore((s) => s.work);
   const activeTypes = attendanceTypes.filter((t) => t.is_active);
   const session = useAuthStore((s) => s.session);
   const employeeId = session?.employee_id ?? 'e022';
@@ -58,9 +74,23 @@ export function AttendanceRegisterDialog({
     location: '',
     purpose: '',
     note: '',
+    scheduled_start: work.default_start_time,
   });
 
   const selectedTypeConfig = attendanceTypes.find((t) => t.code === form.attendance_type);
+
+  const startOptions = useMemo(() => {
+    if (!work.flex_work_enabled) return [work.default_start_time];
+    return generateTimeOptions(work.flex_start_min, work.flex_start_max);
+  }, [work]);
+
+  const scheduledEnd = useMemo(() => {
+    const [h, m] = form.scheduled_start.split(':').map(Number);
+    const endMin = h * 60 + m + 9 * 60; // 9h = 8h work + 1h lunch
+    const eh = Math.floor(endMin / 60);
+    const em = endMin % 60;
+    return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+  }, [form.scheduled_start]);
 
   const handleSubmit = () => {
     if (!form.date) {
@@ -77,7 +107,7 @@ export function AttendanceRegisterDialog({
     }
 
     const now = new Date().toISOString();
-    const clockIn = `${form.date}T09:00:00+09:00`;
+    const clockIn = `${form.date}T${form.scheduled_start}:00+09:00`;
     const record: Attendance = {
       id: `att-${Date.now()}`,
       employee_id: employeeId,
@@ -91,6 +121,8 @@ export function AttendanceRegisterDialog({
       attendance_type: form.attendance_type,
       location: form.location || null,
       purpose: form.purpose || null,
+      scheduled_start: form.scheduled_start,
+      scheduled_end: scheduledEnd,
       created_at: now,
       employee: employee,
     };
@@ -104,6 +136,7 @@ export function AttendanceRegisterDialog({
       location: '',
       purpose: '',
       note: '',
+      scheduled_start: work.default_start_time,
     });
   };
 
@@ -142,6 +175,32 @@ export function AttendanceRegisterDialog({
               </SelectContent>
             </Select>
           </div>
+          {/* Flex schedule selector */}
+          {work.flex_work_enabled && (
+            <div className="space-y-2">
+              <Label>출퇴근 시간</Label>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={form.scheduled_start}
+                  onValueChange={(v) => setForm((prev) => ({ ...prev, scheduled_start: v }))}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {startOptions.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-muted-foreground">~</span>
+                <span className="font-medium">{scheduledEnd}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                유연근무: {work.flex_start_min}~{work.flex_start_max} 출근 / {work.flex_end_min}~{work.flex_end_max} 퇴근
+              </p>
+            </div>
+          )}
           {selectedTypeConfig?.requires_location && (
             <div className="space-y-2">
               <Label htmlFor="reg-location">장소/목적지</Label>

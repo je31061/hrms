@@ -7,7 +7,7 @@ import { AttendanceTable } from '@/components/attendance/attendance-table';
 import { AttendanceRegisterDialog } from '@/components/attendance/attendance-register-dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus, Building2, Plane, MapPin, Laptop, Clock, UserX, Palmtree } from 'lucide-react';
+import { Calendar, Plus, Building2, Plane, MapPin, Laptop, Clock, UserX, Palmtree, TimerOff } from 'lucide-react';
 import Link from 'next/link';
 import { useAttendanceStore } from '@/lib/stores/attendance-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
@@ -20,6 +20,7 @@ const statConfig = [
   { key: 'late', label: '지각', icon: Clock, iconClass: 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400' },
   { key: 'absent', label: '결근', icon: UserX, iconClass: 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400' },
   { key: 'leave', label: '휴가', icon: Palmtree, iconClass: 'bg-accent-green-subtle text-accent-green' },
+  { key: 'half_day', label: '반차', icon: TimerOff, iconClass: 'bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400' },
 ] as const;
 
 export default function AttendancePage() {
@@ -54,11 +55,13 @@ export default function AttendancePage() {
     const byType: Record<string, number> = {};
     let late = 0;
     let absent = 0;
+    let half_day = 0;
     for (const r of todayRecords) {
       const t = r.attendance_type ?? 'office';
       byType[t] = (byType[t] ?? 0) + 1;
       if (r.status === 'late') late++;
       if (r.status === 'absent') absent++;
+      if (r.status === 'half_day' || r.status === 'quarter_day') half_day++;
     }
     return {
       office: byType['office'] ?? 0,
@@ -68,6 +71,7 @@ export default function AttendancePage() {
       late,
       absent,
       leave: 0,
+      half_day,
     };
   }, [todayRecords]);
 
@@ -93,7 +97,7 @@ export default function AttendancePage() {
       <div className="space-y-6">
         <ClockButton />
 
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-8">
           {statConfig.map(({ key, label, icon: Icon, iconClass }) => {
             const val = stats[key as keyof typeof stats];
             const isNegative = key === 'late' || key === 'absent';

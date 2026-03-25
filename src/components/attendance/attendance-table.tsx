@@ -9,7 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ATTENDANCE_STATUS, ATTENDANCE_TYPES } from '@/lib/constants/codes';
+import { ATTENDANCE_STATUS, ATTENDANCE_TYPES, LEAVE_TIME_PERIODS } from '@/lib/constants/codes';
 import type { Attendance } from '@/types';
 
 interface AttendanceTableProps {
@@ -25,6 +25,8 @@ export function AttendanceTable({ records }: AttendanceTableProps) {
       case 'absent': return 'destructive';
       case 'holiday': return 'outline';
       case 'leave': return 'secondary';
+      case 'half_day': return 'secondary';
+      case 'quarter_day': return 'outline';
       default: return 'outline';
     }
   };
@@ -47,6 +49,7 @@ export function AttendanceTable({ records }: AttendanceTableProps) {
             <TableHead>날짜</TableHead>
             <TableHead>이름</TableHead>
             <TableHead>근태유형</TableHead>
+            <TableHead>근무시간대</TableHead>
             <TableHead>출근</TableHead>
             <TableHead>퇴근</TableHead>
             <TableHead>근무시간</TableHead>
@@ -58,7 +61,7 @@ export function AttendanceTable({ records }: AttendanceTableProps) {
         <TableBody>
           {records.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                 근태 기록이 없습니다.
               </TableCell>
             </TableRow>
@@ -67,6 +70,12 @@ export function AttendanceTable({ records }: AttendanceTableProps) {
               const typeCode = record.attendance_type;
               const typeLabel = getTypeLabel(typeCode);
               const isNonOffice = typeCode && typeCode !== 'office';
+              const scheduleLabel = record.scheduled_start && record.scheduled_end
+                ? `${record.scheduled_start}~${record.scheduled_end}`
+                : null;
+              const leavePeriodLabel = record.leave_time_period
+                ? LEAVE_TIME_PERIODS[record.leave_time_period as keyof typeof LEAVE_TIME_PERIODS]
+                : null;
 
               return (
                 <TableRow key={record.id}>
@@ -81,14 +90,26 @@ export function AttendanceTable({ records }: AttendanceTableProps) {
                       <span className="text-sm text-muted-foreground">{typeLabel ?? '사무실 출근'}</span>
                     )}
                   </TableCell>
+                  <TableCell>
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {scheduleLabel ?? '-'}
+                    </span>
+                  </TableCell>
                   <TableCell>{formatTime(record.clock_in)}</TableCell>
                   <TableCell>{formatTime(record.clock_out)}</TableCell>
                   <TableCell>{record.work_hours ? `${record.work_hours}시간` : '-'}</TableCell>
                   <TableCell>{record.overtime_hours > 0 ? `${record.overtime_hours}시간` : '-'}</TableCell>
                   <TableCell>
-                    <Badge variant={statusVariant(record.status)} className="text-xs">
-                      {ATTENDANCE_STATUS[record.status as keyof typeof ATTENDANCE_STATUS] ?? record.status}
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Badge variant={statusVariant(record.status)} className="text-xs">
+                        {ATTENDANCE_STATUS[record.status as keyof typeof ATTENDANCE_STATUS] ?? record.status}
+                      </Badge>
+                      {leavePeriodLabel && (
+                        <Badge variant="outline" className="text-xs">
+                          {leavePeriodLabel}
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div>

@@ -14,10 +14,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Pencil, FileText, ChevronDown } from 'lucide-react';
+import { Pencil, FileText, ChevronDown, Banknote } from 'lucide-react';
 import Link from 'next/link';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { DEGREE_LABELS } from '@/lib/constants/positions';
+import EmployeePayrollTab from '@/components/employee/employee-payroll-tab';
 
 export default function EmployeeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -99,6 +100,10 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
           <TabsTrigger value="education">학력사항</TabsTrigger>
           <TabsTrigger value="certification">자격증</TabsTrigger>
           <TabsTrigger value="family">가족사항</TabsTrigger>
+          <TabsTrigger value="payroll" className="gap-1">
+            <Banknote className="h-3.5 w-3.5" />
+            급여
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic">
@@ -237,6 +242,10 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="payroll">
+          <EmployeePayrollTab employee={employee} />
         </TabsContent>
       </Tabs>
     </div>

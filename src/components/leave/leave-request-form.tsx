@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import type { LeaveTimePeriod } from '@/types';
 
 interface LeaveRequestFormProps {
   employeeId: string;
@@ -29,6 +31,7 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
   const addLeaveRequest = useLeaveStore((s) => s.addLeaveRequest);
   const holidays = useSettingsStore((s) => s.holidays);
   const leaveSettings = useSettingsStore((s) => s.leave);
+  const work = useSettingsStore((s) => s.work);
   const { balances } = useEmployeeLeave(employeeId);
 
   const [leaveTypeId, setLeaveTypeId] = useState('');
@@ -37,6 +40,7 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
   const [reason, setReason] = useState('');
   const [isHalfDay, setIsHalfDay] = useState(false);
   const [isQuarterDay, setIsQuarterDay] = useState(false);
+  const [period, setPeriod] = useState<'am' | 'pm'>('am');
 
   const activeTypes = leaveTypes.filter((lt) => lt.is_active);
   const holidayDates = holidays.filter((h) => h.is_active).map((h) => h.date);
@@ -56,6 +60,33 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
 
   const selectedBalance = balances.find((b) => b.leave_type_id === leaveTypeId);
   const isOverLimit = selectedBalance ? calculatedDays > selectedBalance.remaining_days : false;
+
+  // Compute work time description for half/quarter day
+  const getWorkTimeDesc = () => {
+    const start = work.default_start_time;
+    const end = work.default_end_time;
+    const [sh] = start.split(':').map(Number);
+    const [eh] = end.split(':').map(Number);
+    const midH = Math.floor((sh + eh) / 2);
+    const mid = `${String(midH).padStart(2, '0')}:00`;
+
+    if (isHalfDay) {
+      if (period === 'am') {
+        return `오전반차: ${mid} 출근 ~ ${end} 퇴근 (오전 근무면제)`;
+      }
+      return `오후반차: ${start} 출근 ~ ${mid} 퇴근 (오후 근무면제)`;
+    }
+    if (isQuarterDay) {
+      const quarterH = Math.floor((eh - sh) / 4);
+      if (period === 'am') {
+        const lateStart = `${String(sh + quarterH).padStart(2, '0')}:00`;
+        return `오전반반차: ${lateStart} 출근 ~ ${end} 퇴근 (2시간 면제)`;
+      }
+      const earlyEnd = `${String(eh - quarterH).padStart(2, '0')}:00`;
+      return `오후반반차: ${start} 출근 ~ ${earlyEnd} 퇴근 (2시간 면제)`;
+    }
+    return null;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,6 +114,11 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
       status: 'pending' as const,
       approval_id: null,
       created_at: new Date().toISOString().slice(0, 10),
+      leave_time_period: (isHalfDay
+        ? (period === 'am' ? 'am_half' : 'pm_half')
+        : isQuarterDay
+          ? (period === 'am' ? 'am_quarter' : 'pm_quarter')
+          : undefined) as LeaveTimePeriod | undefined,
     };
 
     addLeaveRequest(request);
@@ -119,7 +155,12 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
           <Input
             type="date"
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={(e) => {
+              setStartDate(e.target.value);
+              if (!endDate || endDate < e.target.value) {
+                setEndDate(e.target.value);
+              }
+            }}
           />
         </div>
         <div className="space-y-2">
@@ -165,6 +206,38 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
           </div>
         )}
       </div>
+
+      {/* AM/PM Period selection */}
+      {(isHalfDay || isQuarterDay) && (
+        <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
+          <Label className="text-sm font-medium">
+            {isHalfDay ? '반차' : '반반차'} 시간대 선택
+          </Label>
+          <RadioGroup
+            value={period}
+            onValueChange={(v) => setPeriod(v as 'am' | 'pm')}
+            className="flex gap-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="am" id="period-am" />
+              <Label htmlFor="period-am" className="text-sm cursor-pointer">
+                {isHalfDay ? '오전반차 (오전 근무면제)' : '오전반반차 (오전 2시간 면제)'}
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="pm" id="period-pm" />
+              <Label htmlFor="period-pm" className="text-sm cursor-pointer">
+                {isHalfDay ? '오후반차 (오후 근무면제)' : '오후반반차 (오후 2시간 면제)'}
+              </Label>
+            </div>
+          </RadioGroup>
+          {getWorkTimeDesc() && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {getWorkTimeDesc()}
+            </p>
+          )}
+        </div>
+      )}
 
       {startDate && endDate && (
         <div className="text-sm p-2 rounded bg-muted">

@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { PayrollItemConfig, SavedPayroll, PayrollStatus } from '@/types';
+import type { PayrollItemConfig, PayrollLineItem, SavedPayroll, PayrollStatus, EmployeePayrollSetting } from '@/types';
 
 // ---- Demo employee salary data ----
 
@@ -82,7 +82,76 @@ const defaultPayrollItems: PayrollItemConfig[] = [
   { id: 'pi-localtax', name: '지방소득세', code: 'local_tax', category: 'deduction', calc_type: 'auto', is_taxable: false, is_active: true, rate_multiplier: null, formula_description: '소득세 × 10%', default_amount: 0, sort_order: 6 },
 ];
 
-// ---- Demo saved payrolls (January 2026 - paid) ----
+// ---- Demo saved payrolls (Oct 2025 ~ Mar 2026, 6 months) ----
+
+function calcOnePayroll(empId: string, year: number, month: number, overtimeHours: number): SavedPayroll {
+  const base = demoEmployeeSalaries[empId] ?? 3800000;
+  const meal = 200000;
+  const transport = 200000;
+  const hourlyWage = Math.round(base / MONTHLY_WORK_HOURS);
+  const overtimePay = Math.round(hourlyWage * 1.5 * overtimeHours);
+  const taxable = base + overtimePay;
+  const pensionBase = Math.min(Math.max(taxable, 370000), 5900000);
+  const pension = Math.round(pensionBase * 0.045);
+  const health = Math.round(taxable * 0.03545);
+  const longterm = Math.round(health * 0.1295);
+  const employment = Math.round(taxable * 0.009);
+  const annualIncome = taxable * 12;
+  let deduction = 0;
+  if (annualIncome <= 5000000) deduction = annualIncome * 0.7;
+  else if (annualIncome <= 15000000) deduction = 3500000 + (annualIncome - 5000000) * 0.4;
+  else if (annualIncome <= 45000000) deduction = 7500000 + (annualIncome - 15000000) * 0.15;
+  else if (annualIncome <= 100000000) deduction = 12000000 + (annualIncome - 45000000) * 0.05;
+  else deduction = 14750000 + (annualIncome - 100000000) * 0.02;
+  const taxableCalc = Math.max(annualIncome - deduction - 1500000, 0);
+  let rate = 0.06, ded = 0;
+  if (taxableCalc > 1000000000) { rate = 0.45; ded = 65940000; }
+  else if (taxableCalc > 500000000) { rate = 0.42; ded = 35940000; }
+  else if (taxableCalc > 300000000) { rate = 0.40; ded = 25940000; }
+  else if (taxableCalc > 150000000) { rate = 0.38; ded = 19940000; }
+  else if (taxableCalc > 88000000) { rate = 0.35; ded = 15440000; }
+  else if (taxableCalc > 50000000) { rate = 0.24; ded = 5760000; }
+  else if (taxableCalc > 14000000) { rate = 0.15; ded = 1260000; }
+  const annualTax = Math.round(taxableCalc * rate - ded);
+  const incomeTax = Math.max(Math.round(annualTax / 12), 0);
+  const localTax = Math.round(incomeTax * 0.1);
+  const totalEarnings = base + meal + transport + overtimePay;
+  const totalDeductions = pension + health + longterm + employment + incomeTax + localTax;
+  const fmtWon = (n: number) => new Intl.NumberFormat('ko-KR').format(n);
+  const mm = String(month).padStart(2, '0');
+
+  const items: PayrollLineItem[] = [
+    { item_id: 'pi-base', name: '기본급', category: 'earning', amount: base, is_taxable: true, formula: `${fmtWon(base)}원 (기본급)` },
+    { item_id: 'pi-meal', name: '식대', category: 'earning', amount: meal, is_taxable: false, formula: `${fmtWon(meal)}원 (비과세)` },
+    { item_id: 'pi-transport', name: '교통비', category: 'earning', amount: transport, is_taxable: false, formula: `${fmtWon(transport)}원 (비과세)` },
+  ];
+  if (overtimePay > 0) {
+    items.push({ item_id: 'pi-overtime', name: '연장근로수당', category: 'earning', amount: overtimePay, is_taxable: true, formula: `${fmtWon(hourlyWage)} × 1.5 × ${overtimeHours}h = ${fmtWon(overtimePay)}원` });
+  }
+  items.push(
+    { item_id: 'pi-pension', name: '국민연금', category: 'deduction', amount: pension, is_taxable: false, formula: `min(${fmtWon(taxable)}, 5,900,000) × 4.5%` },
+    { item_id: 'pi-health', name: '건강보험', category: 'deduction', amount: health, is_taxable: false, formula: `${fmtWon(taxable)} × 3.545%` },
+    { item_id: 'pi-longterm', name: '장기요양보험', category: 'deduction', amount: longterm, is_taxable: false, formula: `건강보험 × 12.95%` },
+    { item_id: 'pi-employment', name: '고용보험', category: 'deduction', amount: employment, is_taxable: false, formula: `${fmtWon(taxable)} × 0.9%` },
+    { item_id: 'pi-incometax', name: '소득세', category: 'deduction', amount: incomeTax, is_taxable: false, formula: `간이세액표 기반` },
+    { item_id: 'pi-localtax', name: '지방소득세', category: 'deduction', amount: localTax, is_taxable: false, formula: `소득세 × 10%` },
+  );
+
+  return {
+    id: `sp-${empId}-${year}-${mm}`,
+    employee_id: empId,
+    year,
+    month,
+    base_salary: base,
+    items,
+    total_earnings: totalEarnings,
+    total_deductions: totalDeductions,
+    net_pay: totalEarnings - totalDeductions,
+    dependents: 1,
+    status: (year === 2026 && month >= 3 ? 'draft' : 'paid') as PayrollStatus,
+    created_at: `${year}-${mm}-25`,
+  };
+}
 
 function generateDemoPayrolls(): SavedPayroll[] {
   const demoIds = [
@@ -90,72 +159,47 @@ function generateDemoPayrolls(): SavedPayroll[] {
     'e027', 'e029', 'e031', 'e032', 'e038', 'e045', 'e051', 'e057', 'e063', 'e068',
     'e073', 'e081', 'e088', 'e092', 'e097',
   ];
-  return demoIds.map((empId) => {
-    const base = demoEmployeeSalaries[empId] ?? 3800000;
-    const meal = 200000;
-    const transport = 200000;
-    const taxable = base;
-    const pensionBase = Math.min(Math.max(taxable, 370000), 5900000);
-    const pension = Math.round(pensionBase * 0.045);
-    const health = Math.round(taxable * 0.03545);
-    const longterm = Math.round(health * 0.1295);
-    const employment = Math.round(taxable * 0.009);
-    // Simplified tax calc
-    const annualIncome = taxable * 12;
-    let deduction = 0;
-    if (annualIncome <= 5000000) deduction = annualIncome * 0.7;
-    else if (annualIncome <= 15000000) deduction = 3500000 + (annualIncome - 5000000) * 0.4;
-    else if (annualIncome <= 45000000) deduction = 7500000 + (annualIncome - 15000000) * 0.15;
-    else if (annualIncome <= 100000000) deduction = 12000000 + (annualIncome - 45000000) * 0.05;
-    else deduction = 14750000 + (annualIncome - 100000000) * 0.02;
-    const taxableCalc = Math.max(annualIncome - deduction - 1500000, 0);
-    let rate = 0.06, ded = 0;
-    if (taxableCalc > 1000000000) { rate = 0.45; ded = 65940000; }
-    else if (taxableCalc > 500000000) { rate = 0.42; ded = 35940000; }
-    else if (taxableCalc > 300000000) { rate = 0.40; ded = 25940000; }
-    else if (taxableCalc > 150000000) { rate = 0.38; ded = 19940000; }
-    else if (taxableCalc > 88000000) { rate = 0.35; ded = 15440000; }
-    else if (taxableCalc > 50000000) { rate = 0.24; ded = 5760000; }
-    else if (taxableCalc > 14000000) { rate = 0.15; ded = 1260000; }
-    const annualTax = Math.round(taxableCalc * rate - ded);
-    const incomeTax = Math.max(Math.round(annualTax / 12), 0);
-    const localTax = Math.round(incomeTax * 0.1);
-    const totalEarnings = base + meal + transport;
-    const totalDeductions = pension + health + longterm + employment + incomeTax + localTax;
-    const fmtWon = (n: number) => new Intl.NumberFormat('ko-KR').format(n);
-
-    return {
-      id: `sp-${empId}-2026-01`,
-      employee_id: empId,
-      year: 2026,
-      month: 1,
-      base_salary: base,
-      items: [
-        { item_id: 'pi-base', name: '기본급', category: 'earning' as const, amount: base, is_taxable: true, formula: `${fmtWon(base)}원 (기본급)` },
-        { item_id: 'pi-meal', name: '식대', category: 'earning' as const, amount: meal, is_taxable: false, formula: `${fmtWon(meal)}원 (비과세)` },
-        { item_id: 'pi-transport', name: '교통비', category: 'earning' as const, amount: transport, is_taxable: false, formula: `${fmtWon(transport)}원 (비과세)` },
-        { item_id: 'pi-pension', name: '국민연금', category: 'deduction' as const, amount: pension, is_taxable: false, formula: `min(${fmtWon(taxable)}, 5,900,000) × 4.5% = ${fmtWon(pension)}원` },
-        { item_id: 'pi-health', name: '건강보험', category: 'deduction' as const, amount: health, is_taxable: false, formula: `${fmtWon(taxable)} × 3.545% = ${fmtWon(health)}원` },
-        { item_id: 'pi-longterm', name: '장기요양보험', category: 'deduction' as const, amount: longterm, is_taxable: false, formula: `${fmtWon(health)} × 12.95% = ${fmtWon(longterm)}원` },
-        { item_id: 'pi-employment', name: '고용보험', category: 'deduction' as const, amount: employment, is_taxable: false, formula: `${fmtWon(taxable)} × 0.9% = ${fmtWon(employment)}원` },
-        { item_id: 'pi-incometax', name: '소득세', category: 'deduction' as const, amount: incomeTax, is_taxable: false, formula: `간이세액표 기반 월 ${fmtWon(incomeTax)}원` },
-        { item_id: 'pi-localtax', name: '지방소득세', category: 'deduction' as const, amount: localTax, is_taxable: false, formula: `${fmtWon(incomeTax)} × 10% = ${fmtWon(localTax)}원` },
-      ],
-      total_earnings: totalEarnings,
-      total_deductions: totalDeductions,
-      net_pay: totalEarnings - totalDeductions,
-      dependents: 1,
-      status: 'paid' as PayrollStatus,
-      created_at: '2026-01-25',
-    };
-  });
+  // Generate 6 months: Oct 2025 ~ Mar 2026
+  const periods = [
+    { year: 2025, month: 10 }, { year: 2025, month: 11 }, { year: 2025, month: 12 },
+    { year: 2026, month: 1 }, { year: 2026, month: 2 }, { year: 2026, month: 3 },
+  ];
+  const payrolls: SavedPayroll[] = [];
+  for (const { year, month } of periods) {
+    for (const empId of demoIds) {
+      // Vary overtime hours by employee and month for realistic data
+      const seed = empId.charCodeAt(3) + month;
+      const overtimeHours = [0, 2, 4, 6, 8, 10, 12, 3, 5, 7][seed % 10];
+      payrolls.push(calcOnePayroll(empId, year, month, overtimeHours));
+    }
+  }
+  return payrolls;
 }
 
 // ---- Store types ----
 
+// ---- Demo employee payroll settings (수당 기준정보) ----
+
+function generateDemoEmpSettings(): EmployeePayrollSetting[] {
+  const now = new Date().toISOString();
+  return [
+    { id: 'eps-001', employee_id: 'e010', item_code: 'position_allowance', item_name: '직책수당', category: 'earning', amount: 300000, is_active: true, effective_from: '2025-01-01', effective_to: null, note: '팀장 직책수당', created_at: now, updated_at: now },
+    { id: 'eps-002', employee_id: 'e022', item_code: 'position_allowance', item_name: '직책수당', category: 'earning', amount: 300000, is_active: true, effective_from: '2025-01-01', effective_to: null, note: '팀장 직책수당', created_at: now, updated_at: now },
+    { id: 'eps-003', employee_id: 'e013', item_code: 'position_allowance', item_name: '직책수당', category: 'earning', amount: 200000, is_active: true, effective_from: '2024-07-01', effective_to: null, note: '과장 직책수당', created_at: now, updated_at: now },
+    { id: 'eps-004', employee_id: 'e013', item_code: 'qualification_allowance', item_name: '자격수당', category: 'earning', amount: 150000, is_active: true, effective_from: '2016-02-01', effective_to: null, note: '공인회계사 자격수당', created_at: now, updated_at: now },
+    { id: 'eps-005', employee_id: 'e017', item_code: 'position_allowance', item_name: '직책수당', category: 'earning', amount: 250000, is_active: true, effective_from: '2023-01-01', effective_to: null, note: '차장 직책수당', created_at: now, updated_at: now },
+    { id: 'eps-006', employee_id: 'e029', item_code: 'position_allowance', item_name: '직책수당', category: 'earning', amount: 300000, is_active: true, effective_from: '2024-01-01', effective_to: null, note: '팀장 직책수당', created_at: now, updated_at: now },
+    { id: 'eps-007', employee_id: 'e029', item_code: 'qualification_allowance', item_name: '자격수당', category: 'earning', amount: 100000, is_active: true, effective_from: '2020-06-01', effective_to: null, note: '품질관리 자격수당', created_at: now, updated_at: now },
+    { id: 'eps-008', employee_id: 'e092', item_code: 'position_allowance', item_name: '직책수당', category: 'earning', amount: 400000, is_active: true, effective_from: '2022-01-01', effective_to: null, note: '본부장 직책수당', created_at: now, updated_at: now },
+    // 종료된 이력 예시
+    { id: 'eps-009', employee_id: 'e013', item_code: 'position_allowance', item_name: '직책수당', category: 'earning', amount: 150000, is_active: false, effective_from: '2020-01-01', effective_to: '2024-06-30', note: '대리 직책수당 (종료)', created_at: now, updated_at: now },
+  ];
+}
+
 interface PayrollState {
   payrollItems: PayrollItemConfig[];
   savedPayrolls: SavedPayroll[];
+  employeePayrollSettings: EmployeePayrollSetting[];
 }
 
 interface PayrollActions {
@@ -169,6 +213,12 @@ interface PayrollActions {
   savePayroll: (payroll: SavedPayroll) => void;
   updatePayrollStatus: (id: string, status: PayrollStatus) => void;
   deletePayroll: (id: string) => void;
+
+  // Employee payroll settings
+  addEmployeePayrollSetting: (setting: EmployeePayrollSetting) => void;
+  updateEmployeePayrollSetting: (id: string, data: Partial<EmployeePayrollSetting>) => void;
+  deleteEmployeePayrollSetting: (id: string) => void;
+  getEmployeePayrollSettings: (employeeId: string) => EmployeePayrollSetting[];
 }
 
 export type PayrollStore = PayrollState & PayrollActions;
@@ -177,9 +227,10 @@ export type PayrollStore = PayrollState & PayrollActions;
 
 export const usePayrollStore = create<PayrollStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       payrollItems: defaultPayrollItems,
       savedPayrolls: generateDemoPayrolls(),
+      employeePayrollSettings: generateDemoEmpSettings(),
 
       addPayrollItem: (item) =>
         set((s) => ({ payrollItems: [...s.payrollItems, item] })),
@@ -230,10 +281,29 @@ export const usePayrollStore = create<PayrollStore>()(
         set((s) => ({
           savedPayrolls: s.savedPayrolls.filter((p) => p.id !== id),
         })),
+
+      // Employee payroll settings
+      addEmployeePayrollSetting: (setting) =>
+        set((s) => ({ employeePayrollSettings: [...s.employeePayrollSettings, setting] })),
+
+      updateEmployeePayrollSetting: (id, data) =>
+        set((s) => ({
+          employeePayrollSettings: s.employeePayrollSettings.map((eps) =>
+            eps.id === id ? { ...eps, ...data, updated_at: new Date().toISOString() } : eps
+          ),
+        })),
+
+      deleteEmployeePayrollSetting: (id) =>
+        set((s) => ({
+          employeePayrollSettings: s.employeePayrollSettings.filter((eps) => eps.id !== id),
+        })),
+
+      getEmployeePayrollSettings: (employeeId) =>
+        get().employeePayrollSettings.filter((eps) => eps.employee_id === employeeId),
     }),
     {
       name: 'hrms-payroll',
-      version: 2,
+      version: 4,
       migrate: () => ({}),
     }
   )

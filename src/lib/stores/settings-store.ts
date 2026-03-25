@@ -69,6 +69,11 @@ interface SettingsState {
     night_rate: number;
     holiday_rate: number;
     holiday_overtime_rate: number;
+    flex_work_enabled: boolean;
+    flex_start_min: string;
+    flex_start_max: string;
+    flex_end_min: string;
+    flex_end_max: string;
   };
   workSchedules: WorkSchedule[];
 
@@ -208,10 +213,10 @@ export type SettingsStore = SettingsState & SettingsActions;
 const defaultWorkSchedules: WorkSchedule[] = [
   {
     id: 'ws-1',
-    name: '기본 고정근무',
+    name: '기본 고정근무 (07:00~16:00)',
     type: 'fixed',
-    start_time: '09:00',
-    end_time: '18:00',
+    start_time: '07:00',
+    end_time: '16:00',
     core_start_time: null,
     core_end_time: null,
     break_minutes: 60,
@@ -226,19 +231,19 @@ const defaultWorkSchedules: WorkSchedule[] = [
   },
   {
     id: 'ws-2',
-    name: '시차출퇴근제',
+    name: '유연근무제 (06:00~08:00 출근)',
     type: 'staggered',
-    start_time: '09:00',
-    end_time: '18:00',
-    core_start_time: '10:00',
-    core_end_time: '16:00',
+    start_time: '07:00',
+    end_time: '16:00',
+    core_start_time: '08:00',
+    core_end_time: '15:00',
     break_minutes: 60,
     weekly_hours: 40,
     is_default: false,
     is_active: true,
     effective_from: null,
     effective_to: null,
-    settings: { earliest_start: '07:00', latest_start: '10:00' },
+    settings: { earliest_start: '06:00', latest_start: '08:00', earliest_end: '15:00', latest_end: '17:00' },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -246,10 +251,10 @@ const defaultWorkSchedules: WorkSchedule[] = [
     id: 'ws-3',
     name: '선택적 근로시간제',
     type: 'selective',
-    start_time: '09:00',
-    end_time: '18:00',
-    core_start_time: '10:00',
-    core_end_time: '16:00',
+    start_time: '07:00',
+    end_time: '16:00',
+    core_start_time: '09:00',
+    core_end_time: '15:00',
     break_minutes: 60,
     weekly_hours: 40,
     is_default: false,
@@ -334,8 +339,8 @@ export const useSettingsStore = create<SettingsStore>()(
         website: 'www.worldpanasia.com',
       },
       work: {
-        default_start_time: '09:00',
-        default_end_time: '18:00',
+        default_start_time: '07:00',
+        default_end_time: '16:00',
         lunch_break_minutes: 60,
         weekly_hours: 40,
         enforce_52h_rule: true,
@@ -346,12 +351,17 @@ export const useSettingsStore = create<SettingsStore>()(
         night_rate: 0.5,
         holiday_rate: 1.5,
         holiday_overtime_rate: 2.0,
+        flex_work_enabled: true,
+        flex_start_min: '06:00',
+        flex_start_max: '08:00',
+        flex_end_min: '15:00',
+        flex_end_max: '17:00',
       },
       workSchedules: defaultWorkSchedules,
       leave: {
         auto_grant_annual: true,
         allow_half_day: true,
-        allow_quarter_day: false,
+        allow_quarter_day: true,
         unused_leave_policy: 'carryover',
         carryover_limit: 5,
       },
@@ -566,7 +576,7 @@ export const useSettingsStore = create<SettingsStore>()(
     }),
     {
       name: 'hrms-settings',
-      version: 5,
+      version: 6,
       migrate: (persisted: unknown, version: number) => {
         if (version < 2) {
           return {};
@@ -584,7 +594,6 @@ export const useSettingsStore = create<SettingsStore>()(
           };
         }
         if (version < 4) {
-          // v3→v4: Add effective_from/to to WorkSchedule and AttendanceTypeConfig
           const addEffective = (items: Record<string, unknown>[]) =>
             items.map((item) => ({
               ...item,
@@ -598,7 +607,6 @@ export const useSettingsStore = create<SettingsStore>()(
           };
         }
         if (version < 5) {
-          // v4→v5: Add /issues route to menu permissions for all roles
           const perms = state.menuPermissions as Record<string, string[]> | undefined;
           if (perms) {
             for (const role of Object.keys(perms)) {
@@ -607,6 +615,32 @@ export const useSettingsStore = create<SettingsStore>()(
               }
             }
             state = { ...state, menuPermissions: perms };
+          }
+        }
+        if (version < 6) {
+          // v5→v6: Add flex work settings and update default times to 07:00-16:00
+          const work = state.work as Record<string, unknown> | undefined;
+          if (work) {
+            state = {
+              ...state,
+              work: {
+                ...work,
+                default_start_time: '07:00',
+                default_end_time: '16:00',
+                flex_work_enabled: work.flex_work_enabled ?? true,
+                flex_start_min: work.flex_start_min ?? '06:00',
+                flex_start_max: work.flex_start_max ?? '08:00',
+                flex_end_min: work.flex_end_min ?? '15:00',
+                flex_end_max: work.flex_end_max ?? '17:00',
+              },
+            };
+          }
+          const leave = state.leave as Record<string, unknown> | undefined;
+          if (leave) {
+            state = {
+              ...state,
+              leave: { ...leave, allow_half_day: true, allow_quarter_day: true },
+            };
           }
         }
         return state;

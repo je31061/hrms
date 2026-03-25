@@ -5,6 +5,15 @@ export const ATTENDANCE_STATUS = {
   absent: '결근',
   holiday: '휴일',
   leave: '휴가',
+  half_day: '반차',
+  quarter_day: '반반차',
+} as const;
+
+export const LEAVE_TIME_PERIODS = {
+  am_half: '오전반차',
+  pm_half: '오후반차',
+  am_quarter: '오전반반차',
+  pm_quarter: '오후반반차',
 } as const;
 
 export const LEAVE_REQUEST_STATUS = {

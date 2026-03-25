@@ -101,7 +101,9 @@ export type EmployeeStatus = 'active' | 'on_leave' | 'resigned' | 'retired';
 export type Gender = 'M' | 'F';
 export type DegreeType = 'high_school' | 'associate' | 'bachelor' | 'master' | 'doctorate';
 
-export type AttendanceStatus = 'normal' | 'late' | 'early_leave' | 'absent' | 'holiday' | 'leave';
+export type AttendanceStatus = 'normal' | 'late' | 'early_leave' | 'absent' | 'holiday' | 'leave' | 'half_day' | 'quarter_day';
+export type HalfDayPeriod = 'am' | 'pm';
+export type LeaveTimePeriod = 'am_half' | 'pm_half' | 'am_quarter' | 'pm_quarter';
 
 export interface AttendanceTypeConfig {
   id: string;
@@ -344,6 +346,9 @@ export interface Attendance {
   attendance_type?: string;
   location?: string | null;
   purpose?: string | null;
+  leave_time_period?: LeaveTimePeriod | null;
+  scheduled_start?: string | null;
+  scheduled_end?: string | null;
   created_at: string;
   employee?: Employee;
 }
@@ -378,6 +383,7 @@ export interface LeaveRequest {
   reason: string | null;
   status: LeaveRequestStatus;
   approval_id: string | null;
+  leave_time_period?: LeaveTimePeriod;
   created_at: string;
   employee?: Employee;
   leave_type?: LeaveType;
@@ -392,6 +398,21 @@ export interface LeaveBalanceAdjustment {
   reason: string;
   adjusted_by: string;
   created_at: string;
+}
+
+export interface EmployeePayrollSetting {
+  id: string;
+  employee_id: string;
+  item_code: string;
+  item_name: string;
+  category: 'earning' | 'deduction';
+  amount: number;
+  is_active: boolean;
+  effective_from: string;
+  effective_to: string | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface PayrollItem {
@@ -621,7 +642,8 @@ export type ChangeHistoryEntityType =
   | 'holiday'
   | 'attendance_type'
   | 'code_group'
-  | 'code_item';
+  | 'code_item'
+  | 'employee_payroll';
 
 export type ChangeHistoryActionType = 'create' | 'update' | 'delete';
 

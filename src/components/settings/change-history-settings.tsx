@@ -29,6 +29,7 @@ const ENTITY_TYPE_LABELS: Record<ChangeHistoryEntityType, string> = {
   attendance_type: '근태유형',
   code_group: '코드그룹',
   code_item: '코드항목',
+  employee_payroll: '사원급여',
 };
 
 const ACTION_LABELS: Record<ChangeHistoryActionType, string> = {

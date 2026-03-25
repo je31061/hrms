@@ -44,6 +44,15 @@ export default function WorkScheduleSettings() {
     weekly_hours: 40,
   });
 
+  // Section A-2: Flex work local state
+  const [flexForm, setFlexForm] = useState({
+    flex_work_enabled: true,
+    flex_start_min: '06:00',
+    flex_start_max: '08:00',
+    flex_end_min: '15:00',
+    flex_end_max: '17:00',
+  });
+
   // Section C: 52h rule & rates local state
   const [ruleForm, setRuleForm] = useState({
     enforce_52h_rule: true,
@@ -71,6 +80,13 @@ export default function WorkScheduleSettings() {
       lunch_break_minutes: work.lunch_break_minutes,
       weekly_hours: work.weekly_hours,
     });
+    setFlexForm({
+      flex_work_enabled: work.flex_work_enabled,
+      flex_start_min: work.flex_start_min,
+      flex_start_max: work.flex_start_max,
+      flex_end_min: work.flex_end_min,
+      flex_end_max: work.flex_end_max,
+    });
     setRuleForm({
       enforce_52h_rule: work.enforce_52h_rule,
       max_weekly_hours: work.max_weekly_hours,
@@ -86,6 +102,11 @@ export default function WorkScheduleSettings() {
   const handleSaveBasic = () => {
     updateWork(basicForm);
     toast.success('기본 근무시간이 저장되었습니다.');
+  };
+
+  const handleSaveFlex = () => {
+    updateWork(flexForm);
+    toast.success('유연근무 설정이 저장되었습니다.');
   };
 
   const handleSaveRules = () => {
@@ -212,6 +233,99 @@ export default function WorkScheduleSettings() {
           </div>
           <div className="flex justify-end">
             <Button onClick={handleSaveBasic}>저장</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Section A-2: 유연근무 설정 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>유연근무 설정</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="flex-enabled">유연근무제 사용</Label>
+              <p className="text-sm text-muted-foreground">
+                직원이 출퇴근 시간을 선택할 수 있습니다.
+              </p>
+            </div>
+            <Switch
+              id="flex-enabled"
+              checked={flexForm.flex_work_enabled}
+              onCheckedChange={(checked) =>
+                setFlexForm((prev) => ({ ...prev, flex_work_enabled: checked }))
+              }
+            />
+          </div>
+          {flexForm.flex_work_enabled && (
+            <>
+              <Separator />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">출근 가능 시간대</p>
+                  <div className="flex items-center gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="flex-start-min" className="text-xs text-muted-foreground">최소</Label>
+                      <Input
+                        id="flex-start-min"
+                        type="time"
+                        value={flexForm.flex_start_min}
+                        onChange={(e) =>
+                          setFlexForm((prev) => ({ ...prev, flex_start_min: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <span className="text-muted-foreground mt-5">~</span>
+                    <div className="space-y-1">
+                      <Label htmlFor="flex-start-max" className="text-xs text-muted-foreground">최대</Label>
+                      <Input
+                        id="flex-start-max"
+                        type="time"
+                        value={flexForm.flex_start_max}
+                        onChange={(e) =>
+                          setFlexForm((prev) => ({ ...prev, flex_start_max: e.target.value }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">퇴근 가능 시간대</p>
+                  <div className="flex items-center gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="flex-end-min" className="text-xs text-muted-foreground">최소</Label>
+                      <Input
+                        id="flex-end-min"
+                        type="time"
+                        value={flexForm.flex_end_min}
+                        onChange={(e) =>
+                          setFlexForm((prev) => ({ ...prev, flex_end_min: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <span className="text-muted-foreground mt-5">~</span>
+                    <div className="space-y-1">
+                      <Label htmlFor="flex-end-max" className="text-xs text-muted-foreground">최대</Label>
+                      <Input
+                        id="flex-end-max"
+                        type="time"
+                        value={flexForm.flex_end_max}
+                        onChange={(e) =>
+                          setFlexForm((prev) => ({ ...prev, flex_end_max: e.target.value }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                현재 설정: {flexForm.flex_start_min}~{flexForm.flex_start_max} 출근 / {flexForm.flex_end_min}~{flexForm.flex_end_max} 퇴근 (8시간 근무 + 1시간 점심)
+              </p>
+            </>
+          )}
+          <div className="flex justify-end">
+            <Button onClick={handleSaveFlex}>저장</Button>
           </div>
         </CardContent>
       </Card>

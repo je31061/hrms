@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calculator, FileText, CheckCircle, Trash2, DollarSign, TrendingUp, Users } from 'lucide-react';
+import { Calculator, FileText, CheckCircle, Trash2, DollarSign, TrendingUp, Users, BarChart3, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -73,12 +73,26 @@ export default function PayrollPage() {
       <Breadcrumb />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">급여관리</h1>
-        <Link href="/payroll/calculate">
-          <Button>
-            <Calculator className="h-4 w-4 mr-2" />
-            급여 계산
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/payroll/settings">
+            <Button variant="outline">
+              <Settings2 className="h-4 w-4 mr-2" />
+              개인별 기준정보
+            </Button>
+          </Link>
+          <Link href="/payroll/dashboard">
+            <Button variant="outline">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              대시보드
+            </Button>
+          </Link>
+          <Link href="/payroll/calculate">
+            <Button>
+              <Calculator className="h-4 w-4 mr-2" />
+              급여 계산
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Summary Cards */}

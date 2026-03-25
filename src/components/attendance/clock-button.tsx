@@ -82,7 +82,7 @@ export function ClockButton() {
   };
 
   const handleClockIn = () => {
-    clockIn(employeeId, 'office', selectedStart, selectedEnd);
+    clockIn(employeeId, 'office', selectedStart, selectedEnd, work.late_grace_minutes);
     toast.success('출근이 기록되었습니다.');
   };
 

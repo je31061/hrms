@@ -706,7 +706,7 @@ export default function MyPage() {
   };
 
   const handleClockIn = () => {
-    clockIn(MY_ID, 'office', selectedStart, selectedEnd);
+    clockIn(MY_ID, 'office', selectedStart, selectedEnd, work.late_grace_minutes);
     toast.success('출근이 기록되었습니다.');
   };
 

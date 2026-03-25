@@ -110,7 +110,7 @@ interface AttendanceState {
 }
 
 interface AttendanceActions {
-  clockIn: (employeeId: string, type?: string, scheduledStart?: string, scheduledEnd?: string) => void;
+  clockIn: (employeeId: string, type?: string, scheduledStart?: string, scheduledEnd?: string, graceMinutes?: number) => void;
   clockOut: (employeeId: string) => void;
   addRecord: (record: Attendance) => void;
   updateRecord: (id: string, data: Partial<Attendance>) => void;
@@ -136,7 +136,7 @@ export const useAttendanceStore = create<AttendanceStore>()(
     (set, get) => ({
       records: seedRecords(),
 
-      clockIn: (employeeId, type = 'office', scheduledStart = '07:00', scheduledEnd = '16:00') => {
+      clockIn: (employeeId, type = 'office', scheduledStart = '07:00', scheduledEnd = '16:00', graceMinutes = 0) => {
         const now = new Date();
         const date = now.toISOString().split('T')[0];
         const existing = get().records.find((r) => r.employee_id === employeeId && r.date === date);
@@ -145,7 +145,9 @@ export const useAttendanceStore = create<AttendanceStore>()(
         const hours = now.getHours();
         const minutes = now.getMinutes();
         const [sh, sm] = scheduledStart.split(':').map(Number);
-        const isLate = hours > sh || (hours === sh && minutes > sm);
+        const clockMinutes = hours * 60 + minutes;
+        const deadlineMinutes = sh * 60 + sm + graceMinutes;
+        const isLate = clockMinutes > deadlineMinutes;
         const pad = (n: number) => String(n).padStart(2, '0');
         const clockInStr = `${date}T${pad(hours)}:${pad(minutes)}:${pad(now.getSeconds())}+09:00`;
 

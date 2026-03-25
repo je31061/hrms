@@ -42,6 +42,7 @@ export default function WorkScheduleSettings() {
     default_end_time: '18:00',
     lunch_break_minutes: 60,
     weekly_hours: 40,
+    late_grace_minutes: 5,
   });
 
   // Section A-2: Flex work local state
@@ -79,6 +80,7 @@ export default function WorkScheduleSettings() {
       default_end_time: work.default_end_time,
       lunch_break_minutes: work.lunch_break_minutes,
       weekly_hours: work.weekly_hours,
+      late_grace_minutes: work.late_grace_minutes,
     });
     setFlexForm({
       flex_work_enabled: work.flex_work_enabled,
@@ -231,6 +233,40 @@ export default function WorkScheduleSettings() {
               />
             </div>
           </div>
+
+          <Separator className="my-4" />
+
+          <div className="space-y-2">
+            <Label htmlFor="late-grace">지각 유예시간 (분)</Label>
+            <p className="text-sm text-muted-foreground">
+              출근시간 이후 설정된 시간 내에 출근하면 지각으로 처리하지 않습니다.
+            </p>
+            <div className="flex items-center gap-3">
+              <Input
+                id="late-grace"
+                type="number"
+                min={0}
+                max={10}
+                className="w-[100px]"
+                value={basicForm.late_grace_minutes}
+                onChange={(e) =>
+                  setBasicForm((prev) => ({
+                    ...prev,
+                    late_grace_minutes: Math.min(10, Math.max(0, Number(e.target.value))),
+                  }))
+                }
+              />
+              <span className="text-sm text-muted-foreground">분 (0~10분)</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              예: {basicForm.late_grace_minutes}분 설정 시 출근시간 {basicForm.default_start_time} 기준 {(() => {
+                const [h, m] = basicForm.default_start_time.split(':').map(Number);
+                const total = h * 60 + m + basicForm.late_grace_minutes;
+                return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+              })()}까지 정상 출근으로 인정
+            </p>
+          </div>
+
           <div className="flex justify-end">
             <Button onClick={handleSaveBasic}>저장</Button>
           </div>

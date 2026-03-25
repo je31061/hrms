@@ -69,6 +69,7 @@ interface SettingsState {
     night_rate: number;
     holiday_rate: number;
     holiday_overtime_rate: number;
+    late_grace_minutes: number;
     flex_work_enabled: boolean;
     flex_start_min: string;
     flex_start_max: string;
@@ -351,6 +352,7 @@ export const useSettingsStore = create<SettingsStore>()(
         night_rate: 0.5,
         holiday_rate: 1.5,
         holiday_overtime_rate: 2.0,
+        late_grace_minutes: 5,
         flex_work_enabled: true,
         flex_start_min: '06:00',
         flex_start_max: '08:00',
@@ -627,6 +629,7 @@ export const useSettingsStore = create<SettingsStore>()(
                 ...work,
                 default_start_time: '07:00',
                 default_end_time: '16:00',
+                late_grace_minutes: work.late_grace_minutes ?? 5,
                 flex_work_enabled: work.flex_work_enabled ?? true,
                 flex_start_min: work.flex_start_min ?? '06:00',
                 flex_start_max: work.flex_start_max ?? '08:00',

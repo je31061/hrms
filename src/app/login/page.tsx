@@ -739,7 +739,6 @@ export default function LoginPage() {
         {/* ═══ SECTIONS BELOW FOLD ═══ */}
         <div className="space-y-24 pb-0">
           <LiveDataSection />
-          <NewsSection />
           <IndustrySection />
           <CompanySection />
           <WorldClockSection />

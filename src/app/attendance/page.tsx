@@ -7,7 +7,7 @@ import { AttendanceTable } from '@/components/attendance/attendance-table';
 import { AttendanceRegisterDialog } from '@/components/attendance/attendance-register-dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus, Building2, Plane, MapPin, Laptop, Clock, UserX, Palmtree, TimerOff } from 'lucide-react';
+import { Calendar, Plus, Building2, Plane, MapPin, Laptop, Clock, UserX, Palmtree, TimerOff, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useAttendanceStore } from '@/lib/stores/attendance-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
@@ -85,6 +85,12 @@ export default function AttendancePage() {
             <Plus className="h-4 w-4 mr-2" />
             근태 등록
           </Button>
+          <Link href="/attendance/admin">
+            <Button variant="outline">
+              <Lock className="h-4 w-4 mr-2" />
+              근태 마감
+            </Button>
+          </Link>
           <Link href="/attendance/monthly">
             <Button variant="outline">
               <Calendar className="h-4 w-4 mr-2" />

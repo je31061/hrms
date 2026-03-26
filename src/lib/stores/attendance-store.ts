@@ -105,8 +105,19 @@ function seedRecords(): Attendance[] {
 // Store types
 // ---------------------------------------------------------------------------
 
+export interface AttendanceCloseout {
+  id: string;
+  year: number;
+  month: number;
+  closed_by: string;
+  closed_by_name: string;
+  closed_at: string;
+  note: string | null;
+}
+
 interface AttendanceState {
   records: Attendance[];
+  closeouts: AttendanceCloseout[];
 }
 
 interface AttendanceActions {
@@ -115,6 +126,8 @@ interface AttendanceActions {
   addRecord: (record: Attendance) => void;
   updateRecord: (id: string, data: Partial<Attendance>) => void;
   addHalfDayRecord: (employeeId: string, date: string, leaveTimePeriod: LeaveTimePeriod, scheduledStart?: string, scheduledEnd?: string) => void;
+  closeMonth: (year: number, month: number, closedBy: string, closedByName: string, note?: string) => void;
+  reopenMonth: (year: number, month: number) => void;
 }
 
 interface AttendanceGetters {
@@ -123,6 +136,7 @@ interface AttendanceGetters {
   getRecordsByEmployeeAndMonth: (empId: string, year: number, month: number) => Attendance[];
   getTodayRecord: (empId: string) => Attendance | undefined;
   getTodaySummary: () => { total: number; normal: number; late: number; half_day: number; quarter_day: number; byType: Record<string, number> };
+  getCloseout: (year: number, month: number) => AttendanceCloseout | undefined;
 }
 
 export type AttendanceStore = AttendanceState & AttendanceActions & AttendanceGetters;
@@ -135,6 +149,7 @@ export const useAttendanceStore = create<AttendanceStore>()(
   persist(
     (set, get) => ({
       records: seedRecords(),
+      closeouts: [] as AttendanceCloseout[],
 
       clockIn: (employeeId, type = 'office', scheduledStart = '07:00', scheduledEnd = '16:00', graceMinutes = 0) => {
         const now = new Date();
@@ -298,7 +313,31 @@ export const useAttendanceStore = create<AttendanceStore>()(
         }
         return { total: todayRecords.length, normal, late, half_day, quarter_day, byType };
       },
+
+      closeMonth: (year, month, closedBy, closedByName, note) => {
+        const existing = get().closeouts.find((c) => c.year === year && c.month === month);
+        if (existing) return;
+        set((s) => ({
+          closeouts: [...s.closeouts, {
+            id: `close-${year}-${month}`,
+            year, month,
+            closed_by: closedBy,
+            closed_by_name: closedByName,
+            closed_at: new Date().toISOString(),
+            note: note ?? null,
+          }],
+        }));
+      },
+
+      reopenMonth: (year, month) => {
+        set((s) => ({
+          closeouts: s.closeouts.filter((c) => !(c.year === year && c.month === month)),
+        }));
+      },
+
+      getCloseout: (year, month) =>
+        get().closeouts.find((c) => c.year === year && c.month === month),
     }),
-    { name: 'hrms-attendance', version: 3, migrate: () => ({}) },
+    { name: 'hrms-attendance', version: 4, migrate: () => ({}) },
   ),
 );

@@ -415,9 +415,9 @@ export const useSettingsStore = create<SettingsStore>()(
         number_format: 'comma',
       },
       menuPermissions: {
-        admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/evaluation', '/workflows', '/issues', '/audit-log', '/settings'],
-        hr_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/evaluation', '/workflows', '/issues'],
-        dept_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/approval', '/evaluation', '/issues'],
+        admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/workflows', '/issues', '/audit-log', '/settings'],
+        hr_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/workflows', '/issues'],
+        dept_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/approval', '/issues'],
         employee: ['/', '/my', '/attendance', '/leave', '/approval', '/issues'],
       },
       printTemplate: {
@@ -588,8 +588,8 @@ export const useSettingsStore = create<SettingsStore>()(
           state = {
             ...state,
             menuPermissions: {
-              admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/evaluation', '/workflows', '/audit-log', '/settings'],
-              hr_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/evaluation', '/workflows'],
+              admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/workflows', '/audit-log', '/settings'],
+              hr_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/recruitment', '/training', '/workflows'],
               dept_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/approval', '/evaluation'],
               employee: ['/', '/my', '/attendance', '/leave', '/approval'],
             },

@@ -42,11 +42,12 @@ function getHolidayBadgeVariant(type: HolidayType): 'default' | 'secondary' | 'o
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
-function HolidayCalendar({ holidays, year, month, onMonthChange }: {
+function HolidayCalendar({ holidays, year, month, onMonthChange, onDateClick }: {
   holidays: Holiday[];
   year: number;
   month: number;
   onMonthChange: (y: number, m: number) => void;
+  onDateClick: (dateStr: string) => void;
 }) {
   const firstDay = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -111,7 +112,8 @@ function HolidayCalendar({ holidays, year, month, onMonthChange }: {
           return (
             <div
               key={dateStr}
-              className={`bg-background p-1 min-h-[60px] ${isToday ? 'ring-2 ring-primary ring-inset' : ''}`}
+              className={`bg-background p-1 min-h-[60px] cursor-pointer hover:bg-muted/50 transition-colors ${isToday ? 'ring-2 ring-primary ring-inset' : ''}`}
+              onClick={() => onDateClick(dateStr)}
             >
               <div className={`text-xs font-medium mb-0.5 ${
                 isHoliday || isSunday ? 'text-red-500 font-bold' :
@@ -199,6 +201,27 @@ export default function HolidaySettings() {
     setDialogOpen(true);
   };
 
+  const handleDateClick = (dateStr: string) => {
+    // Check if holiday already exists on this date
+    const existing = holidays.find((h) => h.date === dateStr && h.is_active);
+    if (existing) {
+      // If company holiday, confirm delete; otherwise just show info
+      if (existing.type === 'company') {
+        if (window.confirm(`"${existing.name}" (${dateStr})을 삭제하시겠습니까?`)) {
+          deleteHoliday(existing.id);
+          recordChange('holiday', existing.id, existing.name, 'delete', []);
+          toast.success('공휴일이 삭제되었습니다.');
+        }
+      } else {
+        toast.info(`${dateStr}: ${existing.name} (${HOLIDAY_TYPES[existing.type]})`);
+      }
+      return;
+    }
+    // Open add dialog with date pre-filled
+    setNewHolidayForm({ date: dateStr, name: '' });
+    setDialogOpen(true);
+  };
+
   const handleAddHoliday = () => {
     if (!newHolidayForm.date) { toast.error('날짜를 입력해주세요.'); return; }
     if (!newHolidayForm.name.trim()) { toast.error('명칭을 입력해주세요.'); return; }
@@ -268,12 +291,14 @@ export default function HolidaySettings() {
               year={calYear}
               month={calMonth}
               onMonthChange={(y, m) => { setCalYear(y); setCalMonth(m); }}
+              onDateClick={handleDateClick}
             />
             <HolidayCalendar
               holidays={holidays}
               year={calMonth === 12 ? calYear + 1 : calYear}
               month={calMonth === 12 ? 1 : calMonth + 1}
               onMonthChange={(y, m) => { setCalYear(m === 1 ? y - 1 : y); setCalMonth(m === 1 ? 12 : m - 1); }}
+              onDateClick={handleDateClick}
             />
           </div>
         </CardContent>

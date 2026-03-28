@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Pencil, FileText, ChevronDown, Banknote } from 'lucide-react';
+import { Pencil, FileText, ChevronDown, Banknote, ClipboardList } from 'lucide-react';
 import Link from 'next/link';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { DEGREE_LABELS } from '@/lib/constants/positions';
@@ -60,6 +60,12 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">사원 상세</h1>
         <div className="flex items-center gap-2">
+          <Link href={`/employees/${id}/record-card`}>
+            <Button variant="outline">
+              <ClipboardList className="h-4 w-4 mr-2" />
+              인사기록카드
+            </Button>
+          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">

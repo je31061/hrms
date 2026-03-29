@@ -284,11 +284,13 @@ export interface Employee {
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
   emergency_contact_relation: string | null;
+  workplace_id: string | null;
   created_at: string;
   updated_at: string;
   department?: Department;
   position_rank?: PositionRank;
   position_title?: PositionTitle;
+  workplace?: Workplace;
 }
 
 export interface CareerHistory {
@@ -398,6 +400,23 @@ export interface LeaveBalanceAdjustment {
   reason: string;
   adjusted_by: string;
   created_at: string;
+}
+
+export interface Workplace {
+  id: string;
+  code: string;
+  name: string;
+  business_number: string;
+  representative: string;
+  address: string;
+  tax_office: string;
+  industry_type: string;
+  business_type: string;
+  is_headquarters: boolean;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface EmployeePayrollSetting {

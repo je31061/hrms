@@ -8,6 +8,7 @@ import type {
   ApprovalTemplate,
   EvaluationCriterion,
   CondolenceLeaveRule,
+  Workplace,
   AttendanceTypeConfig,
   UserRole,
 } from '@/types';
@@ -88,6 +89,9 @@ interface SettingsState {
   };
   condolenceLeaveRules: CondolenceLeaveRule[];
 
+  // Workplaces (사업장)
+  workplaces: Workplace[];
+
   // Payroll
   payroll: {
     pay_day: number;
@@ -165,6 +169,11 @@ interface SettingsActions {
   addCondolenceRule: (rule: CondolenceLeaveRule) => void;
   updateCondolenceRule: (id: string, rule: Partial<CondolenceLeaveRule>) => void;
   deleteCondolenceRule: (id: string) => void;
+
+  // Workplaces
+  addWorkplace: (wp: Workplace) => void;
+  updateWorkplace: (id: string, data: Partial<Workplace>) => void;
+  deleteWorkplace: (id: string) => void;
 
   // Payroll
   updatePayroll: (data: Partial<SettingsState['payroll']>) => void;
@@ -323,6 +332,13 @@ const defaultAttendanceTypes: AttendanceTypeConfig[] = [
   { id: 'atype-7', code: 'other', label: '기타', is_active: true, effective_from: null, effective_to: null, requires_approval: false, requires_location: false, requires_purpose: false, counts_as_work: false, sort_order: 7, is_system: false, created_at: '', updated_at: '' },
 ];
 
+const now = new Date().toISOString();
+const defaultWorkplaces: Workplace[] = [
+  { id: 'wp-01', code: 'HQ', name: '본사 (미음산단)', business_number: '603-81-29289', representative: '이민걸, 정진택', address: '부산광역시 강서구 미음산단3로 55 (미음동)', tax_office: '부산강서세무서', industry_type: '제조업', business_type: '선박 구성 부분품', is_headquarters: true, is_active: true, sort_order: 1, created_at: now, updated_at: now },
+  { id: 'wp-02', code: 'FAC2', name: '제2공장', business_number: '603-81-29289', representative: '이민걸, 정진택', address: '부산광역시 강서구 녹산산업중로 333', tax_office: '부산강서세무서', industry_type: '제조업', business_type: '선박용 기자재', is_headquarters: false, is_active: true, sort_order: 2, created_at: now, updated_at: now },
+  { id: 'wp-03', code: 'SEOUL', name: '서울사무소', business_number: '603-81-29289', representative: '이수태', address: '서울특별시 영등포구 여의도동 28-1', tax_office: '영등포세무서', industry_type: '서비스업', business_type: '환경설비 영업', is_headquarters: false, is_active: true, sort_order: 3, created_at: now, updated_at: now },
+];
+
 // ---- Store ----
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -368,6 +384,7 @@ export const useSettingsStore = create<SettingsStore>()(
         carryover_limit: 5,
       },
       condolenceLeaveRules: defaultCondolenceRules,
+      workplaces: defaultWorkplaces,
       payroll: {
         pay_day: 25,
         national_pension_rate: 4.5,
@@ -486,6 +503,20 @@ export const useSettingsStore = create<SettingsStore>()(
       deleteCondolenceRule: (id) =>
         set((s) => ({
           condolenceLeaveRules: s.condolenceLeaveRules.filter((r) => r.id !== id),
+        })),
+
+      // Workplaces
+      addWorkplace: (wp) =>
+        set((s) => ({ workplaces: [...s.workplaces, wp] })),
+      updateWorkplace: (id, data) =>
+        set((s) => ({
+          workplaces: s.workplaces.map((wp) =>
+            wp.id === id ? { ...wp, ...data, updated_at: new Date().toISOString() } : wp
+          ),
+        })),
+      deleteWorkplace: (id) =>
+        set((s) => ({
+          workplaces: s.workplaces.filter((wp) => wp.id !== id),
         })),
 
       updatePayroll: (data) =>

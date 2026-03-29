@@ -18,6 +18,7 @@ import AttendanceTypeSettings from '@/components/settings/attendance-type-settin
 import CodeManagementSettings from '@/components/settings/code-management-settings';
 import AuditLogSettings from '@/components/settings/audit-log-settings';
 import ChangeHistorySettings from '@/components/settings/change-history-settings';
+import WorkplaceSettings from '@/components/settings/workplace-settings';
 import DepartmentSettings from '@/components/settings/department-settings';
 import PositionRankSettings from '@/components/settings/position-rank-settings';
 import PositionTitleSettings from '@/components/settings/position-title-settings';
@@ -41,6 +42,7 @@ export default function SettingsPage() {
           <TabsTrigger value="salary-grade">호봉관리</TabsTrigger>
           <TabsTrigger value="work">근무설정</TabsTrigger>
           <TabsTrigger value="leave">휴가설정</TabsTrigger>
+          <TabsTrigger value="workplace">사업장</TabsTrigger>
           <TabsTrigger value="payroll">급여설정</TabsTrigger>
           <TabsTrigger value="approval">결재설정</TabsTrigger>
           <TabsTrigger value="evaluation">평가설정</TabsTrigger>
@@ -80,6 +82,9 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="leave">
           <LeavePolicySettings />
+        </TabsContent>
+        <TabsContent value="workplace">
+          <WorkplaceSettings />
         </TabsContent>
         <TabsContent value="payroll">
           <PayrollSettings />

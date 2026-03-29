@@ -289,6 +289,16 @@ function MyPayrollDetail({ myPayrolls, baseSalary, myId }: MyPayrollDetailProps)
         </Card>
       </div>
 
+      {/* 원천징수부 버튼 */}
+      <div className="flex justify-end">
+        <Link href="/payroll/withholding-tax">
+          <Button variant="outline" size="sm">
+            <FileText className="h-4 w-4 mr-1" />
+            원천징수부 조회/출력
+          </Button>
+        </Link>
+      </div>
+
       {/* Latest payroll detail breakdown */}
       {latestPayroll && (
         <div className="grid gap-6 md:grid-cols-2">

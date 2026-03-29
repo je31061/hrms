@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calculator, FileText, CheckCircle, Trash2, DollarSign, TrendingUp, Users, BarChart3, Settings2 } from 'lucide-react';
+import { Calculator, FileText, CheckCircle, Trash2, DollarSign, TrendingUp, Users, BarChart3, Settings2, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -84,6 +84,12 @@ export default function PayrollPage() {
             <Button variant="outline">
               <BarChart3 className="h-4 w-4 mr-2" />
               대시보드
+            </Button>
+          </Link>
+          <Link href="/payroll/withholding-tax">
+            <Button variant="outline">
+              <FileText className="h-4 w-4 mr-2" />
+              원천징수부
             </Button>
           </Link>
           <Link href="/payroll/calculate">

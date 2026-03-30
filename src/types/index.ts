@@ -105,10 +105,13 @@ export type AttendanceStatus = 'normal' | 'late' | 'early_leave' | 'absent' | 'h
 export type HalfDayPeriod = 'am' | 'pm';
 export type LeaveTimePeriod = 'am_half' | 'pm_half' | 'am_quarter' | 'pm_quarter';
 
+export type AttendanceCategory = 'work' | 'leave' | 'trip' | 'special' | 'overtime' | 'absence';
+
 export interface AttendanceTypeConfig {
   id: string;
   code: string;
   label: string;
+  category: AttendanceCategory;
   is_active: boolean;
   effective_from: string | null;
   effective_to: string | null;
@@ -116,6 +119,8 @@ export interface AttendanceTypeConfig {
   requires_location: boolean;
   requires_purpose: boolean;
   counts_as_work: boolean;
+  deduct_leave: boolean;
+  default_hours: number;
   sort_order: number;
   is_system: boolean;
   created_at: string;

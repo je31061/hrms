@@ -126,6 +126,7 @@ function emp(
     bank_name: '국민은행', bank_account: `***-****-${idNum}`,
     profile_image_url: null,
     emergency_contact_name: null, emergency_contact_phone: null, emergency_contact_relation: null,
+    workplace_id: null,
     created_at: '2020-01-01', updated_at: '2020-01-01',
     ...extra,
   };

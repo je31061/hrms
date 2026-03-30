@@ -46,8 +46,10 @@ export default function AttendanceTypeSettings() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingType, setEditingType] = useState<AttendanceTypeConfig | null>(null);
   const [form, setForm] = useState({
-    code: '', label: '', requires_approval: false, requires_location: false,
-    requires_purpose: false, counts_as_work: true, effective_from: '', effective_to: '',
+    code: '', label: '', category: 'work' as import('@/types').AttendanceCategory,
+    requires_approval: false, requires_location: false,
+    requires_purpose: false, counts_as_work: true, deduct_leave: false,
+    default_hours: 8, effective_from: '', effective_to: '',
   });
 
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -55,16 +57,19 @@ export default function AttendanceTypeSettings() {
 
   const handleAdd = () => {
     setEditingType(null);
-    setForm({ code: '', label: '', requires_approval: false, requires_location: false, requires_purpose: false, counts_as_work: true, effective_from: '', effective_to: '' });
+    setForm({ code: '', label: '', category: 'work', requires_approval: false, requires_location: false, requires_purpose: false, counts_as_work: true, deduct_leave: false, default_hours: 8, effective_from: '', effective_to: '' });
     setDialogOpen(true);
   };
 
   const handleEdit = (type: AttendanceTypeConfig) => {
     setEditingType(type);
     setForm({
-      code: type.code, label: type.label, requires_approval: type.requires_approval,
+      code: type.code, label: type.label, category: type.category ?? 'work',
+      requires_approval: type.requires_approval,
       requires_location: type.requires_location, requires_purpose: type.requires_purpose,
-      counts_as_work: type.counts_as_work, effective_from: type.effective_from ?? '', effective_to: type.effective_to ?? '',
+      counts_as_work: type.counts_as_work, deduct_leave: type.deduct_leave ?? false,
+      default_hours: type.default_hours ?? 8,
+      effective_from: type.effective_from ?? '', effective_to: type.effective_to ?? '',
     });
     setDialogOpen(true);
   };
@@ -107,10 +112,12 @@ export default function AttendanceTypeSettings() {
       toast.success('근태유형이 수정되었습니다.');
     } else {
       const newType: AttendanceTypeConfig = {
-        id: `atype-${Date.now()}`, code: form.code, label: form.label, is_active: true,
+        id: `atype-${Date.now()}`, code: form.code, label: form.label, category: form.category,
+        is_active: true,
         effective_from: form.effective_from || null, effective_to: form.effective_to || null,
         requires_approval: form.requires_approval, requires_location: form.requires_location,
         requires_purpose: form.requires_purpose, counts_as_work: form.counts_as_work,
+        deduct_leave: form.deduct_leave, default_hours: form.default_hours,
         sort_order: attendanceTypes.length + 1, is_system: false, created_at: now, updated_at: now,
       };
       addAttendanceType(newType);

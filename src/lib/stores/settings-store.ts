@@ -483,8 +483,8 @@ export const useSettingsStore = create<SettingsStore>()(
         number_format: 'comma',
       },
       menuPermissions: {
-        admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/training', '/workflows', '/issues', '/audit-log', '/settings'],
-        hr_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/training', '/workflows', '/issues'],
+        admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/workflows', '/issues', '/audit-log', '/settings'],
+        hr_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/workflows', '/issues'],
         dept_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/approval', '/issues'],
         employee: ['/', '/my', '/attendance', '/leave', '/approval', '/issues'],
       },
@@ -670,8 +670,8 @@ export const useSettingsStore = create<SettingsStore>()(
           state = {
             ...state,
             menuPermissions: {
-              admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/training', '/workflows', '/audit-log', '/settings'],
-              hr_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/training', '/workflows'],
+              admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/workflows', '/audit-log', '/settings'],
+              hr_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/workflows'],
               dept_manager: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/approval', '/evaluation'],
               employee: ['/', '/my', '/attendance', '/leave', '/approval'],
             },

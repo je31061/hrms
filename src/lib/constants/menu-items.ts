@@ -34,7 +34,6 @@ export const ALL_MENU_ITEMS: MenuItem[] = [
   { href: '/payroll', label: '급여관리', icon: Banknote, description: '급여 계산/관리' },
   { href: '/appointments', label: '인사발령', icon: ArrowRightLeft, description: '인사발령 관리' },
   { href: '/approval', label: '전자결재', icon: FileCheck, description: '전자결재 시스템' },
-  { href: '/training', label: '교육관리', icon: GraduationCap, description: '교육/연수 관리' },
   { href: '/workflows', label: '업무프로세스', icon: ListChecks, description: '업무 워크플로우' },
   { href: '/issues', label: 'HR이슈', icon: AlertTriangle, description: 'HR 이슈 관리' },
   { href: '/audit-log', label: '감사로그', icon: ShieldAlert, description: '시스템 감사 로그' },

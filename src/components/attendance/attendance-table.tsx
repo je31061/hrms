@@ -9,7 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ATTENDANCE_STATUS, ATTENDANCE_TYPES, LEAVE_TIME_PERIODS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import type { Attendance } from '@/types';
 
 interface AttendanceTableProps {
@@ -17,6 +17,10 @@ interface AttendanceTableProps {
 }
 
 export function AttendanceTable({ records }: AttendanceTableProps) {
+  const ATTENDANCE_STATUS = useCodeMap(CODE.ATTENDANCE_STATUS);
+  const ATTENDANCE_TYPES = useCodeMap(CODE.ATTENDANCE_TYPES);
+  const LEAVE_TIME_PERIODS = useCodeMap(CODE.LEAVE_TIME_PERIODS);
+
   const statusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
       case 'normal': return 'default';
@@ -38,7 +42,7 @@ export function AttendanceTable({ records }: AttendanceTableProps) {
 
   const getTypeLabel = (code: string | undefined) => {
     if (!code) return null;
-    return ATTENDANCE_TYPES[code as keyof typeof ATTENDANCE_TYPES] ?? code;
+    return ATTENDANCE_TYPES[code] ?? code;
   };
 
   return (
@@ -74,7 +78,7 @@ export function AttendanceTable({ records }: AttendanceTableProps) {
                 ? `${record.scheduled_start}~${record.scheduled_end}`
                 : null;
               const leavePeriodLabel = record.leave_time_period
-                ? LEAVE_TIME_PERIODS[record.leave_time_period as keyof typeof LEAVE_TIME_PERIODS]
+                ? LEAVE_TIME_PERIODS[record.leave_time_period]
                 : null;
 
               return (
@@ -102,7 +106,7 @@ export function AttendanceTable({ records }: AttendanceTableProps) {
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Badge variant={statusVariant(record.status)} className="text-xs">
-                        {ATTENDANCE_STATUS[record.status as keyof typeof ATTENDANCE_STATUS] ?? record.status}
+                        {ATTENDANCE_STATUS[record.status] ?? record.status}
                       </Badge>
                       {leavePeriodLabel && (
                         <Badge variant="outline" className="text-xs">

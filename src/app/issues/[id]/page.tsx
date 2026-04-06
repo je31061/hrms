@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { useIssueStore } from '@/lib/stores/issue-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
-import { ISSUE_TYPES, ISSUE_PRIORITY, ISSUE_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { SimilarIssuesPanel } from '@/components/issues/similar-issues-panel';
 import type { IssueType, IssuePriority, IssueStatus } from '@/types';
 
@@ -35,6 +35,9 @@ const statusVariant = (s: string): 'default' | 'secondary' | 'destructive' | 'ou
 };
 
 export default function IssueDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const ISSUE_TYPES = useCodeMap(CODE.ISSUE_TYPES);
+  const ISSUE_PRIORITY = useCodeMap(CODE.ISSUE_PRIORITY);
+  const ISSUE_STATUS = useCodeMap(CODE.ISSUE_STATUS);
   const { id } = use(params);
   const router = useRouter();
   const issue = useIssueStore((s) => s.getIssueById(id));

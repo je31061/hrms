@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { EMPLOYMENT_TYPES, GENDER_LABELS } from '@/lib/constants/positions';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { isCurrentlyEffective } from '@/lib/utils/effective-status';
 import type { Employee, PositionRank, PositionTitle, Department } from '@/types';
 
@@ -60,6 +60,9 @@ export function EmployeeForm({
   positionTitles,
   onSubmit,
 }: EmployeeFormProps) {
+  const EMPLOYMENT_TYPES = useCodeMap(CODE.EMPLOYMENT_TYPES);
+  const GENDER_LABELS = useCodeMap(CODE.GENDER_LABELS);
+
   const {
     register,
     handleSubmit,

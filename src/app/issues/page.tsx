@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, AlertTriangle, Clock, CheckCircle, AlertOctagon } from 'lucide-react';
 import { useIssueStore } from '@/lib/stores/issue-store';
-import { ISSUE_TYPES, ISSUE_PRIORITY, ISSUE_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import type { IssueType, IssuePriority, IssueStatus } from '@/types';
 
 const priorityBorderColor: Record<string, string> = {
@@ -39,6 +39,9 @@ const statusVariant = (s: string): 'default' | 'secondary' | 'destructive' | 'ou
 };
 
 export default function IssuesPage() {
+  const ISSUE_TYPES = useCodeMap(CODE.ISSUE_TYPES);
+  const ISSUE_PRIORITY = useCodeMap(CODE.ISSUE_PRIORITY);
+  const ISSUE_STATUS = useCodeMap(CODE.ISSUE_STATUS);
   const issues = useIssueStore((s) => s.issues);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');

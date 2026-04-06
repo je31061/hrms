@@ -15,11 +15,12 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { useWorkflowStore, type WorkflowTemplate } from '@/lib/stores/workflow-store';
-import { WORKFLOW_TYPE } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { toast } from 'sonner';
 import WorkflowTemplateEditor from './workflow-template-editor';
 
 export default function WorkflowTemplateSettings() {
+  const WORKFLOW_TYPE = useCodeMap(CODE.WORKFLOW_TYPE);
   const templates = useWorkflowStore((s) => s.templates);
   const addTemplate = useWorkflowStore((s) => s.addTemplate);
   const updateTemplate = useWorkflowStore((s) => s.updateTemplate);

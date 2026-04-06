@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSettingsStore } from '@/lib/stores/settings-store';
 import type { WorkSchedule } from '@/types';
-import { WORK_SCHEDULE_TYPES } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,8 @@ import EffectiveStatusBadge from '@/components/shared/effective-status-badge';
 import ChangeHistoryDialog from '@/components/shared/change-history-dialog';
 
 export default function WorkScheduleSettings() {
+  const WORK_SCHEDULE_TYPES = useCodeMap(CODE.WORK_SCHEDULE_TYPES);
+
   const work = useSettingsStore((s) => s.work);
   const workSchedules = useSettingsStore((s) => s.workSchedules);
   const updateWork = useSettingsStore((s) => s.updateWork);

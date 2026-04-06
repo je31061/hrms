@@ -12,10 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { useIssueStore } from '@/lib/stores/issue-store';
 import { SimilarIssuesPanel } from '@/components/issues/similar-issues-panel';
-import { ISSUE_TYPES, ISSUE_PRIORITY } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import type { IssueType, IssuePriority } from '@/types';
 
 export default function NewIssuePage() {
+  const ISSUE_TYPES = useCodeMap(CODE.ISSUE_TYPES);
+  const ISSUE_PRIORITY = useCodeMap(CODE.ISSUE_PRIORITY);
   const router = useRouter();
   const addIssue = useIssueStore((s) => s.addIssue);
 

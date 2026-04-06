@@ -5,7 +5,7 @@ import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { usePayrollStore } from '@/lib/stores/payroll-store';
 import { useSettingsStore } from '@/lib/stores/settings-store';
 import { demoEmployees } from '@/lib/stores/leave-store';
-import { PAYROLL_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,8 @@ import Link from 'next/link';
 const fmtWon = (n: number) => new Intl.NumberFormat('ko-KR').format(n) + '원';
 
 export default function PayslipPage({ params }: { params: Promise<{ id: string }> }) {
+  const PAYROLL_STATUS = useCodeMap(CODE.PAYROLL_STATUS);
+
   const { id } = use(params);
   const savedPayrolls = usePayrollStore((s) => s.savedPayrolls);
   const payroll = savedPayrolls.find((p) => p.id === id);
@@ -69,7 +71,7 @@ export default function PayslipPage({ params }: { params: Promise<{ id: string }
             variant={payroll.status === 'paid' ? 'default' : payroll.status === 'confirmed' ? 'secondary' : 'outline'}
             className="mt-1 no-print"
           >
-            {PAYROLL_STATUS[payroll.status as keyof typeof PAYROLL_STATUS]}
+            {PAYROLL_STATUS[payroll.status] ?? payroll.status}
           </Badge>
         </CardHeader>
         <CardContent className="pt-6 space-y-6">

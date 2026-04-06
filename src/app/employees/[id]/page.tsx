@@ -17,10 +17,11 @@ import {
 import { Pencil, FileText, ChevronDown, Banknote, ClipboardList } from 'lucide-react';
 import Link from 'next/link';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
-import { DEGREE_LABELS } from '@/lib/constants/positions';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import EmployeePayrollTab from '@/components/employee/employee-payroll-tab';
 
 export default function EmployeeDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const DEGREE_LABELS = useCodeMap(CODE.DEGREE_LABELS);
   const { id } = use(params);
   const employees = useEmployeeStore((s) => s.employees);
   const departments = useEmployeeStore((s) => s.departments);

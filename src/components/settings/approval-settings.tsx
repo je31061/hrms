@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useSettingsStore } from '@/lib/stores/settings-store';
-import { APPROVAL_DOCUMENT_TYPES } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import type { ApprovalTemplate } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -57,6 +57,7 @@ const emptyForm: TemplateFormData = {
 };
 
 export default function ApprovalSettings() {
+  const APPROVAL_DOCUMENT_TYPES = useCodeMap(CODE.APPROVAL_DOCUMENT_TYPES);
   const approvalTemplates = useSettingsStore((s) => s.approvalTemplates);
   const addApprovalTemplate = useSettingsStore((s) => s.addApprovalTemplate);
   const updateApprovalTemplate = useSettingsStore((s) => s.updateApprovalTemplate);

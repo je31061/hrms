@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { useLeaveStore, demoEmployees } from '@/lib/stores/leave-store';
 import { usePendingRequests } from '@/lib/hooks/use-leave';
-import { LEAVE_REQUEST_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import EmployeeLeaveDetail from '@/components/leave/employee-leave-detail';
 import LeaveTypeManagement from '@/components/leave/leave-type-management';
 import BulkGrantDialog from '@/components/leave/bulk-grant-dialog';
@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function LeaveAdminPage() {
+  const LEAVE_REQUEST_STATUS = useCodeMap(CODE.LEAVE_REQUEST_STATUS);
   const leaveTypes = useLeaveStore((s) => s.leaveTypes);
   const leaveBalances = useLeaveStore((s) => s.leaveBalances);
   const approveLeaveRequest = useLeaveStore((s) => s.approveLeaveRequest);

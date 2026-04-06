@@ -1,3 +1,5 @@
+'use client';
+
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { StatsCard } from '@/components/dashboard/stats-card';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Calendar, Users, ClipboardList, FileCheck, FilePen } from 'lucide-react';
 import Link from 'next/link';
-import { EVALUATION_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 
 const periods = [
   { id: '1', name: '2026년 상반기 평가', year: 2026, half: 'H1', startDate: '2026-06-01', endDate: '2026-06-30', status: 'draft', evaluations: 0, totalTarget: 127 },
@@ -29,6 +31,7 @@ const evalBorderColor: Record<string, string> = {
 };
 
 export default function EvaluationPage() {
+  const EVALUATION_STATUS = useCodeMap(CODE.EVALUATION_STATUS);
   const completedCount = periods.filter((p) => p.status === 'completed').length;
   const draftCount = periods.filter((p) => p.status === 'draft').length;
   const totalTarget = periods.reduce((s, p) => s + p.totalTarget, 0);
@@ -62,7 +65,7 @@ export default function EvaluationPage() {
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold text-lg">{period.name}</h3>
                         <Badge variant={statusVariant(period.status)} className="text-xs">
-                          {EVALUATION_STATUS[period.status as keyof typeof EVALUATION_STATUS] ?? period.status}
+                          {EVALUATION_STATUS[period.status] ?? period.status}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">

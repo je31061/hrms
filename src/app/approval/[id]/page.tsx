@@ -7,12 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { ApprovalFlow } from '@/components/approval/approval-flow';
 import { ApprovalActionForm } from '@/components/approval/approval-form';
 import { Separator } from '@/components/ui/separator';
-import { APPROVAL_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { useApprovalStore } from '@/lib/stores/approval-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
 
 export default function ApprovalDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const APPROVAL_STATUS = useCodeMap(CODE.APPROVAL_STATUS);
   const { id } = use(params);
 
   const approvals = useApprovalStore((s) => s.approvals);
@@ -60,7 +61,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
   }
 
   const requester = findEmployee(approval.requester_id);
-  const statusLabel = APPROVAL_STATUS[approval.status as keyof typeof APPROVAL_STATUS] ?? approval.status;
+  const statusLabel = APPROVAL_STATUS[approval.status] ?? approval.status;
 
   const typeLabels: Record<string, string> = {
     leave: '휴가', appointment: '인사발령', expense: '경비', general: '일반',

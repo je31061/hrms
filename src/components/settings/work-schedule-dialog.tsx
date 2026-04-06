@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { WorkSchedule, WorkScheduleType } from '@/types';
-import { WORK_SCHEDULE_TYPES } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import {
   Dialog,
   DialogContent,
@@ -73,6 +73,7 @@ export default function WorkScheduleDialog({
   schedule,
   onSave,
 }: WorkScheduleDialogProps) {
+  const WORK_SCHEDULE_TYPES = useCodeMap(CODE.WORK_SCHEDULE_TYPES);
   const [form, setForm] = useState<FormState>(defaultForm);
 
   useEffect(() => {

@@ -7,16 +7,10 @@ import { usePayrollStore } from '@/lib/stores/payroll-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { useAttendanceStore } from '@/lib/stores/attendance-store';
 import { useAppointmentStore } from '@/lib/stores/appointment-store';
+import { useApprovalStore } from '@/lib/stores/approval-store';
 import { useSettingsStore } from '@/lib/stores/settings-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
-import {
-  LEAVE_REQUEST_STATUS,
-  PAYROLL_STATUS,
-  APPOINTMENT_TYPES,
-  ATTENDANCE_STATUS,
-  TRAINING_STATUS,
-  LEAVE_TIME_PERIODS,
-} from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -67,6 +61,7 @@ import {
   DollarSign,
   TrendingDown,
   TrendingUp,
+  FileCheck,
 } from 'lucide-react';
 import {
   BarChart,
@@ -206,6 +201,7 @@ interface MyPayrollDetailProps {
 function MyPayrollDetail({ myPayrolls, baseSalary, myId }: MyPayrollDetailProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const payroll = useSettingsStore((s) => s.payroll);
+  const PAYROLL_STATUS = useCodeMap(CODE.PAYROLL_STATUS);
 
   const latestPayroll = myPayrolls.length > 0 ? myPayrolls[0] : null;
   const latestEarnings = latestPayroll?.items.filter((i) => i.category === 'earning') ?? [];
@@ -561,6 +557,14 @@ function MyPayrollDetail({ myPayrolls, baseSalary, myId }: MyPayrollDetailProps)
 // ---------------------------------------------------------------------------
 
 export default function MyPage() {
+  const LEAVE_REQUEST_STATUS = useCodeMap(CODE.LEAVE_REQUEST_STATUS);
+  const PAYROLL_STATUS = useCodeMap(CODE.PAYROLL_STATUS);
+  const APPOINTMENT_TYPES = useCodeMap(CODE.APPOINTMENT_TYPES);
+  const ATTENDANCE_STATUS = useCodeMap(CODE.ATTENDANCE_STATUS);
+  const TRAINING_STATUS = useCodeMap(CODE.TRAINING_STATUS);
+  const LEAVE_TIME_PERIODS = useCodeMap(CODE.LEAVE_TIME_PERIODS);
+  const APPROVAL_STATUS = useCodeMap(CODE.APPROVAL_STATUS);
+
   const session = useAuthStore((s) => s.session);
   const MY_ID = session?.employee_id ?? 'e022';
 
@@ -594,6 +598,9 @@ export default function MyPage() {
 
   // Appointment store
   const appointments = useAppointmentStore((s) => s.appointments);
+
+  // Approval store
+  const approvals = useApprovalStore((s) => s.approvals);
 
   // Local state
   const [selectedStart, setSelectedStart] = useState(work.default_start_time);
@@ -668,6 +675,25 @@ export default function MyPage() {
       .slice(0, 10),
     [attendanceRecords, MY_ID],
   );
+
+  const myApprovals = useMemo(
+    () => approvals
+      .filter((a) => a.requester_id === MY_ID || a.lines?.some((l) => l.approver_id === MY_ID))
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, 15),
+    [approvals, MY_ID],
+  );
+
+  const approvalSummary = useMemo(() => {
+    const myRequested = approvals.filter((a) => a.requester_id === MY_ID);
+    const pending = myRequested.filter((a) => a.status === 'pending' || a.status === 'in_progress').length;
+    const approved = myRequested.filter((a) => a.status === 'approved').length;
+    const rejected = myRequested.filter((a) => a.status === 'rejected').length;
+    const toApprove = approvals.filter((a) =>
+      a.lines?.some((l) => l.approver_id === MY_ID && l.status === 'pending'),
+    ).length;
+    return { pending, approved, rejected, toApprove };
+  }, [approvals, MY_ID]);
 
   const attendanceSummary = useMemo(() => {
     const total = myAttendance.length;
@@ -814,6 +840,10 @@ export default function MyPage() {
           <TabsTrigger value="payroll" className="gap-1">
             <Banknote className="h-3.5 w-3.5" />
             급여
+          </TabsTrigger>
+          <TabsTrigger value="approval" className="gap-1">
+            <FileCheck className="h-3.5 w-3.5" />
+            전자결재
           </TabsTrigger>
           <TabsTrigger value="training" className="gap-1">
             <GraduationCap className="h-3.5 w-3.5" />
@@ -1315,6 +1345,94 @@ export default function MyPage() {
                         </TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        {/* ============================================================== */}
+        {/* Tab: 전자결재 현황                                              */}
+        {/* ============================================================== */}
+        <TabsContent value="approval">
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-4 mb-6">
+            {[
+              { label: '결재 대기', value: approvalSummary.toApprove, color: 'bg-accent-amber-subtle text-accent-amber' },
+              { label: '내 요청 진행중', value: approvalSummary.pending, color: 'bg-accent-blue-subtle text-accent-blue' },
+              { label: '승인 완료', value: approvalSummary.approved, color: 'bg-accent-green-subtle text-accent-green' },
+              { label: '반려', value: approvalSummary.rejected, color: 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400' },
+            ].map(({ label, value, color }) => (
+              <Card key={label}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-muted-foreground">{label}</p>
+                    <div className={`p-1.5 rounded-lg ${color}`}>
+                      <FileCheck className="h-3.5 w-3.5" />
+                    </div>
+                  </div>
+                  <p className="text-2xl font-bold">{value}건</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">결재 내역</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>제목</TableHead>
+                      <TableHead>문서유형</TableHead>
+                      <TableHead>신청일</TableHead>
+                      <TableHead>상태</TableHead>
+                      <TableHead>역할</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {myApprovals.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">결재 내역이 없습니다.</TableCell>
+                      </TableRow>
+                    ) : myApprovals.map((a) => {
+                      const isRequester = a.requester_id === MY_ID;
+                      const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+                        approved: 'default',
+                        pending: 'outline',
+                        in_progress: 'secondary',
+                        rejected: 'destructive',
+                        cancelled: 'outline',
+                      };
+                      return (
+                        <TableRow key={a.id}>
+                          <TableCell className="font-medium">{a.title}</TableCell>
+                          <TableCell className="text-sm">{a.type}</TableCell>
+                          <TableCell className="text-sm">{a.created_at.split('T')[0]}</TableCell>
+                          <TableCell>
+                            <Badge variant={statusVariant[a.status] ?? 'outline'} className="text-xs">
+                              {APPROVAL_STATUS[a.status as keyof typeof APPROVAL_STATUS] ?? a.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {isRequester ? '신청' : '결재'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Link href={`/approval/${a.id}`}>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs">
+                                <ArrowRight className="h-3.5 w-3.5 mr-1" />
+                                보기
+                              </Button>
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

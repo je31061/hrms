@@ -10,11 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { APPOINTMENT_TYPES } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { useAppointmentStore } from '@/lib/stores/appointment-store';
 
 export default function NewAppointmentPage() {
+  const APPOINTMENT_TYPES = useCodeMap(CODE.APPOINTMENT_TYPES);
   const router = useRouter();
   const employees = useEmployeeStore((s) => s.employees);
   const depts = useEmployeeStore((s) => s.departments);

@@ -4,7 +4,7 @@ import { useState, useMemo, Fragment } from 'react';
 import { usePayrollStore, MONTHLY_WORK_HOURS } from '@/lib/stores/payroll-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { useSettingsStore } from '@/lib/stores/settings-store';
-import { PAYROLL_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { useChangeHistory } from '@/lib/hooks/use-change-history';
 import { useChangeHistoryStore } from '@/lib/stores/change-history-store';
 import ChangeHistoryDialog from '@/components/shared/change-history-dialog';
@@ -54,6 +54,8 @@ interface EmployeePayrollTabProps {
 }
 
 export default function EmployeePayrollTab({ employee }: EmployeePayrollTabProps) {
+  const PAYROLL_STATUS = useCodeMap(CODE.PAYROLL_STATUS);
+
   const savedPayrolls = usePayrollStore((s) => s.savedPayrolls);
   const employeePayrollSettings = usePayrollStore((s) => s.employeePayrollSettings);
   const addEmployeePayrollSetting = usePayrollStore((s) => s.addEmployeePayrollSetting);
@@ -546,7 +548,7 @@ export default function EmployeePayrollTab({ employee }: EmployeePayrollTabProps
                         <TableCell className="text-right text-sm font-mono font-bold">{fmtWon(p.net_pay)}</TableCell>
                         <TableCell>
                           <Badge variant={p.status === 'paid' ? 'default' : p.status === 'confirmed' ? 'secondary' : 'outline'} className="text-xs">
-                            {PAYROLL_STATUS[p.status as keyof typeof PAYROLL_STATUS] ?? p.status}
+                            {PAYROLL_STATUS[p.status] ?? p.status}
                           </Badge>
                         </TableCell>
                         <TableCell>

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { useLeaveStore, demoEmployees } from '@/lib/stores/leave-store';
 import { useEmployeeLeave } from '@/lib/hooks/use-leave';
-import { LEAVE_REQUEST_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import LeaveRequestForm from '@/components/leave/leave-request-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,6 +19,7 @@ import Link from 'next/link';
 const CURRENT_EMPLOYEE_ID = 'e022'; // 권대리 (데모용)
 
 export default function LeavePage() {
+  const LEAVE_REQUEST_STATUS = useCodeMap(CODE.LEAVE_REQUEST_STATUS);
   const [open, setOpen] = useState(false);
   const leaveTypes = useLeaveStore((s) => s.leaveTypes);
   const cancelLeaveRequest = useLeaveStore((s) => s.cancelLeaveRequest);
@@ -159,7 +160,7 @@ export default function LeavePage() {
                         <TableCell className="text-sm">{req.reason}</TableCell>
                         <TableCell>
                           <Badge variant={statusVariant(req.status)} className="text-xs">
-                            {LEAVE_REQUEST_STATUS[req.status as keyof typeof LEAVE_REQUEST_STATUS] ?? req.status}
+                            {LEAVE_REQUEST_STATUS[req.status] ?? req.status}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">

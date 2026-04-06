@@ -7,7 +7,7 @@ import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { useLeaveStore } from '@/lib/stores/leave-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { useSettingsStore } from '@/lib/stores/settings-store';
-import { ATTENDANCE_STATUS, LEAVE_TIME_PERIODS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -57,6 +57,9 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 
 export default function AttendanceAdminPage() {
+  const ATTENDANCE_STATUS = useCodeMap(CODE.ATTENDANCE_STATUS);
+  const LEAVE_TIME_PERIODS = useCodeMap(CODE.LEAVE_TIME_PERIODS);
+
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -402,11 +405,11 @@ export default function AttendanceAdminPage() {
                                               <TableCell>
                                                 <div className="flex gap-1">
                                                   <Badge variant={r.status === 'late' || r.status === 'absent' ? 'destructive' : r.status === 'normal' ? 'default' : 'secondary'} className="text-[10px]">
-                                                    {ATTENDANCE_STATUS[r.status as keyof typeof ATTENDANCE_STATUS] ?? r.status}
+                                                    {ATTENDANCE_STATUS[r.status] ?? r.status}
                                                   </Badge>
                                                   {r.leave_time_period && (
                                                     <Badge variant="outline" className="text-[10px]">
-                                                      {LEAVE_TIME_PERIODS[r.leave_time_period as keyof typeof LEAVE_TIME_PERIODS]}
+                                                      {LEAVE_TIME_PERIODS[r.leave_time_period] ?? r.leave_time_period}
                                                     </Badge>
                                                   )}
                                                 </div>

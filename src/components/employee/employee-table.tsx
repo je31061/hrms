@@ -16,13 +16,16 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Employee } from '@/types';
-import { EMPLOYEE_STATUS, EMPLOYMENT_TYPES } from '@/lib/constants/positions';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 
 interface EmployeeTableProps {
   employees: Employee[];
 }
 
 export function EmployeeTable({ employees }: EmployeeTableProps) {
+  const EMPLOYEE_STATUS = useCodeMap(CODE.EMPLOYEE_STATUS);
+  const EMPLOYMENT_TYPES = useCodeMap(CODE.EMPLOYMENT_TYPES);
+
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const perPage = 10;
@@ -105,13 +108,13 @@ export function EmployeeTable({ employees }: EmployeeTableProps) {
                   <TableCell>{emp.position_title?.name ?? '-'}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="text-xs">
-                      {EMPLOYMENT_TYPES[emp.employment_type as keyof typeof EMPLOYMENT_TYPES] ?? emp.employment_type}
+                      {EMPLOYMENT_TYPES[emp.employment_type] ?? emp.employment_type}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm">{emp.hire_date}</TableCell>
                   <TableCell>
                     <Badge variant={statusVariant(emp.status)} className="text-xs">
-                      {EMPLOYEE_STATUS[emp.status as keyof typeof EMPLOYEE_STATUS] ?? emp.status}
+                      {EMPLOYEE_STATUS[emp.status] ?? emp.status}
                     </Badge>
                   </TableCell>
                 </TableRow>

@@ -1,15 +1,18 @@
+'use client';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Mail, Phone, Building2, Calendar } from 'lucide-react';
 import type { Employee } from '@/types';
-import { EMPLOYEE_STATUS } from '@/lib/constants/positions';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 
 interface EmployeeCardProps {
   employee: Employee;
 }
 
 export function EmployeeCard({ employee }: EmployeeCardProps) {
+  const EMPLOYEE_STATUS = useCodeMap(CODE.EMPLOYEE_STATUS);
   const statusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
       case 'active': return 'default';

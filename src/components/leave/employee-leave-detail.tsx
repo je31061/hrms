@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useLeaveStore, demoEmployees } from '@/lib/stores/leave-store';
 import { useEmployeeLeave } from '@/lib/hooks/use-leave';
 import { differenceInYears } from 'date-fns';
-import { LEAVE_REQUEST_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -36,6 +36,7 @@ export default function EmployeeLeaveDetail({
   open,
   onOpenChange,
 }: EmployeeLeaveDetailProps) {
+  const LEAVE_REQUEST_STATUS = useCodeMap(CODE.LEAVE_REQUEST_STATUS);
   const employee = demoEmployees.find((e) => e.id === employeeId);
   const { balances, requests } = useEmployeeLeave(employeeId);
   const leaveTypes = useLeaveStore((s) => s.leaveTypes);
@@ -208,7 +209,7 @@ export default function EmployeeLeaveDetail({
                         <TableCell className="text-sm">{req.reason}</TableCell>
                         <TableCell>
                           <Badge variant={statusVariant(req.status)} className="text-xs">
-                            {LEAVE_REQUEST_STATUS[req.status as keyof typeof LEAVE_REQUEST_STATUS]}
+                            {LEAVE_REQUEST_STATUS[req.status] ?? req.status}
                           </Badge>
                         </TableCell>
                       </TableRow>

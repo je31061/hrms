@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useIssueStore } from '@/lib/stores/issue-store';
 import { findSimilarTexts } from '@/lib/utils/text-similarity';
-import { ISSUE_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import type { HrIssue, IssueStatus } from '@/types';
 
 interface SimilarIssuesPanelProps {
@@ -17,6 +17,7 @@ interface SimilarIssuesPanelProps {
 }
 
 export function SimilarIssuesPanel({ title, description, excludeId }: SimilarIssuesPanelProps) {
+  const ISSUE_STATUS = useCodeMap(CODE.ISSUE_STATUS);
   const issues = useIssueStore((s) => s.issues);
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const queryText = `${title} ${description}`.trim();

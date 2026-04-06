@@ -23,11 +23,12 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Plus } from 'lucide-react';
 import { useWorkflowStore } from '@/lib/stores/workflow-store';
-import { WORKFLOW_TYPE } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import WorkflowProgressCard from '@/components/workflow/workflow-progress-card';
 import { toast } from 'sonner';
 
 export default function WorkflowsPage() {
+  const WORKFLOW_TYPE = useCodeMap(CODE.WORKFLOW_TYPE);
   const instances = useWorkflowStore((s) => s.instances);
   const templates = useWorkflowStore((s) => s.templates);
   const createInstance = useWorkflowStore((s) => s.createInstance);

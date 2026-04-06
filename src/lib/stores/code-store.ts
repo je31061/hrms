@@ -150,6 +150,44 @@ const seedDefinitions = [
   buildGroup('ATTENDANCE_TYPES', '근태유형', '근태 유형 코드 (출장/외근/재택 등)', 24, {
     office: '사무실 출근', business_trip: '출장', field_work: '외근', remote: '재택근무', training: '교육/연수', dispatch: '파견', other: '기타',
   }),
+  // --- codes.ts에만 있던 누락 그룹 추가 ---
+  buildGroup('LEAVE_TIME_PERIODS', '휴가시간구분', '반차/반반차 시간 구분 코드', 25, {
+    am_half: '오전반차', pm_half: '오후반차', am_quarter: '오전반반차', pm_quarter: '오후반반차',
+  }),
+  buildGroup('ATTENDANCE_CATEGORIES', '근태카테고리', '근태 유형 대분류 코드', 26, {
+    work: '근무', leave: '휴���/휴직', trip: '출장', special: '특수/의무', overtime: '연장근로', absence: '근태이상',
+  }),
+  buildGroup('CERTIFICATE_TYPES', '증명서종류', '증명서 발급 유형 코드', 27, {
+    employment: '재직증명서', career: '경력증명서', retirement: '퇴직증명서',
+  }),
+  buildGroup('EVAL_GRADES', '평가등급', '인사평가 등급 코드', 28, {
+    S: 'S', A: 'A', B: 'B', C: 'C', D: 'D',
+  }),
+  // --- 신규 페이지용 코드 그룹 ---
+  buildGroup('CONTRACT_STATUS', '계약상태', '전자계약 상태 코드', 29, {
+    draft: '작성중', pending_sign: '서명대기', signed: '서명완료', expired: '만료', cancelled: '취소',
+  }),
+  buildGroup('CONTRACT_TYPES', '계약유형', '전자계약 유형 코드', 30, {
+    employment: '근로계약서', salary: '연봉계약서', nda: '비밀유지계약서', non_compete: '겸업금지계약서',
+  }),
+  buildGroup('ISSUE_TYPES', 'HR이슈유형', 'HR 이슈 유형 코드', 31, {
+    grievance: '직원 고충', safety: '안전 보고', policy_violation: '정책 위반', payroll_dispute: '급여 이의', harassment: '괴롭힘 신고', other: '기타',
+  }),
+  buildGroup('ISSUE_PRIORITY', 'HR이슈우선순위', 'HR 이슈 우선순위 코드', 32, {
+    low: '낮음', medium: '보통', high: '높음', critical: '긴급',
+  }),
+  buildGroup('ISSUE_STATUS', 'HR이슈상태', 'HR 이슈 상태 코드', 33, {
+    open: '접수', in_progress: '처리중', under_review: '검토중', resolved: '해결', closed: '종결',
+  }),
+  buildGroup('INSURANCE_TYPES', '4대보험', '4대보험 유형 코드', 34, {
+    national_pension: '국민연금', health_insurance: '건강보험', long_term_care: '장기요양보험', employment_insurance: '고용보험',
+  }),
+  buildGroup('YEAR_END_TAX_STATUS', '연말정산상태', '연말정산 처리 상태 코드', 35, {
+    not_submitted: '미제출', reviewing: '검토중', completed: '완료',
+  }),
+  buildGroup('SEVERANCE_STATUS', '퇴직금적립상태', '퇴직금 적립 상태 코드', 36, {
+    funded: '적립완료', funding: '적립중', not_funded: '미적립',
+  }),
   // === 파나시아 인사코드 (HU 시리즈) ===
   buildGroup('HU024', '사원구분', '정규, 수습, 실습, 아르바이트 등', 30, {
     '1': '정규사원', '2': '수습사원', '3': '실습생', '4': '아르바이트', '5': '계약직', '6': '파견직', '7': '임원',

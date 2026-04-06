@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSettingsStore } from '@/lib/stores/settings-store';
 import type { CondolenceLeaveRule } from '@/types';
-import { UNUSED_LEAVE_POLICIES } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +37,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function LeavePolicySettings() {
+  const UNUSED_LEAVE_POLICIES = useCodeMap(CODE.UNUSED_LEAVE_POLICIES);
   const leave = useSettingsStore((s) => s.leave);
   const condolenceLeaveRules = useSettingsStore((s) => s.condolenceLeaveRules);
   const updateLeave = useSettingsStore((s) => s.updateLeave);

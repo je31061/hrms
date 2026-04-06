@@ -7,7 +7,7 @@ import { useSettingsStore } from '@/lib/stores/settings-store';
 import { usePayrollStore, MONTHLY_WORK_HOURS } from '@/lib/stores/payroll-store';
 import { useLeaveStore } from '@/lib/stores/leave-store';
 import { useAppointmentStore } from '@/lib/stores/appointment-store';
-import { DEGREE_LABELS } from '@/lib/constants/positions';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +50,7 @@ const empTypeLabel = (t: string) => {
 };
 
 export default function RecordCardPage({ params }: { params: Promise<{ id: string }> }) {
+  const DEGREE_LABELS = useCodeMap(CODE.DEGREE_LABELS);
   const { id } = use(params);
   const employees = useEmployeeStore((s) => s.employees);
   const departments = useEmployeeStore((s) => s.departments);

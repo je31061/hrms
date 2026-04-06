@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Fuse, { type FuseResultMatch } from 'fuse.js';
-import { Users, FileText, AlertTriangle, Menu } from 'lucide-react';
+import { Users, FileText, Menu } from 'lucide-react';
 import {
   CommandDialog,
   CommandInput,
@@ -14,10 +14,7 @@ import {
 } from '@/components/ui/command';
 import { HighlightMatches } from '@/lib/utils/highlight-matches';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
-import { useIssueStore } from '@/lib/stores/issue-store';
 import { ALL_MENU_ITEMS } from '@/lib/constants/menu-items';
-import { ISSUE_STATUS } from '@/lib/constants/codes';
-import type { IssueStatus } from '@/types';
 
 // Shared open state so header can trigger it
 let externalSetOpen: ((v: boolean) => void) | null = null;
@@ -27,7 +24,7 @@ export function openCommandPalette() {
 
 interface SearchEntry {
   id: string;
-  category: 'employee' | 'menu' | 'issue';
+  category: 'employee' | 'menu';
   title: string;
   subtitle: string;
   href: string;
@@ -59,8 +56,6 @@ export function CommandPalette() {
   const employees = useEmployeeStore((s) => s.employees);
   const departments = useEmployeeStore((s) => s.departments);
   const positionRanks = useEmployeeStore((s) => s.positionRanks);
-  const issues = useIssueStore((s) => s.issues);
-
   // Build searchable entries
   const entries = useMemo<SearchEntry[]>(() => {
     const result: SearchEntry[] = [];
@@ -90,19 +85,8 @@ export function CommandPalette() {
       });
     }
 
-    // Issues
-    for (const issue of issues) {
-      result.push({
-        id: `issue-${issue.id}`,
-        category: 'issue',
-        title: issue.title,
-        subtitle: ISSUE_STATUS[issue.status as IssueStatus] ?? issue.status,
-        href: `/issues/${issue.id}`,
-      });
-    }
-
     return result;
-  }, [employees, departments, positionRanks, issues]);
+  }, [employees, departments, positionRanks]);
 
   // Fuse instance
   const fuse = useMemo(
@@ -124,8 +108,6 @@ export function CommandPalette() {
 
   const employeeResults = results.filter((r) => r.item.category === 'employee');
   const menuResults = results.filter((r) => r.item.category === 'menu');
-  const issueResults = results.filter((r) => r.item.category === 'issue');
-
   const handleSelect = useCallback(
     (href: string) => {
       setOpen(false);
@@ -139,7 +121,6 @@ export function CommandPalette() {
     switch (category) {
       case 'employee': return <Users className="h-4 w-4 text-muted-foreground" />;
       case 'menu': return <Menu className="h-4 w-4 text-muted-foreground" />;
-      case 'issue': return <AlertTriangle className="h-4 w-4 text-muted-foreground" />;
       default: return <FileText className="h-4 w-4 text-muted-foreground" />;
     }
   };
@@ -186,12 +167,12 @@ export function CommandPalette() {
       open={open}
       onOpenChange={(v) => { setOpen(v); if (!v) setQuery(''); }}
       title="글로벌 검색"
-      description="직원, 메뉴, 이슈를 검색합니다"
+      description="직원, 메뉴를 검색합니다"
       shouldFilter={false}
       showCloseButton={false}
     >
       <CommandInput
-        placeholder="검색어를 입력하세요... (직원, 메뉴, 이슈)"
+        placeholder="검색어를 입력하세요... (직원, 메뉴)"
         value={query}
         onValueChange={setQuery}
       />
@@ -201,7 +182,6 @@ export function CommandPalette() {
         )}
         {renderGroup('직원', employeeResults)}
         {renderGroup('메뉴', menuResults)}
-        {renderGroup('이슈', issueResults)}
       </CommandList>
     </CommandDialog>
   );

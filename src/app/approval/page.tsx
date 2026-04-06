@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { APPROVAL_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useApprovalStore } from '@/lib/stores/approval-store';
@@ -31,6 +31,7 @@ const typeLabels: Record<string, string> = {
 };
 
 export default function ApprovalPage() {
+  const APPROVAL_STATUS = useCodeMap(CODE.APPROVAL_STATUS);
   const approvals = useApprovalStore((s) => s.approvals);
   const employees = useEmployeeStore((s) => s.employees);
   const departments = useEmployeeStore((s) => s.departments);
@@ -94,7 +95,7 @@ export default function ApprovalPage() {
                     <TableCell>{requester?.department?.name ?? '-'}</TableCell>
                     <TableCell>
                       <Badge variant={statusVariant(item.status)} className="text-xs">
-                        {APPROVAL_STATUS[item.status as keyof typeof APPROVAL_STATUS] ?? item.status}
+                        {APPROVAL_STATUS[item.status] ?? item.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{item.created_at}</TableCell>

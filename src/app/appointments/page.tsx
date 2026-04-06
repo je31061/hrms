@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText, TrendingUp, ArrowRightLeft } from 'lucide-react';
 import Link from 'next/link';
-import { APPOINTMENT_TYPES } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { useAppointmentStore } from '@/lib/stores/appointment-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 
@@ -34,6 +34,7 @@ const typeDotColor: Record<string, string> = {
 };
 
 export default function AppointmentsPage() {
+  const APPOINTMENT_TYPES = useCodeMap(CODE.APPOINTMENT_TYPES);
   const appointments = useAppointmentStore((s) => s.appointments);
   const employees = useEmployeeStore((s) => s.employees);
   const departments = useEmployeeStore((s) => s.departments);
@@ -104,7 +105,7 @@ export default function AppointmentsPage() {
                       <TableCell>
                         <Badge variant={typeVariant(a.type)} className="text-xs gap-1">
                           <span className={`inline-block h-2 w-2 rounded-full ${typeDotColor[a.type] ?? typeDotColor.other}`} />
-                          {APPOINTMENT_TYPES[a.type as keyof typeof APPOINTMENT_TYPES] ?? a.type}
+                          {APPOINTMENT_TYPES[a.type] ?? a.type}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm">

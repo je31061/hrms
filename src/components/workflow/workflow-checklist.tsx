@@ -5,11 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  WORKFLOW_ASSIGNEE_ROLES,
-  WORKFLOW_TASK_STATUS,
-  DOCUMENT_SUBMISSION_STATUS,
-} from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import type { WorkflowTaskInstance, DocumentInstance } from '@/lib/stores/workflow-store';
 import { format } from 'date-fns';
 import { FileText, Check, X } from 'lucide-react';
@@ -35,6 +31,9 @@ export default function WorkflowChecklist({
   onSubmitDocument,
   onRejectDocument,
 }: WorkflowChecklistProps) {
+  const WORKFLOW_ASSIGNEE_ROLES = useCodeMap(CODE.WORKFLOW_ASSIGNEE_ROLES);
+  const WORKFLOW_TASK_STATUS = useCodeMap(CODE.WORKFLOW_TASK_STATUS);
+  const DOCUMENT_SUBMISSION_STATUS = useCodeMap(CODE.DOCUMENT_SUBMISSION_STATUS);
   const stepTasks = tasks
     .filter((t) => t.step_index === stepIndex)
     .sort((a, b) => a.sort_order - b.sort_order);
@@ -172,6 +171,8 @@ function DocumentRow({
   onSubmit?: (taskId: string, docId: string) => void;
   onReject?: (taskId: string, docId: string, reason: string) => void;
 }) {
+  const WORKFLOW_ASSIGNEE_ROLES = useCodeMap(CODE.WORKFLOW_ASSIGNEE_ROLES);
+  const DOCUMENT_SUBMISSION_STATUS = useCodeMap(CODE.DOCUMENT_SUBMISSION_STATUS);
   const [rejectMode, setRejectMode] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 

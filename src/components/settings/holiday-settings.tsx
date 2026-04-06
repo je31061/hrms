@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useSettingsStore } from '@/lib/stores/settings-store';
-import { HOLIDAY_TYPES } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import type { Holiday, HolidayType } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -156,6 +156,8 @@ function HolidayCalendar({ holidays, year, month, onMonthChange, onDateClick }: 
 }
 
 export default function HolidaySettings() {
+  const HOLIDAY_TYPES = useCodeMap(CODE.HOLIDAY_TYPES);
+
   const holidays = useSettingsStore((s) => s.holidays);
   const holidayAutoSubstitute = useSettingsStore((s) => s.holiday_auto_substitute);
   const setHolidayAutoSubstitute = useSettingsStore((s) => s.setHolidayAutoSubstitute);

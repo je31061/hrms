@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus, Trash2, ChevronDown, ChevronRight, FileText } from 'lucide-react';
-import { WORKFLOW_TYPE, WORKFLOW_ASSIGNEE_ROLES } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import type { WorkflowType } from '@/types';
 import type {
   WorkflowTemplate,
@@ -78,6 +78,8 @@ export default function WorkflowTemplateEditor({
   template,
   onSave,
 }: WorkflowTemplateEditorProps) {
+  const WORKFLOW_TYPE = useCodeMap(CODE.WORKFLOW_TYPE);
+  const WORKFLOW_ASSIGNEE_ROLES = useCodeMap(CODE.WORKFLOW_ASSIGNEE_ROLES);
   const [form, setForm] = useState(emptyForm);
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
 

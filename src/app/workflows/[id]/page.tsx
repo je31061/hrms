@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useWorkflowStore } from '@/lib/stores/workflow-store';
-import { WORKFLOW_TYPE, WORKFLOW_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import WorkflowStepper from '@/components/workflow/workflow-stepper';
 import WorkflowChecklist from '@/components/workflow/workflow-checklist';
 import { format } from 'date-fns';
@@ -27,6 +27,8 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function WorkflowDetailPage() {
+  const WORKFLOW_TYPE = useCodeMap(CODE.WORKFLOW_TYPE);
+  const WORKFLOW_STATUS = useCodeMap(CODE.WORKFLOW_STATUS);
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;

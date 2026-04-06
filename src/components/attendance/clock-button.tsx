@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { useAttendanceStore } from '@/lib/stores/attendance-store';
 import { useSettingsStore } from '@/lib/stores/settings-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
-import { LEAVE_TIME_PERIODS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 
 function generateTimeOptions(min: string, max: string, intervalMin = 30): string[] {
   const [minH, minM] = min.split(':').map(Number);
@@ -42,6 +42,7 @@ function calcEndTime(startTime: string, workHoursTotal: number): string {
 }
 
 export function ClockButton() {
+  const LEAVE_TIME_PERIODS = useCodeMap(CODE.LEAVE_TIME_PERIODS);
   const session = useAuthStore((s) => s.session);
   const employeeId = session?.employee_id ?? 'e022';
   const clockIn = useAttendanceStore((s) => s.clockIn);

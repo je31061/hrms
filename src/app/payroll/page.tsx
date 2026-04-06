@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { usePayrollStore } from '@/lib/stores/payroll-store';
 import { demoEmployees } from '@/lib/stores/leave-store';
-import { PAYROLL_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import type { PayrollStatus } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calculator, FileText, CheckCircle, Trash2, DollarSign, TrendingUp, Users, BarChart3, Settings2, Receipt } from 'lucide-react';
+import { Calculator, FileText, CheckCircle, Trash2, DollarSign, TrendingUp, Users, BarChart3, Settings2, Receipt, Shield, FileSpreadsheet, Landmark } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -32,6 +32,7 @@ const statusVariant = (s: string): 'default' | 'secondary' | 'outline' => {
 };
 
 export default function PayrollPage() {
+  const PAYROLL_STATUS = useCodeMap(CODE.PAYROLL_STATUS);
   const savedPayrolls = usePayrollStore((s) => s.savedPayrolls);
   const updatePayrollStatus = usePayrollStore((s) => s.updatePayrollStatus);
   const deletePayroll = usePayrollStore((s) => s.deletePayroll);
@@ -90,6 +91,24 @@ export default function PayrollPage() {
             <Button variant="outline">
               <FileText className="h-4 w-4 mr-2" />
               원천징수부
+            </Button>
+          </Link>
+          <Link href="/payroll/insurance">
+            <Button variant="outline">
+              <Shield className="h-4 w-4 mr-2" />
+              4대보험
+            </Button>
+          </Link>
+          <Link href="/payroll/year-end-tax">
+            <Button variant="outline">
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              연말정산
+            </Button>
+          </Link>
+          <Link href="/payroll/severance">
+            <Button variant="outline">
+              <Landmark className="h-4 w-4 mr-2" />
+              퇴직금
             </Button>
           </Link>
           <Link href="/payroll/calculate">
@@ -201,7 +220,7 @@ export default function PayrollPage() {
                         <TableCell className="text-right font-mono text-sm font-bold">{fmtWon(p.net_pay)}</TableCell>
                         <TableCell>
                           <Badge variant={statusVariant(p.status)} className="text-xs">
-                            {PAYROLL_STATUS[p.status as keyof typeof PAYROLL_STATUS] ?? p.status}
+                            {PAYROLL_STATUS[p.status] ?? p.status}
                           </Badge>
                         </TableCell>
                         <TableCell>

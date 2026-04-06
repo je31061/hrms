@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Mail, Phone, FileText } from 'lucide-react';
-import { APPLICANT_STAGES } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { toast } from 'sonner';
 
 const posting = {
@@ -42,6 +42,7 @@ const stageVariant = (stage: string): 'default' | 'secondary' | 'destructive' | 
 const stages = ['applied', 'screening', 'interview', 'offer', 'hired', 'rejected'] as const;
 
 export default function RecruitmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const APPLICANT_STAGES = useCodeMap(CODE.APPLICANT_STAGES);
   const { id } = use(params);
 
   const stageCounts = stages.reduce((acc, s) => {

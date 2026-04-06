@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { WORKFLOW_TYPE, WORKFLOW_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import type { WorkflowInstance } from '@/lib/stores/workflow-store';
 import { format } from 'date-fns';
 import { FileText } from 'lucide-react';
@@ -14,6 +14,8 @@ interface WorkflowProgressCardProps {
 }
 
 export default function WorkflowProgressCard({ instance }: WorkflowProgressCardProps) {
+  const WORKFLOW_TYPE = useCodeMap(CODE.WORKFLOW_TYPE);
+  const WORKFLOW_STATUS = useCodeMap(CODE.WORKFLOW_STATUS);
   const totalTasks = instance.tasks.length;
   const completedTasks = instance.tasks.filter(
     (t) => t.status === 'completed' || t.status === 'skipped'

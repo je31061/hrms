@@ -1,3 +1,5 @@
+'use client';
+
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { StatsCard } from '@/components/dashboard/stats-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, Users, Calendar, Briefcase, FileText } from 'lucide-react';
 import Link from 'next/link';
-import { JOB_POSTING_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 
 const postings = [
   { id: '1', title: '프론트엔드 개발자', department: '개발1팀', rank: '대리~과장', type: '정규직', headcount: 2, applicants: 15, status: 'open', startDate: '2026-02-01', endDate: '2026-03-01' },
@@ -31,6 +33,7 @@ const borderColor: Record<string, string> = {
 };
 
 export default function RecruitmentPage() {
+  const JOB_POSTING_STATUS = useCodeMap(CODE.JOB_POSTING_STATUS);
   const openCount = postings.filter((p) => p.status === 'open').length;
   const totalApplicants = postings.reduce((s, p) => s + p.applicants, 0);
   const totalHeadcount = postings.reduce((s, p) => s + p.headcount, 0);
@@ -64,7 +67,7 @@ export default function RecruitmentPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-lg">{posting.title}</h3>
                       <Badge variant={statusVariant(posting.status)} className="text-xs">
-                        {JOB_POSTING_STATUS[posting.status as keyof typeof JOB_POSTING_STATUS] ?? posting.status}
+                        {JOB_POSTING_STATUS[posting.status] ?? posting.status}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">

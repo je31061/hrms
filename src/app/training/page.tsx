@@ -1,3 +1,5 @@
+'use client';
+
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { StatsCard } from '@/components/dashboard/stats-card';
 import { Card, CardContent } from '@/components/ui/card';
@@ -5,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, Calendar, MapPin, Users, User, GraduationCap, BookOpen, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
-import { TRAINING_STATUS } from '@/lib/constants/codes';
+import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 
 const programs = [
   { id: '1', title: '신입사원 OJT 교육', category: '직무교육', instructor: '김팀장', location: '본사 교육실', startDate: '2026-03-02', endDate: '2026-03-06', maxParticipants: 20, enrolled: 8, status: 'planned' },
@@ -31,6 +33,7 @@ const trainingBorderColor: Record<string, string> = {
 };
 
 export default function TrainingPage() {
+  const TRAINING_STATUS = useCodeMap(CODE.TRAINING_STATUS);
   const inProgressCount = programs.filter((p) => p.status === 'in_progress').length;
   const plannedCount = programs.filter((p) => p.status === 'planned').length;
   const completedCount = programs.filter((p) => p.status === 'completed').length;
@@ -63,7 +66,7 @@ export default function TrainingPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-lg">{prog.title}</h3>
                       <Badge variant={statusVariant(prog.status)} className="text-xs">
-                        {TRAINING_STATUS[prog.status as keyof typeof TRAINING_STATUS] ?? prog.status}
+                        {TRAINING_STATUS[prog.status] ?? prog.status}
                       </Badge>
                       <Badge variant="outline" className="text-xs">{prog.category}</Badge>
                     </div>

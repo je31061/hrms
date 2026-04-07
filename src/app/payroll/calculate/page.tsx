@@ -64,6 +64,9 @@ import {
   Clock,
   Moon,
   CalendarCheck,
+  Upload,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -167,6 +170,7 @@ function generateMockAttendance(empId: string, month: number, year: number): Att
 export default function PayrollCalculatePage() {
   const payrollItems = usePayrollStore((s) => s.payrollItems);
   const savePayroll = usePayrollStore((s) => s.savePayroll);
+  const updatePayrollStatus = usePayrollStore((s) => s.updatePayrollStatus);
   const employeePayrollSettings = usePayrollStore((s) => s.employeePayrollSettings);
   const attendanceRecords = useAttendanceStore((s) => s.records);
 
@@ -590,6 +594,70 @@ export default function PayrollCalculatePage() {
     toast.success(`${applied}건의 데이터가 적용되었습니다.`);
   }, [parsedPasteRows, earningRows]);
 
+  // ---- Excel file upload ----
+
+  const handleExcelFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (!text) return;
+      const lines = text.replace(/^\uFEFF/, '').trim().split('\n');
+      if (lines.length < 2) {
+        toast.error('데이터가 충분하지 않습니다.');
+        return;
+      }
+      const separator = lines[0].includes('\t') ? '\t' : ',';
+      const headers = lines[0].split(separator).map((h) => h.trim().replace(/"/g, ''));
+      let applied = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(separator).map((v) => v.trim().replace(/"/g, ''));
+        const row: Record<string, string> = {};
+        headers.forEach((h, idx) => { row[h] = values[idx] ?? ''; });
+        const empId = row['사원번호'];
+        if (!empId) continue;
+        const existing = earningRows.get(empId);
+        if (!existing) continue;
+        const updated = { ...existing };
+        if (row['식대']) updated.meal = Number(row['식대']) || updated.meal;
+        if (row['교통비']) updated.transport = Number(row['교통비']) || updated.transport;
+        if (row['직책수당']) updated.positionAllowance = Number(row['직책수당']) || updated.positionAllowance;
+        if (row['기타수당']) updated.otherPay = Number(row['기타수당']) || updated.otherPay;
+        updated.total =
+          updated.baseSalary + updated.meal + updated.transport + updated.positionAllowance +
+          updated.overtimePay + updated.nightPay + updated.holidayPay + updated.otherPay;
+        setEarningRows((prev) => new Map(prev).set(empId, updated));
+        applied++;
+      }
+      toast.success(`${applied}건의 데이터가 엑셀 파일에서 적용되었습니다.`);
+    };
+    reader.readAsText(file, 'UTF-8');
+    e.target.value = '';
+  }, [earningRows]);
+
+  // ---- 마감 (Close) / 마감해제 (Reopen) ----
+
+  const [isClosed, setIsClosed] = useState(false);
+
+  const handleClose = useCallback(() => {
+    for (const row of results) {
+      const payrollId = `sp-${row.employeeId}-${year}-${month.padStart(2, '0')}`;
+      updatePayrollStatus(payrollId, 'confirmed');
+    }
+    setIsClosed(true);
+    toast.success(`${year}년 ${month}월 급여가 마감되었습니다.`);
+  }, [results, year, month, updatePayrollStatus]);
+
+  const handleReopen = useCallback(() => {
+    for (const row of results) {
+      const payrollId = `sp-${row.employeeId}-${year}-${month.padStart(2, '0')}`;
+      updatePayrollStatus(payrollId, 'draft');
+    }
+    setIsClosed(false);
+    toast.success(`${year}년 ${month}월 급여 마감이 해제되었습니다. 재계산이 가능합니다.`);
+  }, [results, year, month, updatePayrollStatus]);
+
   // ---- Update helpers ----
 
   const updateEarningField = useCallback(
@@ -976,10 +1044,19 @@ export default function PayrollCalculatePage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">지급항목 설정 ({year}년 {month}월)</CardTitle>
-                  <Button variant="outline" size="sm" onClick={() => setExcelDialogOpen(true)}>
-                    <FileUp className="h-4 w-4 mr-2" />
-                    엑셀 업로드 (붙여넣기)
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <label className="cursor-pointer">
+                        <Upload className="h-4 w-4 mr-2" />
+                        엑셀 업로드
+                        <input type="file" accept=".csv,.tsv,.txt,.xlsx" className="hidden" onChange={handleExcelFileUpload} />
+                      </label>
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setExcelDialogOpen(true)}>
+                      <FileUp className="h-4 w-4 mr-2" />
+                      엑셀 붙여넣기
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -1265,12 +1342,27 @@ export default function PayrollCalculatePage() {
         {/* ---- Step 5: 계산 / 결과 ---- */}
         {currentStep === 5 && (
           <div className="space-y-4">
+            {isClosed && (
+              <div className="mb-4 p-4 rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Lock className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="font-semibold text-green-800 dark:text-green-200">{year}년 {month}월 급여 마감 완료</p>
+                    <p className="text-sm text-green-600 dark:text-green-400">재계산이 필요하면 마감 해제를 진행하세요.</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" className="border-orange-500 text-orange-600 hover:bg-orange-50" onClick={handleReopen}>
+                  <Unlock className="h-4 w-4 mr-2" />
+                  마감 해제
+                </Button>
+              </div>
+            )}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">계산 결과 ({year}년 {month}월)</CardTitle>
                   <div className="flex items-center gap-2">
-                    <Button onClick={calculateAll}>
+                    <Button onClick={calculateAll} disabled={isClosed}>
                       <Calculator className="h-4 w-4 mr-2" />
                       일괄 계산
                     </Button>
@@ -1335,6 +1427,7 @@ export default function PayrollCalculatePage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
+                                  disabled={isClosed}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     calculateSingle(emp.id);
@@ -1403,10 +1496,23 @@ export default function PayrollCalculatePage() {
                         <FileDown className="h-4 w-4 mr-2" />
                         엑셀 다운로드
                       </Button>
-                      <Button onClick={handleSaveAll}>
-                        <Save className="h-4 w-4 mr-2" />
-                        전체 저장
-                      </Button>
+                      {!isClosed ? (
+                        <>
+                          <Button onClick={handleSaveAll}>
+                            <Save className="h-4 w-4 mr-2" />
+                            전체 저장
+                          </Button>
+                          <Button variant="default" className="bg-green-600 hover:bg-green-700" onClick={handleClose} disabled={results.length === 0}>
+                            <Lock className="h-4 w-4 mr-2" />
+                            마감
+                          </Button>
+                        </>
+                      ) : (
+                        <Button variant="outline" className="border-orange-500 text-orange-600 hover:bg-orange-50" onClick={handleReopen}>
+                          <Unlock className="h-4 w-4 mr-2" />
+                          마감 해제
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}

@@ -72,7 +72,7 @@ const tooltipStyle = {
 
 const cursorStyle = { fill: 'var(--color-muted)', opacity: 0.5 };
 
-type ChartView = 'trend' | 'department' | 'items' | 'distribution';
+type ChartView = 'trend' | 'department' | 'items' | 'distribution' | 'monthly';
 
 export default function PayrollDashboardPage() {
   const savedPayrolls = usePayrollStore((s) => s.savedPayrolls);
@@ -221,6 +221,91 @@ export default function PayrollDashboardPage() {
       }));
   }, [filtered]);
 
+  // 5. Monthly summary table data
+  const monthlySummaryTable = useMemo(() => {
+    const map = new Map<string, {
+      key: string;
+      year: number;
+      month: number;
+      label: string;
+      empCount: number;
+      totalEarnings: number;
+      totalDeductions: number;
+      totalNetPay: number;
+      avgEarnings: number;
+      avgNetPay: number;
+      overtimePay: number;
+      nightPay: number;
+      holidayPay: number;
+      deductionRate: number;
+    }>();
+    for (const p of filtered) {
+      const key = `${p.year}-${String(p.month).padStart(2, '0')}`;
+      const entry = map.get(key) ?? {
+        key,
+        year: p.year,
+        month: p.month,
+        label: `${p.year}년 ${p.month}월`,
+        empCount: 0,
+        totalEarnings: 0,
+        totalDeductions: 0,
+        totalNetPay: 0,
+        avgEarnings: 0,
+        avgNetPay: 0,
+        overtimePay: 0,
+        nightPay: 0,
+        holidayPay: 0,
+        deductionRate: 0,
+      };
+      entry.empCount++;
+      entry.totalEarnings += p.total_earnings;
+      entry.totalDeductions += p.total_deductions;
+      entry.totalNetPay += p.net_pay;
+      for (const item of p.items) {
+        if (item.item_id === 'pi-overtime') entry.overtimePay += item.amount;
+        if (item.item_id === 'pi-night') entry.nightPay += item.amount;
+        if (item.item_id === 'pi-holiday') entry.holidayPay += item.amount;
+      }
+      map.set(key, entry);
+    }
+    const rows = Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
+    for (const r of rows) {
+      r.avgEarnings = r.empCount > 0 ? Math.round(r.totalEarnings / r.empCount) : 0;
+      r.avgNetPay = r.empCount > 0 ? Math.round(r.totalNetPay / r.empCount) : 0;
+      r.deductionRate = r.totalEarnings > 0 ? Math.round((r.totalDeductions / r.totalEarnings) * 1000) / 10 : 0;
+    }
+    return rows;
+  }, [filtered]);
+
+  // 6. Month-over-month growth rate
+  const monthlyGrowth = useMemo(() => {
+    return monthlySummaryTable.map((curr, idx) => {
+      const prev = idx > 0 ? monthlySummaryTable[idx - 1] : null;
+      const earningsGrowth = prev && prev.totalEarnings > 0
+        ? Math.round(((curr.totalEarnings - prev.totalEarnings) / prev.totalEarnings) * 1000) / 10
+        : 0;
+      const empGrowth = prev ? curr.empCount - prev.empCount : 0;
+      return {
+        label: curr.label,
+        earningsGrowth,
+        empGrowth,
+        deductionRate: curr.deductionRate,
+        avgEarnings: curr.avgEarnings,
+      };
+    });
+  }, [monthlySummaryTable]);
+
+  // 7. Overtime trend by month
+  const overtimeTrend = useMemo(() => {
+    return monthlySummaryTable.map((m) => ({
+      label: m.label,
+      연장수당: m.overtimePay,
+      야간수당: m.nightPay,
+      휴일수당: m.holidayPay,
+      합계: m.overtimePay + m.nightPay + m.holidayPay,
+    }));
+  }, [monthlySummaryTable]);
+
   return (
     <div>
       <Breadcrumb />
@@ -345,6 +430,7 @@ export default function PayrollDashboardPage() {
           { key: 'department', label: '부서별 비교', icon: BarChart3 },
           { key: 'items', label: '항목별 분석', icon: PieChartIcon },
           { key: 'distribution', label: '급여 분포', icon: BarChart3 },
+          { key: 'monthly', label: '월별 집계', icon: BarChart3 },
         ] as const).map(({ key, label, icon: Icon }) => (
           <Button
             key={key}
@@ -732,6 +818,190 @@ export default function PayrollDashboardPage() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {chartView === 'monthly' && (
+        <div className="space-y-6 mb-6">
+          {/* Monthly Summary Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">월별 급여 집계표</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-lg overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>기간</TableHead>
+                      <TableHead className="text-right">인원</TableHead>
+                      <TableHead className="text-right">총 지급액</TableHead>
+                      <TableHead className="text-right">총 공제액</TableHead>
+                      <TableHead className="text-right">총 실수령액</TableHead>
+                      <TableHead className="text-right">1인 평균 지급</TableHead>
+                      <TableHead className="text-right">1인 평균 실수령</TableHead>
+                      <TableHead className="text-right">공제율</TableHead>
+                      <TableHead className="text-right">연장수당</TableHead>
+                      <TableHead className="text-right">야간수당</TableHead>
+                      <TableHead className="text-right">휴일수당</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {monthlySummaryTable.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={11} className="text-center text-muted-foreground">데이터가 없습니다.</TableCell>
+                      </TableRow>
+                    ) : (
+                      <>
+                        {monthlySummaryTable.map((m) => (
+                          <TableRow key={m.key}>
+                            <TableCell className="font-medium">{m.label}</TableCell>
+                            <TableCell className="text-right">{m.empCount}명</TableCell>
+                            <TableCell className="text-right font-mono text-sm">{fmtM(m.totalEarnings)}</TableCell>
+                            <TableCell className="text-right font-mono text-sm text-destructive">{fmtM(m.totalDeductions)}</TableCell>
+                            <TableCell className="text-right font-mono text-sm font-bold">{fmtM(m.totalNetPay)}</TableCell>
+                            <TableCell className="text-right font-mono text-sm">{fmtWon(m.avgEarnings)}</TableCell>
+                            <TableCell className="text-right font-mono text-sm">{fmtWon(m.avgNetPay)}</TableCell>
+                            <TableCell className="text-right text-sm">
+                              <Badge variant={m.deductionRate > 20 ? 'destructive' : 'outline'} className="text-xs">
+                                {m.deductionRate}%
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-mono text-sm text-blue-600">{m.overtimePay > 0 ? fmtM(m.overtimePay) : '-'}</TableCell>
+                            <TableCell className="text-right font-mono text-sm text-purple-600">{m.nightPay > 0 ? fmtM(m.nightPay) : '-'}</TableCell>
+                            <TableCell className="text-right font-mono text-sm text-orange-600">{m.holidayPay > 0 ? fmtM(m.holidayPay) : '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                        {/* Totals row */}
+                        <TableRow className="bg-muted/50 font-bold">
+                          <TableCell>합계</TableCell>
+                          <TableCell className="text-right">{summary.empCount}명</TableCell>
+                          <TableCell className="text-right font-mono text-sm">{fmtM(summary.totalEarnings)}</TableCell>
+                          <TableCell className="text-right font-mono text-sm text-destructive">{fmtM(summary.totalDeductions)}</TableCell>
+                          <TableCell className="text-right font-mono text-sm">{fmtM(summary.totalNetPay)}</TableCell>
+                          <TableCell className="text-right font-mono text-sm">-</TableCell>
+                          <TableCell className="text-right font-mono text-sm">-</TableCell>
+                          <TableCell className="text-right text-sm">
+                            {summary.totalEarnings > 0 ? (
+                              <Badge variant="outline" className="text-xs">
+                                {(Math.round((summary.totalDeductions / summary.totalEarnings) * 1000) / 10)}%
+                              </Badge>
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm text-blue-600">{fmtM(monthlySummaryTable.reduce((s, m) => s + m.overtimePay, 0))}</TableCell>
+                          <TableCell className="text-right font-mono text-sm text-purple-600">{fmtM(monthlySummaryTable.reduce((s, m) => s + m.nightPay, 0))}</TableCell>
+                          <TableCell className="text-right font-mono text-sm text-orange-600">{fmtM(monthlySummaryTable.reduce((s, m) => s + m.holidayPay, 0))}</TableCell>
+                        </TableRow>
+                      </>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Deduction Rate Trend */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">월별 공제율 추이</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <LineChart data={monthlyGrowth} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+                      <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} unit="%" />
+                      <Tooltip contentStyle={tooltipStyle} formatter={(value) => `${value}%`} />
+                      <Line type="monotone" dataKey="deductionRate" stroke="var(--color-accent-amber)" strokeWidth={2} dot={{ r: 4 }} name="공제율" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* MoM Earnings Growth */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">인건비 전월 대비 증감률</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <BarChart data={monthlyGrowth} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+                      <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} unit="%" />
+                      <Tooltip contentStyle={tooltipStyle} formatter={(value) => `${value}%`} />
+                      <Bar dataKey="earningsGrowth" name="증감률" radius={[4, 4, 0, 0]}>
+                        {monthlyGrowth.map((entry, i) => (
+                          <Cell key={i} fill={entry.earningsGrowth >= 0 ? 'var(--color-accent-green)' : 'var(--color-accent-amber)'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Overtime Trend */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">월별 수당 구성 변화</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <AreaChart data={overtimeTrend} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                      <defs>
+                        <linearGradient id="gradOvertime" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--color-accent-blue)" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="var(--color-accent-blue)" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="gradNight" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--color-accent-purple)" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="var(--color-accent-purple)" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="gradHoliday" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+                      <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => fmtM(v)} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={(value) => fmtWon(value as number)} />
+                      <Legend wrapperStyle={{ fontSize: '12px' }} />
+                      <Area type="monotone" dataKey="연장수당" stroke="var(--color-accent-blue)" fill="url(#gradOvertime)" strokeWidth={2} />
+                      <Area type="monotone" dataKey="야간수당" stroke="var(--color-accent-purple)" fill="url(#gradNight)" strokeWidth={2} />
+                      <Area type="monotone" dataKey="휴일수당" stroke="#f97316" fill="url(#gradHoliday)" strokeWidth={2} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Average Earnings per Person Trend */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">1인당 평균 급여 추이</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <LineChart data={monthlyGrowth} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+                      <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => fmtM(v)} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={(value) => fmtWon(value as number)} />
+                      <Line type="monotone" dataKey="avgEarnings" stroke="var(--color-accent-green)" strokeWidth={2.5} dot={{ r: 4, fill: 'var(--color-accent-green)' }} name="1인 평균 지급액" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
     </div>

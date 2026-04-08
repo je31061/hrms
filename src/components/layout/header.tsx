@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, Search, User } from 'lucide-react';
 import { openCommandPalette } from '@/components/layout/command-palette';
+import { NotificationBell } from '@/components/layout/notification-bell';
 import Link from 'next/link';
 
 export function Header() {
@@ -38,6 +39,7 @@ export function Header() {
         </kbd>
       </Button>
       <div className="flex items-center gap-4">
+        <NotificationBell />
         {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -5,9 +5,10 @@ import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { ClockButton } from '@/components/attendance/clock-button';
 import { AttendanceTable } from '@/components/attendance/attendance-table';
 import { AttendanceRegisterDialog } from '@/components/attendance/attendance-register-dialog';
+import { AttendanceRequestForm } from '@/components/attendance/attendance-request-form';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus, Building2, Plane, MapPin, Laptop, Clock, UserX, Palmtree, TimerOff, Lock } from 'lucide-react';
+import { Calendar, Plus, Building2, Plane, MapPin, Laptop, Clock, UserX, Palmtree, TimerOff, Lock, FileCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useAttendanceStore } from '@/lib/stores/attendance-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
@@ -25,6 +26,7 @@ const statConfig = [
 
 export default function AttendancePage() {
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
   const records = useAttendanceStore((s) => s.records);
   const addRecord = useAttendanceStore((s) => s.addRecord);
   const employees = useEmployeeStore((s) => s.employees);
@@ -81,7 +83,11 @@ export default function AttendancePage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">근태관리</h1>
         <div className="flex gap-2">
-          <Button onClick={() => setRegisterOpen(true)}>
+          <Button onClick={() => setRequestOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+            <FileCheck className="h-4 w-4 mr-2" />
+            근태 신청 (전자결재)
+          </Button>
+          <Button variant="outline" onClick={() => setRegisterOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             근태 등록
           </Button>
@@ -131,6 +137,11 @@ export default function AttendancePage() {
         open={registerOpen}
         onOpenChange={setRegisterOpen}
         onRegister={addRecord}
+      />
+
+      <AttendanceRequestForm
+        open={requestOpen}
+        onOpenChange={setRequestOpen}
       />
     </div>
   );

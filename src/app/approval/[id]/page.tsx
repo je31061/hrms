@@ -11,6 +11,9 @@ import { useCodeMap, CODE } from '@/lib/hooks/use-code';
 import { useApprovalStore } from '@/lib/stores/approval-store';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
+import { useNotificationStore } from '@/lib/stores/notification-store';
+import { useAttendanceStore } from '@/lib/stores/attendance-store';
+import type { Attendance, AttendanceStatus } from '@/types';
 
 export default function ApprovalDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const APPROVAL_STATUS = useCodeMap(CODE.APPROVAL_STATUS);
@@ -24,6 +27,8 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
   const departments = useEmployeeStore((s) => s.departments);
   const positionRanks = useEmployeeStore((s) => s.positionRanks);
   const session = useAuthStore((s) => s.session);
+  const addNotification = useNotificationStore((s) => s.addNotification);
+  const addAttendanceRecord = useAttendanceStore((s) => s.addRecord);
 
   const approval = approvals.find((a) => a.id === id);
   const lines = approvalLines.filter((l) => l.approval_id === id).sort((a, b) => a.step - b.step);
@@ -65,6 +70,20 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
 
   const typeLabels: Record<string, string> = {
     leave: '휴가', appointment: '인사발령', expense: '경비', general: '일반',
+    attendance_request: '근태신청',
+  };
+
+  // 근태 신청 내용의 키를 한글 라벨로 매핑
+  const contentLabels: Record<string, string> = {
+    requestType: '신청유형코드',
+    requestTypeLabel: '신청유형',
+    startDate: '시작일',
+    endDate: '종료일',
+    halfPeriod: '시간대',
+    days: '기간(일)',
+    location: '장소',
+    purpose: '목적',
+    reason: '사유',
   };
 
   // Check if current user can act on this approval
@@ -72,6 +91,143 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
   const canAct = currentEmployeeId && lines.some(
     (l) => l.approver_id === currentEmployeeId && l.status === 'pending',
   ) && (approval.status === 'pending' || approval.status === 'in_progress');
+
+  // 근태 신청 유형에 따른 Attendance.status 매핑
+  const mapAttendanceStatus = (requestType: string): AttendanceStatus => {
+    if (requestType === 'leave_full') return 'leave';
+    if (requestType === 'leave_half') return 'half_day';
+    if (requestType === 'leave_quarter') return 'quarter_day';
+    return 'normal'; // field_work, business_trip, remote
+  };
+
+  // 근태 신청 유형에 따른 attendance_type 매핑
+  const mapAttendanceType = (requestType: string): string => {
+    switch (requestType) {
+      case 'field_work': return 'field_work';
+      case 'business_trip': return 'domestic_trip';
+      case 'remote': return 'remote';
+      case 'leave_full':
+      case 'leave_half':
+      case 'leave_quarter':
+        return 'annual_leave';
+      default: return 'office';
+    }
+  };
+
+  const handleApprove = (comment?: string) => {
+    if (!currentEmployeeId) return;
+    approveStep(id, currentEmployeeId, comment);
+
+    // 알림: 신청자에게 결재 진행 상황 통지
+    const isLastStep = lines.filter((l) => l.approver_id !== currentEmployeeId).every((l) => l.status !== 'pending');
+    const finalApproved = isLastStep;
+
+    if (finalApproved) {
+      // 최종 승인: 근태 신청이면 attendance record 생성
+      if (approval.type === 'attendance_request' && approval.content) {
+        const content = approval.content as Record<string, unknown>;
+        const requestType = String(content.requestType ?? '');
+        const startDate = String(content.startDate ?? '');
+        const endDate = String(content.endDate ?? startDate);
+        const halfPeriod = content.halfPeriod as string | null;
+
+        // 기간 내 각 날짜에 대해 근태 기록 생성
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const dayMs = 24 * 60 * 60 * 1000;
+        const days: string[] = [];
+        for (let d = new Date(start); d <= end; d = new Date(d.getTime() + dayMs)) {
+          days.push(d.toISOString().split('T')[0]);
+        }
+
+        days.forEach((date, idx) => {
+          const record: Attendance = {
+            id: `att-req-${approval.id}-${idx}`,
+            employee_id: approval.requester_id,
+            date,
+            clock_in: null,
+            clock_out: null,
+            work_hours: requestType === 'leave_half' ? 4 : requestType === 'leave_quarter' ? 6 : 8,
+            overtime_hours: 0,
+            status: mapAttendanceStatus(requestType),
+            note: `[전자결재 승인] ${String(content.reason ?? '')}`,
+            attendance_type: mapAttendanceType(requestType),
+            location: (content.location as string | null) ?? null,
+            purpose: (content.purpose as string | null) ?? null,
+            leave_time_period: halfPeriod
+              ? (requestType === 'leave_half'
+                  ? (halfPeriod === 'am' ? 'am_half' : 'pm_half')
+                  : (halfPeriod === 'am' ? 'am_quarter' : 'pm_quarter'))
+              : undefined,
+            scheduled_start: null,
+            scheduled_end: null,
+            created_at: new Date().toISOString(),
+          };
+          addAttendanceRecord(record);
+        });
+
+        // 신청자에게 알림
+        addNotification({
+          recipient_id: approval.requester_id,
+          type: 'attendance_approved',
+          title: '근태 신청 승인',
+          message: `${approval.title} 신청이 최종 승인되었습니다.`,
+          link: `/approval/${id}`,
+          related_id: id,
+        });
+      } else {
+        // 일반 결재 승인 알림
+        addNotification({
+          recipient_id: approval.requester_id,
+          type: 'approval_approved',
+          title: '결재 승인',
+          message: `${approval.title} 결재가 최종 승인되었습니다.`,
+          link: `/approval/${id}`,
+          related_id: id,
+        });
+      }
+    } else {
+      // 중간 단계 승인: 다음 결재자에게 알림
+      const nextLine = lines
+        .filter((l) => l.approver_id !== currentEmployeeId && l.status === 'pending')
+        .sort((a, b) => a.step - b.step)[0];
+      if (nextLine) {
+        addNotification({
+          recipient_id: nextLine.approver_id,
+          type: 'approval_request',
+          title: '결재 요청 (다음 단계)',
+          message: `${approval.title} 결재가 이전 단계 승인 후 귀하에게 전달되었습니다.`,
+          link: `/approval/${id}`,
+          related_id: id,
+        });
+      }
+      // 신청자에게도 진행 상황 알림
+      addNotification({
+        recipient_id: approval.requester_id,
+        type: 'approval_approved',
+        title: '결재 진행',
+        message: `${approval.title}이(가) 중간 단계에서 승인되었습니다.`,
+        link: `/approval/${id}`,
+        related_id: id,
+      });
+    }
+  };
+
+  const handleReject = (comment?: string) => {
+    if (!currentEmployeeId) return;
+    rejectStep(id, currentEmployeeId, comment);
+
+    // 신청자에게 반려 알림
+    const notifType = approval.type === 'attendance_request' ? 'attendance_rejected' : 'approval_rejected';
+    addNotification({
+      recipient_id: approval.requester_id,
+      type: notifType,
+      title: approval.type === 'attendance_request' ? '근태 신청 반려' : '결재 반려',
+      message: `${approval.title}이(가) 반려되었습니다.${comment ? ` 사유: ${comment}` : ''}`,
+      link: `/approval/${id}`,
+      related_id: id,
+    });
+  };
 
   return (
     <div>
@@ -110,11 +266,14 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                 <div className="space-y-2 text-sm">
                   <h4 className="font-semibold">결재 내용</h4>
                   <div className="grid grid-cols-2 gap-2">
-                    {Object.entries(approval.content).map(([key, value]) => (
-                      <div key={key}>
-                        <span className="text-muted-foreground">{key}:</span> {String(value)}
-                      </div>
-                    ))}
+                    {Object.entries(approval.content)
+                      .filter(([, value]) => value !== null && value !== undefined && value !== '')
+                      .map(([key, value]) => (
+                        <div key={key}>
+                          <span className="text-muted-foreground">{contentLabels[key] ?? key}:</span>{' '}
+                          <span className="font-medium">{String(value)}</span>
+                        </div>
+                      ))}
                   </div>
                 </div>
               </>
@@ -130,8 +289,8 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
             <CardContent>
               <ApprovalActionForm
                 approvalId={id}
-                onApprove={(comment) => approveStep(id, currentEmployeeId!, comment)}
-                onReject={(comment) => rejectStep(id, currentEmployeeId!, comment)}
+                onApprove={(comment) => handleApprove(comment)}
+                onReject={(comment) => handleReject(comment)}
               />
             </CardContent>
           </Card>

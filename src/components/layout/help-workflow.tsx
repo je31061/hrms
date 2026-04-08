@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
@@ -15,9 +15,8 @@ import {
   Banknote,
   ArrowRightLeft,
   FileCheck,
-  Briefcase,
+  FileSignature,
   GraduationCap,
-  Star,
   Settings,
   ChevronDown,
   ArrowRight,
@@ -57,9 +56,9 @@ interface FlowRow {
 const workflowRows: FlowRow[] = [
   {
     nodes: [
+      { id: 'organization', label: '조직도', icon: Network, href: '/organization' },
       { id: 'employees', label: '인사정보', icon: Users, href: '/employees' },
       { id: 'appointments', label: '인사발령', icon: ArrowRightLeft, href: '/appointments' },
-      { id: 'organization', label: '조직도', icon: Network, href: '/organization' },
     ],
   },
   {
@@ -76,19 +75,12 @@ const workflowRows: FlowRow[] = [
   {
     nodes: [
       { id: 'approval', label: '전자결재', icon: FileCheck, href: '/approval' },
+      { id: 'contracts', label: '전자계약', icon: FileSignature, href: '/contracts' },
     ],
   },
   {
     nodes: [
       { id: 'training', label: '교육관리', icon: GraduationCap, href: '/training' },
-      { id: 'evaluation', label: '평가관리', icon: Star, href: '/evaluation' },
-    ],
-  },
-  {
-    nodes: [
-      { id: 'recruitment', label: '채용관리', icon: Briefcase, href: '/recruitment' },
-      { id: 'hire', label: '입사', icon: Users, href: '/employees' },
-      { id: 'employees2', label: '인사정보', icon: Users, href: '/employees' },
     ],
   },
 ];
@@ -170,11 +162,11 @@ const moduleGuides: ModuleGuide[] = [
     workflow: '문서 기안 → 결재라인 설정 → 제출 → 순차 승인/반려 → 완료',
   },
   {
-    label: '채용관리',
-    icon: Briefcase,
-    href: '/recruitment',
-    description: '채용공고 등록부터 지원자 관리, 서류심사, 면접, 제안, 최종 채용까지의 프로세스를 관리합니다.',
-    workflow: '채용공고 → 지원자 접수 → 서류심사 → 면접 → 제안 → 채용 확정',
+    label: '전자계약',
+    icon: FileSignature,
+    href: '/contracts',
+    description: '근로계약서, 연봉계약서, 비밀유지계약서(NDA), 겸업금지계약서 등의 전자계약을 관리합니다.',
+    workflow: '계약 생성 → 직원 선택 → 서명 요청 → 서명 완료 → 계약 보관',
   },
   {
     label: '교육관리',
@@ -184,17 +176,10 @@ const moduleGuides: ModuleGuide[] = [
     workflow: '교육과정 등록 → 수강 신청 → 교육 진행 → 이수 처리',
   },
   {
-    label: '평가관리',
-    icon: Star,
-    href: '/evaluation',
-    description: '평가기간을 설정하고, 다면평가(자기/동료/상사)를 실시하여 등급을 부여합니다.',
-    workflow: '평가기간 설정 → 평가 대상 배정 → 다면평가 실시 → 등급 부여',
-  },
-  {
     label: '설정',
     icon: Settings,
     href: '/settings',
-    description: '근무일정, 공휴일, 연차정책, 직급체계, 결재양식, 평가항목 등 시스템 전반의 설정을 관리합니다.',
+    description: '근무일정, 공휴일, 연차정책, 직급체계, 결재양식, 코드관리 등 시스템 전반의 설정을 관리합니다.',
     workflow: '설정 메뉴 선택 → 항목 조회/수정 → 저장',
   },
 ];
@@ -351,16 +336,29 @@ export function HelpWorkflow() {
   const [search, setSearch] = useState('');
   const pathname = usePathname();
   const router = useRouter();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const normalizedSearch = search.trim().toLowerCase();
 
   const filteredGuides = useMemo(() => {
-    if (!search) return moduleGuides;
+    if (!normalizedSearch) return moduleGuides;
     return moduleGuides.filter(
       (g) =>
-        matchesSearch(g.label, search) ||
-        matchesSearch(g.description, search) ||
-        matchesSearch(g.workflow, search)
+        g.label.toLowerCase().includes(normalizedSearch) ||
+        g.description.toLowerCase().includes(normalizedSearch) ||
+        g.workflow.toLowerCase().includes(normalizedSearch),
     );
-  }, [search]);
+  }, [normalizedSearch]);
+
+  // Auto-focus search input when the sheet opens
+  useEffect(() => {
+    if (open) {
+      const t = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(t);
+    }
+  }, [open]);
 
   const handleNavigate = (href: string) => {
     setOpen(false);
@@ -396,7 +394,14 @@ export function HelpWorkflow() {
 
       {/* Sheet panel */}
       <Sheet open={open} onOpenChange={handleOpenChange}>
-        <SheetContent side="right" className="sm:max-w-md w-full p-0 flex flex-col">
+        <SheetContent
+          side="right"
+          className="sm:max-w-md w-full p-0 flex flex-col"
+          onOpenAutoFocus={(e) => {
+            // Let our own autoFocus handle it (search input)
+            e.preventDefault();
+          }}
+        >
           <SheetHeader className="px-4 pt-4 pb-2 border-b">
             <SheetTitle className="text-lg">업무 도움말</SheetTitle>
             <SheetDescription>
@@ -407,12 +412,18 @@ export function HelpWorkflow() {
           {/* Search input - fixed above scroll area */}
           <div className="px-4 py-2 border-b">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <Input
+                ref={searchInputRef}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="모듈 검색..."
+                onKeyDown={(e) => {
+                  // Prevent radix dialog from capturing keystrokes
+                  e.stopPropagation();
+                }}
+                placeholder="모듈 검색... (예: 급여, 휴가, 근태)"
                 className="pl-9"
+                autoComplete="off"
               />
             </div>
             {search && (
@@ -427,7 +438,7 @@ export function HelpWorkflow() {
               {/* Workflow diagram */}
               <WorkflowDiagram
                 pathname={pathname}
-                search={search}
+                search={normalizedSearch}
                 onNodeClick={handleNavigate}
               />
 

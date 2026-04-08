@@ -490,9 +490,20 @@ interface EmployeeActions {
 
   // Sub-data
   addCareerHistory: (item: CareerHistory) => void;
+  updateCareerHistory: (id: string, data: Partial<CareerHistory>) => void;
+  deleteCareerHistory: (id: string) => void;
+
   addEducationHistory: (item: EducationHistory) => void;
+  updateEducationHistory: (id: string, data: Partial<EducationHistory>) => void;
+  deleteEducationHistory: (id: string) => void;
+
   addCertification: (item: Certification) => void;
+  updateCertification: (id: string, data: Partial<Certification>) => void;
+  deleteCertification: (id: string) => void;
+
   addFamilyMember: (item: FamilyMember) => void;
+  updateFamilyMember: (id: string, data: Partial<FamilyMember>) => void;
+  deleteFamilyMember: (id: string) => void;
 }
 
 interface EmployeeGetters {
@@ -668,12 +679,39 @@ export const useEmployeeStore = create<EmployeeStore>()(
 
       addCareerHistory: (item) =>
         set((s) => ({ careerHistories: [...s.careerHistories, item] })),
+      updateCareerHistory: (id, data) =>
+        set((s) => ({
+          careerHistories: s.careerHistories.map((c) => (c.id === id ? { ...c, ...data } : c)),
+        })),
+      deleteCareerHistory: (id) =>
+        set((s) => ({ careerHistories: s.careerHistories.filter((c) => c.id !== id) })),
+
       addEducationHistory: (item) =>
         set((s) => ({ educationHistories: [...s.educationHistories, item] })),
+      updateEducationHistory: (id, data) =>
+        set((s) => ({
+          educationHistories: s.educationHistories.map((e) => (e.id === id ? { ...e, ...data } : e)),
+        })),
+      deleteEducationHistory: (id) =>
+        set((s) => ({ educationHistories: s.educationHistories.filter((e) => e.id !== id) })),
+
       addCertification: (item) =>
         set((s) => ({ certifications: [...s.certifications, item] })),
+      updateCertification: (id, data) =>
+        set((s) => ({
+          certifications: s.certifications.map((c) => (c.id === id ? { ...c, ...data } : c)),
+        })),
+      deleteCertification: (id) =>
+        set((s) => ({ certifications: s.certifications.filter((c) => c.id !== id) })),
+
       addFamilyMember: (item) =>
         set((s) => ({ familyMembers: [...s.familyMembers, item] })),
+      updateFamilyMember: (id, data) =>
+        set((s) => ({
+          familyMembers: s.familyMembers.map((f) => (f.id === id ? { ...f, ...data } : f)),
+        })),
+      deleteFamilyMember: (id) =>
+        set((s) => ({ familyMembers: s.familyMembers.filter((f) => f.id !== id) })),
 
       // --- Getters ---
       getEmployeeById: (id) => {

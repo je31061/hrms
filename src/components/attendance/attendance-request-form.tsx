@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -26,9 +26,10 @@ import { useAuthStore } from '@/lib/stores/auth-store';
 import { useApprovalStore } from '@/lib/stores/approval-store';
 import { useNotificationStore } from '@/lib/stores/notification-store';
 import { findApprovers } from '@/lib/utils/approval-helpers';
+import { ApprovalLineEditor } from '@/components/approval/approval-line-editor';
 import { toast } from 'sonner';
-import type { Approval, ApprovalLine } from '@/types';
-import { FileCheck, Users, ArrowRight } from 'lucide-react';
+import type { Approval, ApprovalLine, Employee } from '@/types';
+import { FileCheck, Users, ArrowRight, Edit } from 'lucide-react';
 
 export type AttendanceRequestType =
   | 'field_work'       // 외근
@@ -87,7 +88,7 @@ export function AttendanceRequestForm({
   const requesterRank = positionRanks.find((r) => r.id === requester?.position_rank_id);
 
   // 자동 결재자 탐색
-  const approvers = useMemo(() => {
+  const autoApprovers = useMemo(() => {
     if (!employeeId) return [];
     return findApprovers({
       requesterId: employeeId,
@@ -97,6 +98,21 @@ export function AttendanceRequestForm({
       maxLevels: 2,
     });
   }, [employeeId, employees, positionRanks, departments]);
+
+  // 커스텀 결재 라인 (변경 가능)
+  const [customApprovers, setCustomApprovers] = useState<Employee[] | null>(null);
+  const [lineEditorOpen, setLineEditorOpen] = useState(false);
+
+  // 자동 결재자가 변경될 때 커스텀이 없으면 자동 반영
+  useEffect(() => {
+    setCustomApprovers(null);
+  }, [employeeId]);
+
+  const approvers = customApprovers ?? autoApprovers;
+
+  const handleLineChange = (newApprovers: Employee[]) => {
+    setCustomApprovers(newApprovers);
+  };
 
   const selectedOption = REQUEST_TYPE_OPTIONS.find((o) => o.value === type);
   const needsLocation = type === 'field_work' || type === 'business_trip';
@@ -121,6 +137,7 @@ export function AttendanceRequestForm({
     setLocation('');
     setPurpose('');
     setReason('');
+    setCustomApprovers(null);
   };
 
   const handleSubmit = () => {
@@ -336,12 +353,28 @@ export function AttendanceRequestForm({
 
           {/* 결재 라인 미리보기 */}
           <div className="p-3 rounded-lg border bg-muted/30">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">결재 라인 (자동)</span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">
+                  결재 라인 {customApprovers ? '(수동)' : '(자동)'}
+                </span>
+                {customApprovers && (
+                  <Badge variant="secondary" className="text-[10px]">변경됨</Badge>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setLineEditorOpen(true)}
+              >
+                <Edit className="h-3 w-3 mr-1" />
+                결재라인 변경
+              </Button>
             </div>
             {approvers.length === 0 ? (
-              <p className="text-xs text-destructive">결재자를 찾을 수 없습니다.</p>
+              <p className="text-xs text-destructive">결재자를 찾을 수 없습니다. &quot;결재라인 변경&quot;을 눌러 직접 추가하세요.</p>
             ) : (
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="text-xs">
@@ -375,6 +408,18 @@ export function AttendanceRequestForm({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* 결재라인 변경 다이얼로그 */}
+      <ApprovalLineEditor
+        open={lineEditorOpen}
+        onOpenChange={setLineEditorOpen}
+        value={approvers}
+        onChange={handleLineChange}
+        requester={requester}
+        employees={employees}
+        positionRanks={positionRanks}
+        departments={departments}
+      />
     </Dialog>
   );
 }

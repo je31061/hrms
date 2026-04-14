@@ -163,6 +163,7 @@ export interface AuditLogEntry {
   target_label: string;
   details: Record<string, unknown> | null;
   session_id: string;
+  ip_address: string | null;
 }
 
 export interface AuditLogSettings {

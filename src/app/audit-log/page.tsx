@@ -247,12 +247,13 @@ export default function AuditLogPage() {
                 <TableHead className="w-[90px]">역할</TableHead>
                 <TableHead className="w-[120px]">액션</TableHead>
                 <TableHead>대상</TableHead>
+                <TableHead className="w-[130px]">IP 주소</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     감사로그가 없습니다.
                   </TableCell>
                 </TableRow>
@@ -275,6 +276,7 @@ export default function AuditLogPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm">{log.target_label}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{log.ip_address ?? '-'}</TableCell>
                   </TableRow>
                 ))
               )}

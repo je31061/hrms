@@ -28,6 +28,7 @@ const SEED_LOGS: AuditLogEntry[] = [
     target_label: '로그인',
     details: { method: 'demo' },
     session_id: 'seed-session-01',
+    ip_address: '192.168.1.100',
   },
   {
     id: 'seed-02',
@@ -41,6 +42,7 @@ const SEED_LOGS: AuditLogEntry[] = [
     target_label: '대시보드',
     details: null,
     session_id: 'seed-session-01',
+    ip_address: '192.168.1.100',
   },
   {
     id: 'seed-03',
@@ -54,6 +56,7 @@ const SEED_LOGS: AuditLogEntry[] = [
     target_label: '인사정보',
     details: null,
     session_id: 'seed-session-01',
+    ip_address: '192.168.1.100',
   },
   {
     id: 'seed-04',
@@ -67,6 +70,7 @@ const SEED_LOGS: AuditLogEntry[] = [
     target_label: '신규 직원 등록: 최신입',
     details: { name: '최신입', department: '마케팅팀' },
     session_id: 'seed-session-01',
+    ip_address: '192.168.1.100',
   },
   {
     id: 'seed-05',
@@ -80,6 +84,7 @@ const SEED_LOGS: AuditLogEntry[] = [
     target_label: '로그인',
     details: { method: 'demo' },
     session_id: 'seed-session-02',
+    ip_address: '192.168.1.105',
   },
   {
     id: 'seed-06',
@@ -93,6 +98,7 @@ const SEED_LOGS: AuditLogEntry[] = [
     target_label: '휴가관리',
     details: null,
     session_id: 'seed-session-02',
+    ip_address: '192.168.1.105',
   },
   {
     id: 'seed-07',
@@ -106,6 +112,7 @@ const SEED_LOGS: AuditLogEntry[] = [
     target_label: '휴가 승인: 정사원',
     details: { employee: '정사원', leave_type: '연차' },
     session_id: 'seed-session-02',
+    ip_address: '192.168.1.105',
   },
   {
     id: 'seed-08',
@@ -119,6 +126,7 @@ const SEED_LOGS: AuditLogEntry[] = [
     target_label: '근태관리',
     details: null,
     session_id: 'seed-session-03',
+    ip_address: '10.0.0.22',
   },
   {
     id: 'seed-09',
@@ -132,6 +140,7 @@ const SEED_LOGS: AuditLogEntry[] = [
     target_label: '마이페이지',
     details: null,
     session_id: 'seed-session-04',
+    ip_address: '10.0.0.55',
   },
   {
     id: 'seed-10',
@@ -145,6 +154,7 @@ const SEED_LOGS: AuditLogEntry[] = [
     target_label: '시스템 설정 변경',
     details: { section: '근무설정' },
     session_id: 'seed-session-01',
+    ip_address: '192.168.1.100',
   },
 ];
 

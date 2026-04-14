@@ -600,7 +600,7 @@ export default function LoginPage() {
 
   const recordLoginLog = useCallback(
     (userId: string, userName: string, userRole: UserRole, sessionId: string) => {
-      addLog({ user_id: userId, user_name: userName, user_role: userRole, action_type: 'login', target_type: '/login', target_id: null, target_label: '로그인', details: { method: 'demo' }, session_id: sessionId });
+      addLog({ user_id: userId, user_name: userName, user_role: userRole, action_type: 'login', target_type: '/login', target_id: null, target_label: '로그인', details: { method: 'demo' }, session_id: sessionId, ip_address: null });
     }, [addLog]
   );
 

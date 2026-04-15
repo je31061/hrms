@@ -88,9 +88,29 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
 
   // Check if current user can act on this approval
   const currentEmployeeId = session?.employee_id;
-  const canAct = currentEmployeeId && lines.some(
-    (l) => l.approver_id === currentEmployeeId && l.status === 'pending',
-  ) && (approval.status === 'pending' || approval.status === 'in_progress');
+  const myPendingLine = lines.find(
+    (l) => l.approver_id === currentEmployeeId && l.status === 'pending' && l.line_type !== 'cc',
+  );
+
+  // 결재(approval) 타입은 모든 합의(agreement)가 완료된 후에만 결재 가능
+  const allAgreementsCompleted = lines
+    .filter((l) => l.line_type === 'agreement')
+    .every((l) => l.status === 'approved');
+
+  const canAct = !!(
+    currentEmployeeId &&
+    myPendingLine &&
+    (approval.status === 'pending' || approval.status === 'in_progress') &&
+    // 합의자는 항상 액션 가능, 결재자는 합의 완료 후만 가능
+    (myPendingLine.line_type === 'agreement' || allAgreementsCompleted)
+  );
+
+  // 참조자 여부 확인 (최종 승인 후 열람 가능)
+  const isCcViewer = !!(
+    currentEmployeeId &&
+    lines.some((l) => l.approver_id === currentEmployeeId && l.line_type === 'cc')
+  );
+  const ccViewable = isCcViewer && approval.status === 'approved';
 
   // 근태 신청 유형에 따른 Attendance.status 매핑
   const mapAttendanceStatus = (requestType: string): AttendanceStatus => {
@@ -284,14 +304,45 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
         {canAct && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">결재 처리</CardTitle>
+              <CardTitle className="text-base">
+                {myPendingLine?.line_type === 'agreement' ? '합의 처리' : '결재 처리'}
+              </CardTitle>
+              {myPendingLine?.line_type === 'agreement' && (
+                <p className="text-xs text-muted-foreground">합의 완료 시 최종 결재자에게 전달됩니다.</p>
+              )}
+              {myPendingLine?.line_type === 'approval' && !allAgreementsCompleted && (
+                <p className="text-xs text-destructive">모든 합의가 완료되어야 결재 가능합니다.</p>
+              )}
             </CardHeader>
             <CardContent>
               <ApprovalActionForm
                 approvalId={id}
                 onApprove={(comment) => handleApprove(comment)}
                 onReject={(comment) => handleReject(comment)}
+                approveLabel={myPendingLine?.line_type === 'agreement' ? '합의' : '승인'}
               />
+            </CardContent>
+          </Card>
+        )}
+
+        {ccViewable && (
+          <Card className="border-slate-300">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Badge variant="outline" className="text-xs">참조</Badge>
+                이 결재 문서가 최종 승인되어 참조로 열람 가능합니다.
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isCcViewer && !ccViewable && approval.status !== 'approved' && (
+          <Card className="border-dashed border-slate-300">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Badge variant="outline" className="text-xs">참조 대기</Badge>
+                최종결재가 완료되면 이 문서를 열람할 수 있습니다.
+              </div>
             </CardContent>
           </Card>
         )}

@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Approval, ApprovalLine, ApprovalStatus, ApprovalLineStatus } from '@/types';
+import type { Approval, ApprovalLine, ApprovalStatus, ApprovalLineStatus, ApprovalLineType } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Seed data — 5 approvals + 10 lines
@@ -38,24 +38,24 @@ const seedApprovals: Approval[] = [
 
 const seedApprovalLines: ApprovalLine[] = [
   // apr-1: pending (waiting for step 1)
-  { id: 'apl-1', approval_id: 'apr-1', approver_id: 'e020', step: 1, status: 'pending', comment: null, acted_at: null },
-  { id: 'apl-2', approval_id: 'apr-1', approver_id: 'e004', step: 2, status: 'pending', comment: null, acted_at: null },
+  { id: 'apl-1', approval_id: 'apr-1', approver_id: 'e020', step: 1, status: 'pending', comment: null, acted_at: null, line_type: 'approval' },
+  { id: 'apl-2', approval_id: 'apr-1', approver_id: 'e004', step: 2, status: 'pending', comment: null, acted_at: null, line_type: 'approval' },
 
   // apr-2: in_progress (step 1 approved, step 2 pending)
-  { id: 'apl-3', approval_id: 'apr-2', approver_id: 'e010', step: 1, status: 'approved', comment: '승인합니다.', acted_at: '2026-02-16T10:00:00' },
-  { id: 'apl-4', approval_id: 'apr-2', approver_id: 'e004', step: 2, status: 'pending', comment: null, acted_at: null },
+  { id: 'apl-3', approval_id: 'apr-2', approver_id: 'e010', step: 1, status: 'approved', comment: '승인합니다.', acted_at: '2026-02-16T10:00:00', line_type: 'agreement' },
+  { id: 'apl-4', approval_id: 'apr-2', approver_id: 'e004', step: 2, status: 'pending', comment: null, acted_at: null, line_type: 'approval' },
 
   // apr-3: approved (both steps approved)
-  { id: 'apl-5', approval_id: 'apr-3', approver_id: 'e010', step: 1, status: 'approved', comment: '확인했습니다.', acted_at: '2026-01-29T09:00:00' },
-  { id: 'apl-6', approval_id: 'apr-3', approver_id: 'e002', step: 2, status: 'approved', comment: '승인합니다.', acted_at: '2026-01-30T14:00:00' },
+  { id: 'apl-5', approval_id: 'apr-3', approver_id: 'e010', step: 1, status: 'approved', comment: '확인했습니다.', acted_at: '2026-01-29T09:00:00', line_type: 'agreement' },
+  { id: 'apl-6', approval_id: 'apr-3', approver_id: 'e002', step: 2, status: 'approved', comment: '승인합니다.', acted_at: '2026-01-30T14:00:00', line_type: 'approval' },
 
   // apr-4: approved
-  { id: 'apl-7', approval_id: 'apr-4', approver_id: 'e015', step: 1, status: 'approved', comment: '확인.', acted_at: '2026-02-09T11:00:00' },
-  { id: 'apl-8', approval_id: 'apr-4', approver_id: 'e002', step: 2, status: 'approved', comment: '승인.', acted_at: '2026-02-10T09:00:00' },
+  { id: 'apl-7', approval_id: 'apr-4', approver_id: 'e015', step: 1, status: 'approved', comment: '확인.', acted_at: '2026-02-09T11:00:00', line_type: 'approval' },
+  { id: 'apl-8', approval_id: 'apr-4', approver_id: 'e002', step: 2, status: 'approved', comment: '승인.', acted_at: '2026-02-10T09:00:00', line_type: 'approval' },
 
   // apr-5: rejected (step 1 rejected)
-  { id: 'apl-9', approval_id: 'apr-5', approver_id: 'e016', step: 1, status: 'rejected', comment: '해당 기간 출장 불가합니다.', acted_at: '2026-02-07T15:00:00' },
-  { id: 'apl-10', approval_id: 'apr-5', approver_id: 'e004', step: 2, status: 'pending', comment: null, acted_at: null },
+  { id: 'apl-9', approval_id: 'apr-5', approver_id: 'e016', step: 1, status: 'rejected', comment: '해당 기간 출장 불가합니다.', acted_at: '2026-02-07T15:00:00', line_type: 'approval' },
+  { id: 'apl-10', approval_id: 'apr-5', approver_id: 'e004', step: 2, status: 'pending', comment: null, acted_at: null, line_type: 'approval' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -102,11 +102,10 @@ export const useApprovalStore = create<ApprovalStore>()(
       approveStep: (approvalId, approverId, comment) => {
         set((s) => {
           const lines = s.approvalLines.filter((l) => l.approval_id === approvalId);
-          const sortedLines = [...lines].sort((a, b) => a.step - b.step);
 
-          // Find the current pending step that this approver should handle
-          const currentLine = sortedLines.find(
-            (l) => l.approver_id === approverId && l.status === 'pending',
+          // Find the current pending line for this approver (결재 or 합의, not 참조)
+          const currentLine = lines.find(
+            (l) => l.approver_id === approverId && l.status === 'pending' && l.line_type !== 'cc',
           );
           if (!currentLine) return s;
 
@@ -117,19 +116,37 @@ export const useApprovalStore = create<ApprovalStore>()(
               : l,
           );
 
-          // Check if all lines for this approval are now approved
-          const updatedApprovalLines = newLines.filter((l) => l.approval_id === approvalId);
-          const allApproved = updatedApprovalLines.every((l) => l.status === 'approved');
+          // 결재 완료 판정:
+          // 1) 모든 합의(agreement) 라인이 승인되어야 함
+          // 2) 모든 결재(approval) 라인이 승인되어야 함
+          // 3) 참조(cc)는 판정에서 제외
+          const updatedLines = newLines.filter((l) => l.approval_id === approvalId);
+          const agreementLines = updatedLines.filter((l) => l.line_type === 'agreement');
+          const approvalLines = updatedLines.filter((l) => l.line_type === 'approval');
+
+          const allAgreementsApproved = agreementLines.every((l) => l.status === 'approved');
+          const allApprovalsApproved = approvalLines.every((l) => l.status === 'approved');
+          const allDone = allAgreementsApproved && allApprovalsApproved;
+
+          // 참조자는 최종결재 완료 시 자동으로 'approved'(열람 가능) 처리
+          let finalLines = newLines;
+          if (allDone) {
+            finalLines = finalLines.map((l) =>
+              l.approval_id === approvalId && l.line_type === 'cc' && l.status === 'pending'
+                ? { ...l, status: 'approved' as ApprovalLineStatus, acted_at: now, comment: '참조 열람' }
+                : l,
+            );
+          }
 
           const newApprovals = s.approvals.map((a) => {
             if (a.id !== approvalId) return a;
-            if (allApproved) {
+            if (allDone) {
               return { ...a, status: 'approved' as ApprovalStatus, completed_at: now };
             }
             return { ...a, status: 'in_progress' as ApprovalStatus };
           });
 
-          return { approvals: newApprovals, approvalLines: newLines };
+          return { approvals: newApprovals, approvalLines: finalLines };
         });
       },
 
@@ -137,7 +154,7 @@ export const useApprovalStore = create<ApprovalStore>()(
         set((s) => {
           const now = new Date().toISOString();
           const currentLine = s.approvalLines.find(
-            (l) => l.approval_id === approvalId && l.approver_id === approverId && l.status === 'pending',
+            (l) => l.approval_id === approvalId && l.approver_id === approverId && l.status === 'pending' && l.line_type !== 'cc',
           );
           if (!currentLine) return s;
 
@@ -173,8 +190,9 @@ export const useApprovalStore = create<ApprovalStore>()(
 
       getPendingForApprover: (approverId) => {
         const s = get();
+        // 결재/합의 대기건만 (참조는 제외)
         const pendingLineApprovalIds = s.approvalLines
-          .filter((l) => l.approver_id === approverId && l.status === 'pending')
+          .filter((l) => l.approver_id === approverId && l.status === 'pending' && l.line_type !== 'cc')
           .map((l) => l.approval_id);
         return s.approvals.filter((a) => pendingLineApprovalIds.includes(a.id) && (a.status === 'pending' || a.status === 'in_progress'));
       },

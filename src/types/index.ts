@@ -549,6 +549,8 @@ export interface Approval {
   lines?: ApprovalLine[];
 }
 
+export type ApprovalLineType = 'approval' | 'agreement' | 'cc';
+
 export interface ApprovalLine {
   id: string;
   approval_id: string;
@@ -558,6 +560,8 @@ export interface ApprovalLine {
   comment: string | null;
   acted_at: string | null;
   approver?: Employee;
+  /** 결재: approval(순차결재), agreement(합의-병렬), cc(참조-열람만) */
+  line_type: ApprovalLineType;
 }
 
 export interface JobPosting {

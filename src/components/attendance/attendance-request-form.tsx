@@ -26,10 +26,10 @@ import { useAuthStore } from '@/lib/stores/auth-store';
 import { useApprovalStore } from '@/lib/stores/approval-store';
 import { useNotificationStore } from '@/lib/stores/notification-store';
 import { findApprovers } from '@/lib/utils/approval-helpers';
-import { ApprovalLineEditor } from '@/components/approval/approval-line-editor';
+import { ApprovalLineEditor, type ApprovalLineEntry } from '@/components/approval/approval-line-editor';
 import { toast } from 'sonner';
 import type { Approval, ApprovalLine, Employee } from '@/types';
-import { FileCheck, Users, ArrowRight, Edit } from 'lucide-react';
+import { FileCheck, Users, ArrowRight, Edit, Handshake, Eye } from 'lucide-react';
 
 export type AttendanceRequestType =
   | 'field_work'       // 외근
@@ -99,19 +99,25 @@ export function AttendanceRequestForm({
     });
   }, [employeeId, employees, positionRanks, departments]);
 
-  // 커스텀 결재 라인 (변경 가능)
-  const [customApprovers, setCustomApprovers] = useState<Employee[] | null>(null);
+  // 커스텀 결재 라인 (변경 가능) - 합의/참조 역할 포함
+  const [customLineEntries, setCustomLineEntries] = useState<ApprovalLineEntry[] | null>(null);
   const [lineEditorOpen, setLineEditorOpen] = useState(false);
 
   // 자동 결재자가 변경될 때 커스텀이 없으면 자동 반영
   useEffect(() => {
-    setCustomApprovers(null);
+    setCustomLineEntries(null);
   }, [employeeId]);
 
-  const approvers = customApprovers ?? autoApprovers;
+  // 자동 탐색된 결재자를 ApprovalLineEntry로 변환 (기본: 모두 'approval')
+  const autoLineEntries: ApprovalLineEntry[] = useMemo(() => {
+    return autoApprovers.map((emp) => ({ employee: emp, lineType: 'approval' as const }));
+  }, [autoApprovers]);
 
-  const handleLineChange = (newApprovers: Employee[]) => {
-    setCustomApprovers(newApprovers);
+  const lineEntries = customLineEntries ?? autoLineEntries;
+  const approvers = lineEntries.map((e) => e.employee);
+
+  const handleLineChange = (newEntries: ApprovalLineEntry[]) => {
+    setCustomLineEntries(newEntries);
   };
 
   const selectedOption = REQUEST_TYPE_OPTIONS.find((o) => o.value === type);
@@ -137,7 +143,7 @@ export function AttendanceRequestForm({
     setLocation('');
     setPurpose('');
     setReason('');
-    setCustomApprovers(null);
+    setCustomLineEntries(null);
   };
 
   const handleSubmit = () => {
@@ -190,15 +196,16 @@ export function AttendanceRequestForm({
       completed_at: null,
     };
 
-    // ApprovalLine 생성 (자동 탐색된 결재자)
-    const lines: ApprovalLine[] = approvers.map((approver, idx) => ({
+    // ApprovalLine 생성 (합의/결재/참조 역할 반영)
+    const lines: ApprovalLine[] = lineEntries.map((entry, idx) => ({
       id: `al-att-${Date.now()}-${idx}`,
       approval_id: approvalId,
-      approver_id: approver.id,
+      approver_id: entry.employee.id,
       step: idx + 1,
       status: 'pending',
       comment: null,
       acted_at: null,
+      line_type: entry.lineType,
     }));
 
     createApproval(approval, lines);
@@ -357,9 +364,9 @@ export function AttendanceRequestForm({
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">
-                  결재 라인 {customApprovers ? '(수동)' : '(자동)'}
+                  결재 라인 {customLineEntries ? '(수동)' : '(자동)'}
                 </span>
-                {customApprovers && (
+                {customLineEntries && (
                   <Badge variant="secondary" className="text-[10px]">변경됨</Badge>
                 )}
               </div>
@@ -373,22 +380,24 @@ export function AttendanceRequestForm({
                 결재라인 변경
               </Button>
             </div>
-            {approvers.length === 0 ? (
+            {lineEntries.length === 0 ? (
               <p className="text-xs text-destructive">결재자를 찾을 수 없습니다. &quot;결재라인 변경&quot;을 눌러 직접 추가하세요.</p>
             ) : (
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="text-xs">
                   {requester.name} (신청)
                 </Badge>
-                {approvers.map((a, idx) => {
+                {lineEntries.map((entry, idx) => {
+                  const a = entry.employee;
                   const rank = positionRanks.find((r) => r.id === a.position_rank_id);
-                  const dept = departments.find((d) => d.id === a.department_id);
+                  const roleLabel = entry.lineType === 'agreement' ? '합의' : entry.lineType === 'cc' ? '참조' : '결재';
+                  const roleColor = entry.lineType === 'agreement' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/30' : entry.lineType === 'cc' ? 'bg-slate-50 text-slate-500 dark:bg-slate-900/30' : '';
                   return (
                     <div key={a.id} className="flex items-center gap-2">
                       <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                      <Badge className="text-xs">
-                        {idx + 1}. {a.name} ({rank?.name ?? ''})
-                        <span className="ml-1 text-[10px] opacity-70">· {dept?.name ?? ''}</span>
+                      <Badge className={`text-xs ${roleColor}`}>
+                        {a.name} ({rank?.name ?? ''})
+                        <span className="ml-1 text-[10px] opacity-70">{roleLabel}</span>
                       </Badge>
                     </div>
                   );
@@ -402,7 +411,7 @@ export function AttendanceRequestForm({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             취소
           </Button>
-          <Button onClick={handleSubmit} disabled={approvers.length === 0}>
+          <Button onClick={handleSubmit} disabled={lineEntries.filter((e) => e.lineType === 'approval').length === 0}>
             <FileCheck className="h-4 w-4 mr-2" />
             결재 요청
           </Button>
@@ -413,7 +422,7 @@ export function AttendanceRequestForm({
       <ApprovalLineEditor
         open={lineEditorOpen}
         onOpenChange={setLineEditorOpen}
-        value={approvers}
+        value={lineEntries}
         onChange={handleLineChange}
         requester={requester}
         employees={employees}

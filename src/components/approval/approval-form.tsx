@@ -11,9 +11,10 @@ interface ApprovalFormProps {
   approvalId: string;
   onApprove?: (comment?: string) => void;
   onReject?: (comment?: string) => void;
+  approveLabel?: string;
 }
 
-export function ApprovalActionForm({ approvalId, onApprove, onReject }: ApprovalFormProps) {
+export function ApprovalActionForm({ approvalId, onApprove, onReject, approveLabel = '승인' }: ApprovalFormProps) {
   const [comment, setComment] = useState('');
 
   return (
@@ -46,7 +47,7 @@ export function ApprovalActionForm({ approvalId, onApprove, onReject }: Approval
           }}
         >
           <Check className="h-4 w-4 mr-2" />
-          승인
+          {approveLabel}
         </Button>
       </div>
     </div>

@@ -76,6 +76,13 @@ interface SettingsState {
     flex_start_max: string;
     flex_end_min: string;
     flex_end_max: string;
+    // 근태신청 옵션
+    require_attachment_for_trip: boolean;       // 출장 시 첨부파일 필수
+    allow_companion_request: boolean;            // 동행자 신청 허용
+    birthday_early_per_child_hours: number;      // 자녀 1명당 생일조기퇴근 시간
+    block_near_area_business_trip: boolean;      // 부산권 출장(A/B/C) 차단
+    overtime_requires_approval: boolean;         // 잔업/특근 결재 필수
+    enable_late_grace_by_request_type: boolean;  // 근태별 지각 유예 차등 적용
   };
   workSchedules: WorkSchedule[];
 
@@ -425,6 +432,12 @@ export const useSettingsStore = create<SettingsStore>()(
         flex_start_max: '08:00',
         flex_end_min: '15:00',
         flex_end_max: '17:00',
+        require_attachment_for_trip: false,
+        allow_companion_request: true,
+        birthday_early_per_child_hours: 4,
+        block_near_area_business_trip: true,
+        overtime_requires_approval: true,
+        enable_late_grace_by_request_type: false,
       },
       workSchedules: defaultWorkSchedules,
       leave: {
@@ -712,6 +725,12 @@ export const useSettingsStore = create<SettingsStore>()(
                 default_start_time: '07:00',
                 default_end_time: '16:00',
                 late_grace_minutes: work.late_grace_minutes ?? 5,
+                require_attachment_for_trip: work.require_attachment_for_trip ?? false,
+                allow_companion_request: work.allow_companion_request ?? true,
+                birthday_early_per_child_hours: work.birthday_early_per_child_hours ?? 4,
+                block_near_area_business_trip: work.block_near_area_business_trip ?? true,
+                overtime_requires_approval: work.overtime_requires_approval ?? true,
+                enable_late_grace_by_request_type: work.enable_late_grace_by_request_type ?? false,
                 flex_work_enabled: work.flex_work_enabled ?? true,
                 flex_start_min: work.flex_start_min ?? '06:00',
                 flex_start_max: work.flex_start_max ?? '08:00',

@@ -275,6 +275,68 @@ export default function WorkScheduleSettings() {
         </CardContent>
       </Card>
 
+      {/* Section A-3: 근태신청 옵션 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>근태신청 옵션</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <Label>출장 시 첨부파일 필수</Label>
+              <p className="text-sm text-muted-foreground">국내/해외 출장 신청 시 증빙 첨부 필수</p>
+            </div>
+            <Switch checked={work.require_attachment_for_trip ?? false}
+              onCheckedChange={(v) => updateWork({ require_attachment_for_trip: v })} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <Label>동행자 신청 허용</Label>
+              <p className="text-sm text-muted-foreground">같은 본부 직원과 동반 신청 (결재 1건으로 처리)</p>
+            </div>
+            <Switch checked={work.allow_companion_request ?? true}
+              onCheckedChange={(v) => updateWork({ allow_companion_request: v })} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <Label>부산권 출장(A/B/C) 차단</Label>
+              <p className="text-sm text-muted-foreground">부산/김해/창원/양산은 외근으로 신청하도록 안내</p>
+            </div>
+            <Switch checked={work.block_near_area_business_trip ?? true}
+              onCheckedChange={(v) => updateWork({ block_near_area_business_trip: v })} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <Label>잔업/특근 결재 필수</Label>
+              <p className="text-sm text-muted-foreground">잔업/특근 신청 시 전자결재 상신 필수</p>
+            </div>
+            <Switch checked={work.overtime_requires_approval ?? true}
+              onCheckedChange={(v) => updateWork({ overtime_requires_approval: v })} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <Label>근태별 지각유예 차등</Label>
+              <p className="text-sm text-muted-foreground">교대근무, 유연근무 등 근태유형별 지각 기준 차등 적용</p>
+            </div>
+            <Switch checked={work.enable_late_grace_by_request_type ?? false}
+              onCheckedChange={(v) => updateWork({ enable_late_grace_by_request_type: v })} />
+          </div>
+          <Separator />
+          <div className="space-y-2">
+            <Label>생일자 조기퇴근 - 자녀 1명당 시간</Label>
+            <p className="text-sm text-muted-foreground">자녀 수에 따라 연 사용 한도 자동 산정 (인사정보 가족 등록 기준)</p>
+            <div className="flex items-center gap-3">
+              <Input
+                type="number" min={0} max={8} className="w-[100px]"
+                value={work.birthday_early_per_child_hours ?? 4}
+                onChange={(e) => updateWork({ birthday_early_per_child_hours: Number(e.target.value) })}
+              />
+              <span className="text-sm text-muted-foreground">시간/자녀</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Section A-2: 유연근무 설정 */}
       <Card>
         <CardHeader>

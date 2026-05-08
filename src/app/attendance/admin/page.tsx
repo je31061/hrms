@@ -52,9 +52,12 @@ import {
   TrendingDown,
   Palmtree,
   TimerOff,
+  Pencil,
+  XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { useAttendanceModificationStore } from '@/lib/stores/attendance-modification-store';
 
 export default function AttendanceAdminPage() {
   const ATTENDANCE_STATUS = useCodeMap(CODE.ATTENDANCE_STATUS);
@@ -81,6 +84,40 @@ export default function AttendanceAdminPage() {
   const leaveBalances = useLeaveStore((s) => s.leaveBalances);
   const session = useAuthStore((s) => s.session);
   const work = useSettingsStore((s) => s.work);
+  const updateRecord = useAttendanceStore((s) => s.updateRecord);
+  const allModifications = useAttendanceModificationStore((s) => s.modifications);
+  const reviewModification = useAttendanceModificationStore((s) => s.reviewModification);
+
+  const pendingModifications = useMemo(
+    () => allModifications.filter((m) => m.status === 'pending').sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    [allModifications],
+  );
+  const reviewedModifications = useMemo(
+    () => allModifications.filter((m) => m.status !== 'pending').sort((a, b) => (b.reviewed_at ?? '').localeCompare(a.reviewed_at ?? '')),
+    [allModifications],
+  );
+
+  const handleApproveModification = (m: typeof allModifications[0]) => {
+    if (window.confirm('이 근태수정 요청을 승인하시겠습니까? 승인하면 근태에 즉시 반영됩니다.')) {
+      reviewModification(m.id, 'approved', session?.employee_id ?? '', session?.user_name ?? '관리자');
+      // 실제 근태에 반영
+      updateRecord(m.attendance_id, {
+        clock_in: m.after.clock_in,
+        clock_out: m.after.clock_out,
+        work_hours: m.after.work_hours,
+        status: m.after.status as never,
+        note: m.after.note,
+      });
+      toast.success('근태수정이 승인되었습니다.');
+    }
+  };
+  const handleRejectModification = (m: typeof allModifications[0]) => {
+    const reason = window.prompt('반려 사유를 입력하세요:');
+    if (reason) {
+      reviewModification(m.id, 'rejected', session?.employee_id ?? '', session?.user_name ?? '관리자', reason);
+      toast.success('근태수정이 반려되었습니다.');
+    }
+  };
 
   const closeout = getCloseout(year, month);
   const isClosed = !!closeout;
@@ -291,6 +328,10 @@ export default function AttendanceAdminPage() {
           <TabsTrigger value="leave" className="gap-1">
             <Palmtree className="h-3.5 w-3.5" />
             연차 현황
+          </TabsTrigger>
+          <TabsTrigger value="modifications" className="gap-1">
+            <Pencil className="h-3.5 w-3.5" />
+            근태수정 결재 ({pendingModifications.length})
           </TabsTrigger>
         </TabsList>
 
@@ -616,6 +657,125 @@ export default function AttendanceAdminPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ===== 근태수정 결재 ===== */}
+        <TabsContent value="modifications">
+          {/* 대기중 */}
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle className="text-base">결재 대기 중 ({pendingModifications.length}건)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pendingModifications.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">대기 중인 근태수정 요청이 없습니다.</p>
+              ) : (
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>요청일</TableHead>
+                        <TableHead>신청자</TableHead>
+                        <TableHead>대상 근태일</TableHead>
+                        <TableHead>변경내용</TableHead>
+                        <TableHead>사유</TableHead>
+                        <TableHead className="text-right">결재</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingModifications.map((m) => {
+                        const emp = employees.find((e) => e.id === m.employee_id);
+                        const dept = emp ? departments.find((d) => d.id === emp.department_id) : null;
+                        const att = records.find((r) => r.id === m.attendance_id);
+                        return (
+                          <TableRow key={m.id}>
+                            <TableCell className="text-xs">{m.created_at.slice(0, 10)}</TableCell>
+                            <TableCell className="text-sm font-medium">
+                              {emp?.name ?? m.employee_id}
+                              <p className="text-[10px] text-muted-foreground">{dept?.name}</p>
+                            </TableCell>
+                            <TableCell className="text-sm font-mono">{att?.date ?? '-'}</TableCell>
+                            <TableCell className="text-xs">
+                              {m.before.clock_in !== m.after.clock_in && (
+                                <div>출근: {m.before.clock_in ? new Date(m.before.clock_in).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'} → <strong>{m.after.clock_in ? new Date(m.after.clock_in).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'}</strong></div>
+                              )}
+                              {m.before.clock_out !== m.after.clock_out && (
+                                <div>퇴근: {m.before.clock_out ? new Date(m.before.clock_out).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'} → <strong>{m.after.clock_out ? new Date(m.after.clock_out).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'}</strong></div>
+                              )}
+                              {m.before.status !== m.after.status && (
+                                <div>상태: {ATTENDANCE_STATUS[m.before.status] ?? m.before.status} → <strong>{ATTENDANCE_STATUS[m.after.status] ?? m.after.status}</strong></div>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground max-w-[200px]">{m.reason}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex gap-1 justify-end">
+                                <Button size="sm" className="h-7 bg-green-600 hover:bg-green-700" onClick={() => handleApproveModification(m)}>
+                                  <CheckCircle className="h-3 w-3 mr-1" />승인
+                                </Button>
+                                <Button size="sm" variant="destructive" className="h-7" onClick={() => handleRejectModification(m)}>
+                                  <XCircle className="h-3 w-3 mr-1" />반려
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 처리 완료 */}
+          {reviewedModifications.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base text-muted-foreground">처리 완료 ({reviewedModifications.length}건)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>처리일</TableHead>
+                        <TableHead>신청자</TableHead>
+                        <TableHead>대상 근태</TableHead>
+                        <TableHead>변경 요약</TableHead>
+                        <TableHead>처리</TableHead>
+                        <TableHead>처리자/의견</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {reviewedModifications.slice(0, 30).map((m) => {
+                        const emp = employees.find((e) => e.id === m.employee_id);
+                        const att = records.find((r) => r.id === m.attendance_id);
+                        return (
+                          <TableRow key={m.id}>
+                            <TableCell className="text-xs">{m.reviewed_at?.slice(0, 10)}</TableCell>
+                            <TableCell className="text-sm">{emp?.name ?? m.employee_id}</TableCell>
+                            <TableCell className="text-sm font-mono">{att?.date ?? '-'}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{m.reason}</TableCell>
+                            <TableCell>
+                              <Badge variant={m.status === 'approved' ? 'default' : 'destructive'} className="text-xs">
+                                {m.status === 'approved' ? '승인' : '반려'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              <p>{m.reviewed_by_name}</p>
+                              {m.review_comment && (
+                                <p className="text-muted-foreground italic">"{m.review_comment}"</p>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
 

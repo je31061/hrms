@@ -321,6 +321,22 @@ export default function WorkScheduleSettings() {
             <Switch checked={work.enable_late_grace_by_request_type ?? false}
               onCheckedChange={(v) => updateWork({ enable_late_grace_by_request_type: v })} />
           </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <Label>사후결재 (근태수정 요청) 허용</Label>
+              <p className="text-sm text-muted-foreground">개인 근태조회에서 [근태수정] 버튼으로 수정요청 가능</p>
+            </div>
+            <Switch checked={work.allow_attendance_modification ?? true}
+              onCheckedChange={(v) => updateWork({ allow_attendance_modification: v })} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <Label>마감된 근태는 수정 불가</Label>
+              <p className="text-sm text-muted-foreground">근태 마감 처리된 월의 근태는 수정 요청을 비활성화</p>
+            </div>
+            <Switch checked={work.modification_locked_after_close ?? true}
+              onCheckedChange={(v) => updateWork({ modification_locked_after_close: v })} />
+          </div>
           <Separator />
           <div className="space-y-2">
             <Label>생일자 조기퇴근 - 자녀 1명당 시간</Label>

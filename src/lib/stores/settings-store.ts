@@ -83,6 +83,8 @@ interface SettingsState {
     block_near_area_business_trip: boolean;      // 부산권 출장(A/B/C) 차단
     overtime_requires_approval: boolean;         // 잔업/특근 결재 필수
     enable_late_grace_by_request_type: boolean;  // 근태별 지각 유예 차등 적용
+    allow_attendance_modification: boolean;       // 사후결재 (근태 수정요청) 허용
+    modification_locked_after_close: boolean;     // 근태 마감된 월은 수정 불가
   };
   workSchedules: WorkSchedule[];
 
@@ -438,6 +440,8 @@ export const useSettingsStore = create<SettingsStore>()(
         block_near_area_business_trip: true,
         overtime_requires_approval: true,
         enable_late_grace_by_request_type: false,
+        allow_attendance_modification: true,
+        modification_locked_after_close: true,
       },
       workSchedules: defaultWorkSchedules,
       leave: {
@@ -731,6 +735,8 @@ export const useSettingsStore = create<SettingsStore>()(
                 block_near_area_business_trip: work.block_near_area_business_trip ?? true,
                 overtime_requires_approval: work.overtime_requires_approval ?? true,
                 enable_late_grace_by_request_type: work.enable_late_grace_by_request_type ?? false,
+                allow_attendance_modification: work.allow_attendance_modification ?? true,
+                modification_locked_after_close: work.modification_locked_after_close ?? true,
                 flex_work_enabled: work.flex_work_enabled ?? true,
                 flex_start_min: work.flex_start_min ?? '06:00',
                 flex_start_max: work.flex_start_max ?? '08:00',

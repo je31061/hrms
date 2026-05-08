@@ -9,6 +9,7 @@ import { useAttendanceStore } from '@/lib/stores/attendance-store';
 import { useAppointmentStore } from '@/lib/stores/appointment-store';
 import { useApprovalStore } from '@/lib/stores/approval-store';
 import { useFlexScheduleStore } from '@/lib/stores/flex-schedule-store';
+import { useAttendanceModificationStore } from '@/lib/stores/attendance-modification-store';
 import { useSettingsStore } from '@/lib/stores/settings-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { useCodeMap, CODE } from '@/lib/hooks/use-code';
@@ -606,6 +607,10 @@ export default function MyPage() {
   const workplaces = useSettingsStore((s) => s.workplaces);
   const workSchedules = useSettingsStore((s) => s.workSchedules);
   const getActiveAssignment = useFlexScheduleStore((s) => s.getActiveAssignment);
+  const addModification = useAttendanceModificationStore((s) => s.addModification);
+  const getModByAttendance = useAttendanceModificationStore((s) => s.getByAttendance);
+  const getModByEmployee = useAttendanceModificationStore((s) => s.getByEmployee);
+  const getCloseout = useAttendanceStore((s) => s.getCloseout);
 
   const rawEmp = employees.find((e) => e.id === MY_ID);
   const myEmployee = rawEmp ? {
@@ -639,6 +644,20 @@ export default function MyPage() {
   const [selectedStart, setSelectedStart] = useState(work.default_start_time);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+
+  // === 근태 필터 & 수정 요청 ===
+  const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'normal' | 'late' | 'halfDay' | 'trip' | 'other'>('all');
+  const [modDialogOpen, setModDialogOpen] = useState(false);
+  const [modTarget, setModTarget] = useState<typeof myAttendance[0] | null>(null);
+  const [modForm, setModForm] = useState({
+    clock_in: '',
+    clock_out: '',
+    status: 'normal',
+    note: '',
+    reason: '',
+  });
+  const [modHistoryOpen, setModHistoryOpen] = useState(false);
+  const [modHistoryTargetId, setModHistoryTargetId] = useState<string | null>(null);
 
   // === 권한 체크 ===
   const userRole = session?.role ?? 'employee';
@@ -766,15 +785,111 @@ export default function MyPage() {
     return { pending, approved, rejected, toApprove };
   }, [approvals, MY_ID]);
 
+  // 필터된 근태 기록
+  const filteredAttendance = useMemo(() => {
+    if (attendanceFilter === 'all') return myAttendance;
+    if (attendanceFilter === 'normal') return myAttendance.filter((a) => a.status === 'normal');
+    if (attendanceFilter === 'late') return myAttendance.filter((a) => a.status === 'late');
+    if (attendanceFilter === 'halfDay') return myAttendance.filter((a) => a.status === 'half_day' || a.status === 'quarter_day');
+    if (attendanceFilter === 'trip') return myAttendance.filter((a) => {
+      const t = a.attendance_type;
+      return t && t !== 'office' && (
+        t.includes('trip') || t === 'field_work' || t === 'remote' || t === 'training' || t === 'dispatch'
+      );
+    });
+    if (attendanceFilter === 'other') return myAttendance.filter(
+      (a) => a.status === 'early_leave' || a.status === 'absent' || a.status === 'leave',
+    );
+    return myAttendance;
+  }, [myAttendance, attendanceFilter]);
+
+  // 마감여부 체크
+  const isAttendanceClosed = (date: string): boolean => {
+    if (!work.modification_locked_after_close) return false;
+    const d = new Date(date);
+    const closeout = getCloseout(d.getFullYear(), d.getMonth() + 1);
+    return !!closeout;
+  };
+
+  // 수정 요청 핸들러
+  const openModDialog = (record: typeof myAttendance[0]) => {
+    setModTarget(record);
+    setModForm({
+      clock_in: record.clock_in ? new Date(record.clock_in).toTimeString().slice(0, 5) : '',
+      clock_out: record.clock_out ? new Date(record.clock_out).toTimeString().slice(0, 5) : '',
+      status: record.status,
+      note: record.note ?? '',
+      reason: '',
+    });
+    setModDialogOpen(true);
+  };
+
+  const submitModification = () => {
+    if (!modTarget || !modForm.reason.trim()) {
+      toast.error('수정 사유를 입력해주세요.');
+      return;
+    }
+    const date = modTarget.date;
+    const newClockIn = modForm.clock_in ? `${date}T${modForm.clock_in}:00+09:00` : null;
+    const newClockOut = modForm.clock_out ? `${date}T${modForm.clock_out}:00+09:00` : null;
+    let newWorkHours: number | null = modTarget.work_hours;
+    if (newClockIn && newClockOut) {
+      const diff = (new Date(newClockOut).getTime() - new Date(newClockIn).getTime()) / (1000 * 60 * 60);
+      newWorkHours = Math.round(diff * 100) / 100;
+    }
+    addModification({
+      id: `am-${Date.now()}`,
+      attendance_id: modTarget.id,
+      employee_id: MY_ID,
+      before: {
+        clock_in: modTarget.clock_in,
+        clock_out: modTarget.clock_out,
+        work_hours: modTarget.work_hours,
+        status: modTarget.status,
+        note: modTarget.note,
+        attendance_type: modTarget.attendance_type,
+      },
+      after: {
+        clock_in: newClockIn,
+        clock_out: newClockOut,
+        work_hours: newWorkHours,
+        status: modForm.status,
+        note: modForm.note || null,
+        attendance_type: modTarget.attendance_type,
+      },
+      reason: modForm.reason,
+      status: 'pending',
+      approval_id: null,
+      reviewed_by: null,
+      reviewed_by_name: null,
+      reviewed_at: null,
+      review_comment: null,
+      attachment_name: null,
+      created_at: new Date().toISOString(),
+    });
+    toast.success('근태수정 요청이 접수되었습니다. 결재 진행 후 반영됩니다.');
+    setModDialogOpen(false);
+    setModTarget(null);
+  };
+
+  const myModifications = useMemo(() => getModByEmployee(MY_ID), [MY_ID, getModByEmployee]);
+
   const attendanceSummary = useMemo(() => {
     const total = myAttendance.length;
     const normal = myAttendance.filter((a) => a.status === 'normal').length;
     const late = myAttendance.filter((a) => a.status === 'late').length;
     const halfDay = myAttendance.filter((a) => a.status === 'half_day' || a.status === 'quarter_day').length;
+    // 출장/외근/재택/교육 등 외근성 근태
+    const trip = myAttendance.filter((a) => {
+      const t = a.attendance_type;
+      return t && t !== 'office' && (
+        t.includes('trip') || t === 'field_work' || t === 'remote' || t === 'training' || t === 'dispatch'
+      );
+    }).length;
     const other = myAttendance.filter(
       (a) => a.status === 'early_leave' || a.status === 'absent' || a.status === 'leave',
     ).length;
-    return { total, normal, late, halfDay, other };
+    return { total, normal, late, halfDay, trip, other };
   }, [myAttendance]);
 
   // Fallback if no employee found
@@ -999,16 +1114,21 @@ export default function MyPage() {
             </CardContent>
           </Card>
 
-          {/* Summary cards */}
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-5 mb-6">
+          {/* Summary cards - 클릭으로 필터링 */}
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6 mb-6">
             {[
-              { label: '최근 근무일', value: attendanceSummary.total, color: 'bg-accent-blue-subtle text-accent-blue' },
-              { label: '정상출근', value: attendanceSummary.normal, color: 'bg-accent-green-subtle text-accent-green' },
-              { label: '지각', value: attendanceSummary.late, color: 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400' },
-              { label: '반차/반반차', value: attendanceSummary.halfDay, color: 'bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400' },
-              { label: '조퇴/결근/휴가', value: attendanceSummary.other, color: 'bg-accent-amber-subtle text-accent-amber' },
-            ].map(({ label, value, color }) => (
-              <Card key={label}>
+              { key: 'all' as const, label: '전체', value: attendanceSummary.total, color: 'bg-accent-blue-subtle text-accent-blue' },
+              { key: 'normal' as const, label: '정상출근', value: attendanceSummary.normal, color: 'bg-accent-green-subtle text-accent-green' },
+              { key: 'late' as const, label: '지각', value: attendanceSummary.late, color: 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400' },
+              { key: 'halfDay' as const, label: '반차/반반차', value: attendanceSummary.halfDay, color: 'bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400' },
+              { key: 'trip' as const, label: '출장/외근/재택', value: attendanceSummary.trip, color: 'bg-accent-purple-subtle text-accent-purple' },
+              { key: 'other' as const, label: '기타(조퇴/결근/휴가)', value: attendanceSummary.other, color: 'bg-accent-amber-subtle text-accent-amber' },
+            ].map(({ key, label, value, color }) => (
+              <Card
+                key={label}
+                className={`cursor-pointer transition-all hover:shadow-md ${attendanceFilter === key ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => setAttendanceFilter(key)}
+              >
                 <CardContent className="pt-4">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs text-muted-foreground">{label}</p>
@@ -1017,15 +1137,29 @@ export default function MyPage() {
                     </div>
                   </div>
                   <p className="text-2xl font-bold">{value}일</p>
+                  {attendanceFilter === key && (
+                    <p className="text-[10px] text-primary mt-1">▼ 아래 표 필터링됨</p>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          {/* Attendance table */}
+          {/* Attendance table - 필터링 + 근태수정 요청 */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">근태 기록</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">
+                근태 기록
+                {attendanceFilter !== 'all' && (
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    필터: {{
+                      normal: '정상출근', late: '지각', halfDay: '반차/반반차', trip: '출장/외근/재택', other: '기타'
+                    }[attendanceFilter]}
+                    <button onClick={(e) => { e.stopPropagation(); setAttendanceFilter('all'); }} className="ml-2 hover:text-destructive">×</button>
+                  </Badge>
+                )}
+              </CardTitle>
+              <span className="text-xs text-muted-foreground">{filteredAttendance.length}건</span>
             </CardHeader>
             <CardContent>
               <div className="border rounded-lg">
@@ -1033,57 +1167,162 @@ export default function MyPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>날짜</TableHead>
+                      <TableHead>근태유형</TableHead>
                       <TableHead>근무시간대</TableHead>
                       <TableHead>출근</TableHead>
                       <TableHead>퇴근</TableHead>
                       <TableHead>근무시간</TableHead>
                       <TableHead>상태</TableHead>
                       <TableHead>비고</TableHead>
+                      <TableHead className="text-right">작업</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {myAttendance.length === 0 ? (
+                    {filteredAttendance.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground">근태 기록이 없습니다.</TableCell>
+                        <TableCell colSpan={9} className="text-center text-muted-foreground">근태 기록이 없습니다.</TableCell>
                       </TableRow>
-                    ) : myAttendance.map((a) => (
-                      <TableRow key={a.id}>
-                        <TableCell className="font-medium">{a.date}</TableCell>
-                        <TableCell>
-                          <span className="text-xs text-muted-foreground font-mono">
-                            {a.scheduled_start && a.scheduled_end
-                              ? `${a.scheduled_start}~${a.scheduled_end}`
-                              : '-'}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-sm">{formatClockTime(a.clock_in)}</TableCell>
-                        <TableCell className="text-sm">{formatClockTime(a.clock_out)}</TableCell>
-                        <TableCell className="text-sm">
-                          {a.work_hours != null ? `${a.work_hours.toFixed(2)}h` : '-'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Badge
-                              variant={attendanceStatusVariant(a.status)}
-                              className="text-xs"
-                            >
-                              {ATTENDANCE_STATUS[a.status as keyof typeof ATTENDANCE_STATUS] ?? a.status}
-                            </Badge>
-                            {a.leave_time_period && (
-                              <Badge variant="outline" className="text-xs">
-                                {LEAVE_TIME_PERIODS[a.leave_time_period as keyof typeof LEAVE_TIME_PERIODS]}
+                    ) : filteredAttendance.map((a) => {
+                      const isClosed = isAttendanceClosed(a.date);
+                      const mods = getModByAttendance(a.id);
+                      const hasPendingMod = mods.some((m) => m.status === 'pending');
+                      const hasApprovedMod = mods.some((m) => m.status === 'approved');
+                      return (
+                        <TableRow key={a.id} className={isClosed ? 'bg-muted/30' : ''}>
+                          <TableCell className="font-medium">
+                            {a.date}
+                            {isClosed && <Badge variant="outline" className="ml-1 text-[9px]">마감</Badge>}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs text-muted-foreground">
+                              {a.attendance_type ?? 'office'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs text-muted-foreground font-mono">
+                              {a.scheduled_start && a.scheduled_end
+                                ? `${a.scheduled_start}~${a.scheduled_end}`
+                                : '-'}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-sm">{formatClockTime(a.clock_in)}</TableCell>
+                          <TableCell className="text-sm">{formatClockTime(a.clock_out)}</TableCell>
+                          <TableCell className="text-sm">
+                            {a.work_hours != null ? `${a.work_hours.toFixed(2)}h` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Badge
+                                variant={attendanceStatusVariant(a.status)}
+                                className="text-xs"
+                              >
+                                {ATTENDANCE_STATUS[a.status as keyof typeof ATTENDANCE_STATUS] ?? a.status}
                               </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{a.note ?? ''}</TableCell>
-                      </TableRow>
-                    ))}
+                              {a.leave_time_period && (
+                                <Badge variant="outline" className="text-xs">
+                                  {LEAVE_TIME_PERIODS[a.leave_time_period as keyof typeof LEAVE_TIME_PERIODS]}
+                                </Badge>
+                              )}
+                              {hasPendingMod && (
+                                <Badge variant="secondary" className="text-[10px] bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300">
+                                  수정대기
+                                </Badge>
+                              )}
+                              {hasApprovedMod && !hasPendingMod && (
+                                <Badge variant="outline" className="text-[10px]">수정됨</Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{a.note ?? ''}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex gap-1 justify-end">
+                              {mods.length > 0 && (
+                                <Button
+                                  variant="ghost" size="sm" className="h-7 px-2 text-xs"
+                                  onClick={() => { setModHistoryTargetId(a.id); setModHistoryOpen(true); }}
+                                >
+                                  이력
+                                </Button>
+                              )}
+                              {work.allow_attendance_modification && !isClosed && !hasPendingMod && (
+                                <Button
+                                  variant="outline" size="sm" className="h-7 px-2 text-xs"
+                                  onClick={() => openModDialog(a)}
+                                >
+                                  근태수정
+                                </Button>
+                              )}
+                              {isClosed && (
+                                <span className="text-[10px] text-muted-foreground">마감</span>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
             </CardContent>
           </Card>
+
+          {/* 내 근태수정 요청 이력 */}
+          {myModifications.length > 0 && (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="text-base">내 근태수정 요청 이력 ({myModifications.length}건)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>요청일</TableHead>
+                        <TableHead>대상 근태일</TableHead>
+                        <TableHead>변경 내용</TableHead>
+                        <TableHead>사유</TableHead>
+                        <TableHead>상태</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {myModifications.slice(0, 10).map((m) => {
+                        const target = myAttendance.find((a) => a.id === m.attendance_id);
+                        return (
+                          <TableRow key={m.id}>
+                            <TableCell className="text-xs">{m.created_at.slice(0, 10)}</TableCell>
+                            <TableCell className="text-sm font-medium">{target?.date ?? '-'}</TableCell>
+                            <TableCell className="text-xs">
+                              {m.before.clock_in !== m.after.clock_in && (
+                                <div>출근: {m.before.clock_in ? new Date(m.before.clock_in).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'} → {m.after.clock_in ? new Date(m.after.clock_in).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'}</div>
+                              )}
+                              {m.before.clock_out !== m.after.clock_out && (
+                                <div>퇴근: {m.before.clock_out ? new Date(m.before.clock_out).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'} → {m.after.clock_out ? new Date(m.after.clock_out).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'}</div>
+                              )}
+                              {m.before.status !== m.after.status && (
+                                <div>상태: {m.before.status} → {m.after.status}</div>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{m.reason}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={m.status === 'approved' ? 'default' : m.status === 'rejected' ? 'destructive' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {m.status === 'pending' ? '결재 대기' : m.status === 'approved' ? '승인' : '반려'}
+                              </Badge>
+                              {m.reviewed_by_name && (
+                                <p className="text-[10px] text-muted-foreground mt-0.5">{m.reviewed_by_name}</p>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* ============================================================== */}
@@ -1803,6 +2042,139 @@ export default function MyPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* 근태수정 요청 다이얼로그 */}
+      <Dialog open={modDialogOpen} onOpenChange={setModDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>근태수정 요청 (사후결재)</DialogTitle>
+            <DialogDescription>
+              {modTarget?.date} 근태를 수정 요청합니다. 결재 승인 후 반영되며 수정 이력이 저장됩니다.
+            </DialogDescription>
+          </DialogHeader>
+          {modTarget && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">현재 출근</p>
+                  <p className="text-sm font-mono">{formatClockTime(modTarget.clock_in)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">현재 퇴근</p>
+                  <p className="text-sm font-mono">{formatClockTime(modTarget.clock_out)}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>수정 출근시간</Label>
+                  <Input type="time" value={modForm.clock_in}
+                    onChange={(e) => setModForm((p) => ({ ...p, clock_in: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>수정 퇴근시간</Label>
+                  <Input type="time" value={modForm.clock_out}
+                    onChange={(e) => setModForm((p) => ({ ...p, clock_out: e.target.value }))} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>상태</Label>
+                <Select value={modForm.status} onValueChange={(v) => setModForm((p) => ({ ...p, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal">정상</SelectItem>
+                    <SelectItem value="late">지각</SelectItem>
+                    <SelectItem value="early_leave">조퇴</SelectItem>
+                    <SelectItem value="absent">결근</SelectItem>
+                    <SelectItem value="leave">휴가</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>비고</Label>
+                <Input value={modForm.note}
+                  onChange={(e) => setModForm((p) => ({ ...p, note: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>수정 사유 *</Label>
+                <Textarea
+                  value={modForm.reason}
+                  onChange={(e) => setModForm((p) => ({ ...p, reason: e.target.value }))}
+                  placeholder="예) 출장 중 출근 미체크, 시스템 오류로 퇴근 미체크 등"
+                  rows={3}
+                />
+              </div>
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg text-xs text-muted-foreground">
+                💡 수정 요청은 결재 진행 후 승인 시 근태에 반영되며, 수정 이력은 별도 저장됩니다.
+                인사팀은 [근태수정 결재] 탭에서 별도 조회 가능합니다.
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModDialogOpen(false)}>취소</Button>
+            <Button onClick={submitModification}>결재 상신</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 근태수정 이력 다이얼로그 */}
+      <Dialog open={modHistoryOpen} onOpenChange={setModHistoryOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>근태수정 이력</DialogTitle>
+            <DialogDescription>
+              {modHistoryTargetId && (() => {
+                const a = myAttendance.find((x) => x.id === modHistoryTargetId);
+                return a?.date ?? '';
+              })()} 근태에 대한 수정 요청 내역
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {modHistoryTargetId && getModByAttendance(modHistoryTargetId).map((m) => (
+              <div key={m.id} className="border rounded-lg p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Badge variant={m.status === 'approved' ? 'default' : m.status === 'rejected' ? 'destructive' : 'secondary'} className="text-xs">
+                    {m.status === 'pending' ? '결재 대기' : m.status === 'approved' ? '승인' : '반려'}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">{m.created_at.slice(0, 16).replace('T', ' ')}</span>
+                </div>
+                <div className="text-xs space-y-1">
+                  {m.before.clock_in !== m.after.clock_in && (
+                    <div className="flex gap-2">
+                      <span className="text-muted-foreground">출근:</span>
+                      <span className="line-through text-muted-foreground">{m.before.clock_in ? new Date(m.before.clock_in).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+                      <span>→</span>
+                      <span className="font-medium">{m.after.clock_in ? new Date(m.after.clock_in).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+                    </div>
+                  )}
+                  {m.before.clock_out !== m.after.clock_out && (
+                    <div className="flex gap-2">
+                      <span className="text-muted-foreground">퇴근:</span>
+                      <span className="line-through text-muted-foreground">{m.before.clock_out ? new Date(m.before.clock_out).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+                      <span>→</span>
+                      <span className="font-medium">{m.after.clock_out ? new Date(m.after.clock_out).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+                    </div>
+                  )}
+                  {m.before.status !== m.after.status && (
+                    <div className="flex gap-2">
+                      <span className="text-muted-foreground">상태:</span>
+                      <span className="line-through text-muted-foreground">{ATTENDANCE_STATUS[m.before.status as keyof typeof ATTENDANCE_STATUS] ?? m.before.status}</span>
+                      <span>→</span>
+                      <span className="font-medium">{ATTENDANCE_STATUS[m.after.status as keyof typeof ATTENDANCE_STATUS] ?? m.after.status}</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground border-t pt-2">사유: {m.reason}</p>
+                {m.review_comment && (
+                  <p className="text-xs text-muted-foreground">검토의견: {m.review_comment}</p>
+                )}
+                {m.reviewed_by_name && (
+                  <p className="text-[10px] text-muted-foreground">검토자: {m.reviewed_by_name} ({m.reviewed_at?.slice(0, 16).replace('T', ' ')})</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

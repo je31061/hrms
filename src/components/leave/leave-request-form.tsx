@@ -40,7 +40,9 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
   const [reason, setReason] = useState('');
   const [isHalfDay, setIsHalfDay] = useState(false);
   const [isQuarterDay, setIsQuarterDay] = useState(false);
-  const [period, setPeriod] = useState<'am' | 'pm'>('am');
+  const [period, setPeriod] = useState<'am' | 'pm' | 'custom'>('am');
+  const [customStartTime, setCustomStartTime] = useState('');
+  const [customEndTime, setCustomEndTime] = useState('');
 
   const activeTypes = leaveTypes.filter((lt) => lt.is_active);
   const holidayDates = holidays.filter((h) => h.is_active).map((h) => h.date);
@@ -61,6 +63,27 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
   const selectedBalance = balances.find((b) => b.leave_type_id === leaveTypeId);
   const isOverLimit = selectedBalance ? calculatedDays > selectedBalance.remaining_days : false;
 
+  // 시간을 분 단위로 변환
+  const timeToMinutes = (t: string) => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  };
+  const minutesToTime = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  };
+
+  // 사용자 지정 시간이 유효한지 검증
+  const customDuration = useMemo(() => {
+    if (period !== 'custom' || !customStartTime || !customEndTime) return 0;
+    const diff = timeToMinutes(customEndTime) - timeToMinutes(customStartTime);
+    return diff;
+  }, [period, customStartTime, customEndTime]);
+
+  const expectedMinutes = isHalfDay ? 240 : isQuarterDay ? 120 : 0;
+  const customTimeValid = period !== 'custom' || (customDuration === expectedMinutes);
+
   // Compute work time description for half/quarter day
   const getWorkTimeDesc = () => {
     const start = work.default_start_time;
@@ -69,6 +92,14 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
     const [eh] = end.split(':').map(Number);
     const midH = Math.floor((sh + eh) / 2);
     const mid = `${String(midH).padStart(2, '0')}:00`;
+
+    if (period === 'custom') {
+      if (!customStartTime || !customEndTime) return '시작/종료 시간을 입력하세요';
+      if (customDuration !== expectedMinutes) {
+        return `${isHalfDay ? '반차는 4시간' : '반반차는 2시간'}이어야 합니다. (현재 ${customDuration}분)`;
+      }
+      return `사용자지정: ${customStartTime} ~ ${customEndTime} 휴가 (${customDuration / 60}시간)`;
+    }
 
     if (isHalfDay) {
       if (period === 'am') {
@@ -102,6 +133,17 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
       toast.error('잔여일수를 초과합니다.');
       return;
     }
+    // 사용자 지정 시간 검증
+    if ((isHalfDay || isQuarterDay) && period === 'custom') {
+      if (!customStartTime || !customEndTime) {
+        toast.error('시작/종료 시간을 입력해주세요.');
+        return;
+      }
+      if (customDuration !== expectedMinutes) {
+        toast.error(`${isHalfDay ? '반차는 4시간(240분)' : '반반차는 2시간(120분)'}이어야 합니다.`);
+        return;
+      }
+    }
 
     const request = {
       id: `lr-${crypto.randomUUID().slice(0, 8)}`,
@@ -115,10 +157,12 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
       approval_id: null,
       created_at: new Date().toISOString().slice(0, 10),
       leave_time_period: (isHalfDay
-        ? (period === 'am' ? 'am_half' : 'pm_half')
+        ? (period === 'am' ? 'am_half' : period === 'pm' ? 'pm_half' : 'custom_half')
         : isQuarterDay
-          ? (period === 'am' ? 'am_quarter' : 'pm_quarter')
+          ? (period === 'am' ? 'am_quarter' : period === 'pm' ? 'pm_quarter' : 'custom_quarter')
           : undefined) as LeaveTimePeriod | undefined,
+      custom_start_time: period === 'custom' ? customStartTime : null,
+      custom_end_time: period === 'custom' ? customEndTime : null,
     };
 
     addLeaveRequest(request);
@@ -207,7 +251,7 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
         )}
       </div>
 
-      {/* AM/PM Period selection */}
+      {/* AM/PM/Custom Period selection */}
       {(isHalfDay || isQuarterDay) && (
         <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
           <Label className="text-sm font-medium">
@@ -215,8 +259,8 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
           </Label>
           <RadioGroup
             value={period}
-            onValueChange={(v) => setPeriod(v as 'am' | 'pm')}
-            className="flex gap-4"
+            onValueChange={(v) => setPeriod(v as 'am' | 'pm' | 'custom')}
+            className="flex flex-col gap-2"
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="am" id="period-am" />
@@ -230,9 +274,48 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
                 {isHalfDay ? '오후반차 (오후 근무면제)' : '오후반반차 (오후 2시간 면제)'}
               </Label>
             </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="custom" id="period-custom" />
+              <Label htmlFor="period-custom" className="text-sm cursor-pointer">
+                사용자 지정 시간 ({isHalfDay ? '4시간' : '2시간'})
+              </Label>
+            </div>
           </RadioGroup>
+
+          {/* 사용자 지정 시간 입력 */}
+          {period === 'custom' && (
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+              <div className="space-y-1">
+                <Label className="text-xs">시작 시간</Label>
+                <Input
+                  type="time"
+                  value={customStartTime}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setCustomStartTime(v);
+                    // 종료시간 자동 계산 (반차=4h, 반반차=2h)
+                    if (v && expectedMinutes > 0) {
+                      const newEnd = timeToMinutes(v) + expectedMinutes;
+                      if (newEnd <= 24 * 60) {
+                        setCustomEndTime(minutesToTime(newEnd));
+                      }
+                    }
+                  }}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">종료 시간</Label>
+                <Input
+                  type="time"
+                  value={customEndTime}
+                  onChange={(e) => setCustomEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
           {getWorkTimeDesc() && (
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className={`text-xs mt-1 ${period === 'custom' && !customTimeValid ? 'text-destructive' : 'text-muted-foreground'}`}>
               {getWorkTimeDesc()}
             </p>
           )}
@@ -260,7 +343,7 @@ export default function LeaveRequestForm({ employeeId, onSuccess }: LeaveRequest
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="submit" disabled={isOverLimit}>
+        <Button type="submit" disabled={isOverLimit || !customTimeValid}>
           신청
         </Button>
       </div>

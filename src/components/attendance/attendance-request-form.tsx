@@ -162,7 +162,9 @@ export function AttendanceRequestForm({
   const [endDate, setEndDate] = useState('');     // 도착일자
   const [startTime, setStartTime] = useState(''); // 출발시간
   const [endTime, setEndTime] = useState('');     // 도착시간
-  const [halfPeriod, setHalfPeriod] = useState<'am' | 'pm'>('am');
+  const [halfPeriod, setHalfPeriod] = useState<'am' | 'pm' | 'custom'>('am');
+  const [halfCustomStart, setHalfCustomStart] = useState('');
+  const [halfCustomEnd, setHalfCustomEnd] = useState('');
   const [location, setLocation] = useState('');
   const [purpose, setPurpose] = useState('');
   const [reason, setReason] = useState('');
@@ -261,6 +263,7 @@ export function AttendanceRequestForm({
     setStartDate(''); setEndDate('');
     setStartTime(''); setEndTime('');
     setHalfPeriod('am');
+    setHalfCustomStart(''); setHalfCustomEnd('');
     setLocation(''); setPurpose(''); setReason('');
     setClient(''); setRegion(''); setVehicle('');
     setDepartLocation('company'); setDepartLocationDetail('');
@@ -303,6 +306,21 @@ export function AttendanceRequestForm({
       toast.error('시작일을 선택해주세요.');
       return;
     }
+    // 반차/반반차/1H연차 사용자 지정 시간 검증
+    if (isHalfType && halfPeriod === 'custom') {
+      if (!halfCustomStart || !halfCustomEnd) {
+        toast.error('사용자 지정 시간을 입력해주세요.');
+        return;
+      }
+      const [sh, sm] = halfCustomStart.split(':').map(Number);
+      const [eh, em] = halfCustomEnd.split(':').map(Number);
+      const dur = (eh * 60 + em) - (sh * 60 + sm);
+      const expected = type === 'leave_half' ? 240 : type === 'leave_quarter' ? 120 : 60;
+      if (dur !== expected) {
+        toast.error(`${type === 'leave_half' ? '반차는 4시간' : type === 'leave_quarter' ? '반반차는 2시간' : '1H연차는 1시간'}이어야 합니다. (현재 ${dur}분)`);
+        return;
+      }
+    }
     if (!isHalfType && !endDate) {
       setEndDate(startDate);
     }
@@ -338,6 +356,8 @@ export function AttendanceRequestForm({
         startDate, endDate: isHalfType ? startDate : (endDate || startDate),
         startTime: startTime || null, endTime: endTime || null,
         halfPeriod: isHalfType ? halfPeriod : null,
+        halfCustomStart: isHalfType && halfPeriod === 'custom' ? halfCustomStart : null,
+        halfCustomEnd: isHalfType && halfPeriod === 'custom' ? halfCustomEnd : null,
         days: calculatedDays,
         location: needsLocation ? location : null,
         purpose: needsLocation ? purpose : null,
@@ -514,18 +534,57 @@ export function AttendanceRequestForm({
             {isHalfType && (
               <div className="space-y-2">
                 <Label>시간대 *</Label>
-                <Select value={halfPeriod} onValueChange={(v) => setHalfPeriod(v as 'am' | 'pm')}>
+                <Select value={halfPeriod} onValueChange={(v) => setHalfPeriod(v as 'am' | 'pm' | 'custom')}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="am">오전</SelectItem>
                     <SelectItem value="pm">오후</SelectItem>
+                    <SelectItem value="custom">사용자 지정</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             )}
           </div>
+
+          {/* 반차/반반차/1H연차 - 사용자 지정 시간 입력 */}
+          {isHalfType && halfPeriod === 'custom' && (
+            <div className="grid grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/30">
+              <div className="space-y-2">
+                <Label>시작 시간 *</Label>
+                <Input
+                  type="time"
+                  value={halfCustomStart}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setHalfCustomStart(v);
+                    if (v) {
+                      const [h, m] = v.split(':').map(Number);
+                      const dur = type === 'leave_half' ? 240 : type === 'leave_quarter' ? 120 : 60;
+                      const endMin = h * 60 + m + dur;
+                      if (endMin <= 24 * 60) {
+                        const eh = Math.floor(endMin / 60);
+                        const em = endMin % 60;
+                        setHalfCustomEnd(`${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`);
+                      }
+                    }
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>종료 시간 *</Label>
+                <Input
+                  type="time"
+                  value={halfCustomEnd}
+                  onChange={(e) => setHalfCustomEnd(e.target.value)}
+                />
+              </div>
+              <p className="col-span-2 text-xs text-muted-foreground">
+                {type === 'leave_half' ? '반차는 4시간(240분)' : type === 'leave_quarter' ? '반반차는 2시간(120분)' : '1H연차는 1시간(60분)'} 단위로 신청해야 합니다.
+              </p>
+            </div>
+          )}
 
           {/* 출발/도착 시간 (외근/출장/잔업/특근) */}
           {(needsTripFields || isOvertime || type === 'training') && (

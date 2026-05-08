@@ -103,7 +103,7 @@ export type DegreeType = 'high_school' | 'associate' | 'bachelor' | 'master' | '
 
 export type AttendanceStatus = 'normal' | 'late' | 'early_leave' | 'absent' | 'holiday' | 'leave' | 'half_day' | 'quarter_day';
 export type HalfDayPeriod = 'am' | 'pm';
-export type LeaveTimePeriod = 'am_half' | 'pm_half' | 'am_quarter' | 'pm_quarter';
+export type LeaveTimePeriod = 'am_half' | 'pm_half' | 'am_quarter' | 'pm_quarter' | 'custom_half' | 'custom_quarter';
 
 export type AttendanceCategory = 'work' | 'leave' | 'trip' | 'special' | 'overtime' | 'absence';
 
@@ -398,6 +398,8 @@ export interface LeaveRequest {
   status: LeaveRequestStatus;
   approval_id: string | null;
   leave_time_period?: LeaveTimePeriod;
+  custom_start_time?: string | null;
+  custom_end_time?: string | null;
   created_at: string;
   employee?: Employee;
   leave_type?: LeaveType;

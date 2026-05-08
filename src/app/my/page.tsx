@@ -42,6 +42,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import {
   User,
@@ -73,6 +77,11 @@ import {
   Hash,
   CreditCard,
   Users,
+  Pencil,
+  Lock,
+  EyeOff,
+  Save,
+  Trash2,
 } from 'lucide-react';
 import {
   BarChart,
@@ -589,6 +598,10 @@ export default function MyPage() {
   const educationHistories = useEmployeeStore((s) => s.educationHistories);
   const certifications = useEmployeeStore((s) => s.certifications);
   const familyMembers = useEmployeeStore((s) => s.familyMembers);
+  const updateEmployee = useEmployeeStore((s) => s.updateEmployee);
+  const addFamilyMember = useEmployeeStore((s) => s.addFamilyMember);
+  const updateFamilyMember = useEmployeeStore((s) => s.updateFamilyMember);
+  const deleteFamilyMember = useEmployeeStore((s) => s.deleteFamilyMember);
   const work = useSettingsStore((s) => s.work);
   const workplaces = useSettingsStore((s) => s.workplaces);
   const workSchedules = useSettingsStore((s) => s.workSchedules);
@@ -626,6 +639,27 @@ export default function MyPage() {
   const [selectedStart, setSelectedStart] = useState(work.default_start_time);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+
+  // === 권한 체크 ===
+  const userRole = session?.role ?? 'employee';
+  const isHR = userRole === 'admin' || userRole === 'hr_manager';
+  // 본인은 자기 정보의 개인신상/가족정보 수정 가능, 인사기본정보(부서/직급/사번 등)는 HR만
+  const canEditPersonal = true; // 본인은 항상 수정 가능
+  // 민감정보(주민번호 전체) - HR만 조회 가능
+  const canViewSensitive = isHR;
+
+  // 편집 다이얼로그 상태
+  const [personalEditOpen, setPersonalEditOpen] = useState(false);
+  const [personalForm, setPersonalForm] = useState({
+    phone: '', personal_email: '', address: '', address_detail: '', zip_code: '',
+    marriage_date: '', emergency_contact_name: '', emergency_contact_phone: '', emergency_contact_relation: '',
+  });
+  const [familyDialogOpen, setFamilyDialogOpen] = useState(false);
+  const [editingFamilyId, setEditingFamilyId] = useState<string | null>(null);
+  const [familyForm, setFamilyForm] = useState({
+    name: '', relation: '배우자', birth_date: '', phone: '',
+    is_dependent: false, is_living_together: true, has_income: false, medical_notes: '',
+  });
 
   // Timer for clock
   useState(() => {

@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Users, Clock, CalendarDays, UserRoundPlus, Cake, PartyPopper, Briefcase } from 'lucide-react';
+import Link from 'next/link';
+import { Users, Clock, CalendarDays, UserRoundPlus, Cake, PartyPopper, Briefcase, AlertTriangle, UserX, LogOut, Timer, TimerOff, ArrowRight } from 'lucide-react';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ReferenceLine,
@@ -14,6 +15,7 @@ import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { useAttendanceStore } from '@/lib/stores/attendance-store';
 import { useLeaveStore } from '@/lib/stores/leave-store';
@@ -49,6 +51,44 @@ export default function DashboardPage() {
       r.status === 'approved' && r.start_date <= today && r.end_date >= today,
     ).length;
   }, [leaveRequests, today]);
+
+  // === 금일 근태 집계 ===
+  const todayAttendanceSummary = useMemo(() => {
+    const total = activeEmployees.length;
+    const records = todayAttendance;
+    const lateCount = records.filter((r) => r.status === 'late').length;
+    const earlyLeaveCount = records.filter((r) => r.status === 'early_leave').length;
+    const halfDayCount = records.filter((r) => r.status === 'half_day' || r.status === 'quarter_day').length;
+    const onLeaveStatus = records.filter((r) => r.status === 'leave').length;
+    const missingClockOut = records.filter((r) => r.clock_in && !r.clock_out).length;
+    const noClockIn = total - records.length - onLeaveToday;
+    const normalCount = records.filter((r) => r.status === 'normal').length;
+    return {
+      total, normalCount, lateCount, earlyLeaveCount, halfDayCount,
+      missingClockOut, noClockIn: Math.max(0, noClockIn), onLeaveStatus, totalRecorded: records.length,
+    };
+  }, [todayAttendance, activeEmployees, onLeaveToday]);
+
+  // 지각자/미타각자 명단 추출
+  const lateEmployees = useMemo(() => {
+    return todayAttendance
+      .filter((r) => r.status === 'late')
+      .map((r) => {
+        const emp = employees.find((e) => e.id === r.employee_id);
+        const dept = emp ? departments.find((d) => d.id === emp.department_id) : null;
+        return { id: r.id, name: emp?.name ?? '-', dept: dept?.name ?? '-', clockIn: r.clock_in };
+      });
+  }, [todayAttendance, employees, departments]);
+
+  const missingClockOutEmployees = useMemo(() => {
+    return todayAttendance
+      .filter((r) => r.clock_in && !r.clock_out)
+      .map((r) => {
+        const emp = employees.find((e) => e.id === r.employee_id);
+        const dept = emp ? departments.find((d) => d.id === emp.department_id) : null;
+        return { id: r.id, name: emp?.name ?? '-', dept: dept?.name ?? '-', clockIn: r.clock_in };
+      });
+  }, [todayAttendance, employees, departments]);
 
   // Hire / resign stats for current year
   const { hiresThisYear, resignsThisYear, turnoverRate } = useMemo(() => {
@@ -273,6 +313,115 @@ export default function DashboardPage() {
           <StatsCard key={stat.title} {...stat} />
         ))}
       </div>
+
+      {/* ── 금일 근태 집계 ── */}
+      <Card className="mb-6">
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            금일 근태 집계
+            <Badge variant="outline" className="ml-2 font-normal">{today}</Badge>
+          </CardTitle>
+          <Link href="/attendance">
+            <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs">
+              상세보기
+              <ArrowRight className="h-3 w-3" />
+            </Button>
+          </Link>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 grid-cols-2 md:grid-cols-4 lg:grid-cols-7 mb-4">
+            <div className="rounded-lg border p-3 text-center">
+              <Users className="h-4 w-4 mx-auto mb-1 text-blue-500" />
+              <p className="text-xs text-muted-foreground">대상 인원</p>
+              <p className="text-lg font-bold">{todayAttendanceSummary.total}</p>
+            </div>
+            <div className="rounded-lg border p-3 text-center bg-green-50 dark:bg-green-950/20">
+              <Clock className="h-4 w-4 mx-auto mb-1 text-green-600" />
+              <p className="text-xs text-muted-foreground">정상 출근</p>
+              <p className="text-lg font-bold text-green-600">{todayAttendanceSummary.normalCount}</p>
+            </div>
+            <div className="rounded-lg border p-3 text-center bg-red-50 dark:bg-red-950/20">
+              <AlertTriangle className="h-4 w-4 mx-auto mb-1 text-red-600" />
+              <p className="text-xs text-muted-foreground">지각</p>
+              <p className="text-lg font-bold text-red-600">{todayAttendanceSummary.lateCount}</p>
+            </div>
+            <div className="rounded-lg border p-3 text-center bg-orange-50 dark:bg-orange-950/20">
+              <LogOut className="h-4 w-4 mx-auto mb-1 text-orange-600" />
+              <p className="text-xs text-muted-foreground">조퇴</p>
+              <p className="text-lg font-bold text-orange-600">{todayAttendanceSummary.earlyLeaveCount}</p>
+            </div>
+            <div className="rounded-lg border p-3 text-center bg-amber-50 dark:bg-amber-950/20">
+              <TimerOff className="h-4 w-4 mx-auto mb-1 text-amber-600" />
+              <p className="text-xs text-muted-foreground">반차/반반차</p>
+              <p className="text-lg font-bold text-amber-600">{todayAttendanceSummary.halfDayCount}</p>
+            </div>
+            <div className="rounded-lg border p-3 text-center bg-yellow-50 dark:bg-yellow-950/20">
+              <Timer className="h-4 w-4 mx-auto mb-1 text-yellow-600" />
+              <p className="text-xs text-muted-foreground">퇴근 미타각</p>
+              <p className="text-lg font-bold text-yellow-600">{todayAttendanceSummary.missingClockOut}</p>
+            </div>
+            <div className="rounded-lg border p-3 text-center bg-gray-50 dark:bg-gray-900/40">
+              <UserX className="h-4 w-4 mx-auto mb-1 text-gray-600" />
+              <p className="text-xs text-muted-foreground">미출근</p>
+              <p className="text-lg font-bold">{todayAttendanceSummary.noClockIn}</p>
+            </div>
+          </div>
+
+          {/* 출근율 진행바 */}
+          <div className="mb-4">
+            <div className="flex justify-between text-xs mb-1.5">
+              <span className="text-muted-foreground">출근율</span>
+              <span className="font-medium">
+                {todayAttendanceSummary.totalRecorded} / {todayAttendanceSummary.total}명 ({attendanceRate}%)
+              </span>
+            </div>
+            <Progress value={attendanceRate} className="h-2" />
+          </div>
+
+          {/* 지각자 / 미타각자 명단 */}
+          {(lateEmployees.length > 0 || missingClockOutEmployees.length > 0) && (
+            <div className="grid gap-4 md:grid-cols-2 mt-4 pt-4 border-t">
+              {lateEmployees.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-red-600 mb-2 flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    지각자 ({lateEmployees.length}명)
+                  </p>
+                  <div className="space-y-1 max-h-40 overflow-auto">
+                    {lateEmployees.map((emp) => (
+                      <div key={emp.id} className="flex items-center justify-between text-xs px-2 py-1 rounded bg-red-50/50 dark:bg-red-950/10">
+                        <span className="font-medium">{emp.name}</span>
+                        <span className="text-muted-foreground">{emp.dept}</span>
+                        <span className="font-mono text-red-600">
+                          {emp.clockIn ? new Date(emp.clockIn).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {missingClockOutEmployees.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-yellow-600 mb-2 flex items-center gap-1">
+                    <Timer className="h-3 w-3" />
+                    퇴근 미타각자 ({missingClockOutEmployees.length}명)
+                  </p>
+                  <div className="space-y-1 max-h-40 overflow-auto">
+                    {missingClockOutEmployees.map((emp) => (
+                      <div key={emp.id} className="flex items-center justify-between text-xs px-2 py-1 rounded bg-yellow-50/50 dark:bg-yellow-950/10">
+                        <span className="font-medium">{emp.name}</span>
+                        <span className="text-muted-foreground">{emp.dept}</span>
+                        <span className="font-mono text-yellow-700">출근만</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2 mb-6">
         <HeadcountChart data={headcountData} />

@@ -425,6 +425,9 @@ export function FamilyDialog({ open, onOpenChange, employeeId, initialData, onSu
     birth_date: '',
     phone: '',
     is_dependent: false,
+    is_living_together: true,
+    has_income: false,
+    medical_notes: null,
   });
 
   useEffect(() => {
@@ -440,6 +443,9 @@ export function FamilyDialog({ open, onOpenChange, employeeId, initialData, onSu
           birth_date: '',
           phone: '',
           is_dependent: false,
+          is_living_together: true,
+          has_income: false,
+          medical_notes: null,
         });
       }
     }

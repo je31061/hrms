@@ -342,6 +342,9 @@ export interface FamilyMember {
   birth_date: string | null;
   phone: string | null;
   is_dependent: boolean;
+  is_living_together: boolean;
+  has_income: boolean;
+  medical_notes: string | null;
 }
 
 export interface Attendance {

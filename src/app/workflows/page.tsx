@@ -1,9 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
+import { ListChecks, Clock, CheckCircle2, AlertTriangle, BarChart3 } from 'lucide-react';
+import { useEmployeeStore } from '@/lib/stores/employee-store';
 import {
   Dialog,
   DialogContent,
@@ -32,12 +37,40 @@ export default function WorkflowsPage() {
   const instances = useWorkflowStore((s) => s.instances);
   const templates = useWorkflowStore((s) => s.templates);
   const createInstance = useWorkflowStore((s) => s.createInstance);
+  const realEmployees = useEmployeeStore((s) => s.employees);
+  const realDepartments = useEmployeeStore((s) => s.departments);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [employeeName, setEmployeeName] = useState('');
   const [employeeDepartment, setEmployeeDepartment] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+
+  // SLA / 지연 체크
+  const stats = useMemo(() => {
+    const total = instances.length;
+    const inProgress = instances.filter((i) => i.status === 'in_progress' || i.status === 'pending').length;
+    const completed = instances.filter((i) => i.status === 'completed').length;
+    // 7일 이상 진행중인 것은 지연으로 간주
+    const now = new Date();
+    const overdue = instances.filter((i) => {
+      if (i.status === 'completed' || i.status === 'cancelled') return false;
+      const started = new Date(i.started_at);
+      const days = (now.getTime() - started.getTime()) / (1000 * 60 * 60 * 24);
+      return days >= 7;
+    }).length;
+    // 평균 완료 일수
+    const completedInstances = instances.filter((i) => i.status === 'completed' && i.completed_at);
+    const avgDays = completedInstances.length > 0
+      ? Math.round(completedInstances.reduce((sum, i) => {
+          const s = new Date(i.started_at);
+          const e = new Date(i.completed_at!);
+          return sum + (e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24);
+        }, 0) / completedInstances.length * 10) / 10
+      : 0;
+    return { total, inProgress, completed, overdue, avgDays };
+  }, [instances]);
 
   const activeTemplates = templates.filter((t) => t.is_active);
 
@@ -53,20 +86,35 @@ export default function WorkflowsPage() {
   const all = filteredByType(instances);
 
   const handleCreate = () => {
-    if (!selectedTemplate || !employeeName.trim()) {
-      toast.error('템플릿과 직원명을 입력해주세요.');
+    if (!selectedTemplate) {
+      toast.error('템플릿을 선택해주세요.');
       return;
     }
-    const id = createInstance(
-      selectedTemplate,
-      `e-${Date.now()}`,
-      employeeName.trim(),
-      employeeDepartment.trim() || '-'
-    );
+    let empId = '';
+    let empName = '';
+    let empDept = '';
+    if (selectedEmployeeId) {
+      const emp = realEmployees.find((e) => e.id === selectedEmployeeId);
+      if (emp) {
+        empId = emp.id;
+        empName = emp.name;
+        const d = realDepartments.find((dep) => dep.id === emp.department_id);
+        empDept = d?.name ?? '-';
+      }
+    } else if (employeeName.trim()) {
+      empId = `e-${Date.now()}`;
+      empName = employeeName.trim();
+      empDept = employeeDepartment.trim() || '-';
+    } else {
+      toast.error('직원을 선택하거나 이름을 입력해주세요.');
+      return;
+    }
+    const id = createInstance(selectedTemplate, empId, empName, empDept);
     if (id) {
       toast.success('프로세스가 시작되었습니다.');
       setDialogOpen(false);
       setSelectedTemplate('');
+      setSelectedEmployeeId('');
       setEmployeeName('');
       setEmployeeDepartment('');
     }
@@ -77,10 +125,67 @@ export default function WorkflowsPage() {
       <Breadcrumb />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">업무프로세스</h1>
-        <Button size="sm" onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" />
-          새 프로세스 시작
-        </Button>
+        <div className="flex gap-2">
+          <Link href="/settings">
+            <Button variant="outline" size="sm">
+              <ListChecks className="h-4 w-4 mr-1" />
+              템플릿 관리
+            </Button>
+          </Link>
+          <Button size="sm" onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            새 프로세스 시작
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-5 mb-6">
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-muted-foreground">전체</p>
+              <ListChecks className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-xl font-bold">{stats.total}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-muted-foreground">진행중</p>
+              <Clock className="h-4 w-4 text-amber-500" />
+            </div>
+            <p className="text-xl font-bold text-amber-600">{stats.inProgress}</p>
+          </CardContent>
+        </Card>
+        <Card className={stats.overdue > 0 ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20' : ''}>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-muted-foreground">지연 (7일+)</p>
+              <AlertTriangle className={`h-4 w-4 ${stats.overdue > 0 ? 'text-red-500' : 'text-muted-foreground'}`} />
+            </div>
+            <p className={`text-xl font-bold ${stats.overdue > 0 ? 'text-red-600' : ''}`}>{stats.overdue}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-muted-foreground">완료</p>
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            </div>
+            <p className="text-xl font-bold text-green-600">{stats.completed}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-muted-foreground">평균 완료</p>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-xl font-bold">{stats.avgDays}일</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex items-center gap-3 mb-4">
@@ -105,6 +210,12 @@ export default function WorkflowsPage() {
           <TabsTrigger value="in_progress">
             진행중 ({inProgress.length})
           </TabsTrigger>
+          {stats.overdue > 0 && (
+            <TabsTrigger value="overdue" className="gap-1 text-red-600">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              지연 ({stats.overdue})
+            </TabsTrigger>
+          )}
           <TabsTrigger value="completed">
             완료 ({completed.length})
           </TabsTrigger>
@@ -116,6 +227,14 @@ export default function WorkflowsPage() {
         <TabsContent value="in_progress">
           <InstanceGrid instances={inProgress} />
         </TabsContent>
+        {stats.overdue > 0 && (
+          <TabsContent value="overdue">
+            <InstanceGrid instances={inProgress.filter((i) => {
+              const days = (Date.now() - new Date(i.started_at).getTime()) / (1000 * 60 * 60 * 24);
+              return days >= 7;
+            })} showOverdueDays />
+          </TabsContent>
+        )}
         <TabsContent value="completed">
           <InstanceGrid instances={completed} />
         </TabsContent>
@@ -134,7 +253,7 @@ export default function WorkflowsPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>프로세스 템플릿</Label>
+              <Label>프로세스 템플릿 *</Label>
               <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
                 <SelectTrigger>
                   <SelectValue placeholder="템플릿 선택" />
@@ -149,20 +268,52 @@ export default function WorkflowsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>직원명</Label>
-              <Input
-                value={employeeName}
-                onChange={(e) => setEmployeeName(e.target.value)}
-                placeholder="이름 입력"
-              />
+              <Label>대상자 (재직 직원에서 선택)</Label>
+              <Select value={selectedEmployeeId} onValueChange={(v) => {
+                setSelectedEmployeeId(v);
+                if (v) {
+                  setEmployeeName('');
+                  setEmployeeDepartment('');
+                }
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="직원 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {realEmployees.filter((e) => e.status === 'active').map((e) => {
+                    const dept = realDepartments.find((d) => d.id === e.department_id);
+                    return (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.name} ({e.employee_number}) - {dept?.name ?? '-'}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">또는 신입사원/외부인 등 직접 입력 ↓</p>
             </div>
-            <div className="space-y-2">
-              <Label>부서</Label>
-              <Input
-                value={employeeDepartment}
-                onChange={(e) => setEmployeeDepartment(e.target.value)}
-                placeholder="부서 입력"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>직원명 (직접 입력)</Label>
+                <Input
+                  value={employeeName}
+                  onChange={(e) => {
+                    setEmployeeName(e.target.value);
+                    if (e.target.value) setSelectedEmployeeId('');
+                  }}
+                  placeholder="이름"
+                  disabled={!!selectedEmployeeId}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>부서</Label>
+                <Input
+                  value={employeeDepartment}
+                  onChange={(e) => setEmployeeDepartment(e.target.value)}
+                  placeholder="부서"
+                  disabled={!!selectedEmployeeId}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -177,7 +328,13 @@ export default function WorkflowsPage() {
   );
 }
 
-function InstanceGrid({ instances }: { instances: ReturnType<typeof useWorkflowStore.getState>['instances'] }) {
+function InstanceGrid({
+  instances,
+  showOverdueDays,
+}: {
+  instances: ReturnType<typeof useWorkflowStore.getState>['instances'];
+  showOverdueDays?: boolean;
+}) {
   if (instances.length === 0) {
     return (
       <p className="text-sm text-muted-foreground text-center py-8">
@@ -188,9 +345,19 @@ function InstanceGrid({ instances }: { instances: ReturnType<typeof useWorkflowS
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {instances.map((inst) => (
-        <WorkflowProgressCard key={inst.id} instance={inst} />
-      ))}
+      {instances.map((inst) => {
+        const days = Math.floor((Date.now() - new Date(inst.started_at).getTime()) / (1000 * 60 * 60 * 24));
+        return (
+          <div key={inst.id} className="relative">
+            {showOverdueDays && (
+              <Badge variant="destructive" className="absolute top-2 right-2 z-10 text-xs">
+                {days}일 지연
+              </Badge>
+            )}
+            <WorkflowProgressCard instance={inst} />
+          </div>
+        );
+      })}
     </div>
   );
 }

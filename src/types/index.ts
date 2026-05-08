@@ -291,6 +291,9 @@ export interface Employee {
   emergency_contact_phone: string | null;
   emergency_contact_relation: string | null;
   workplace_id: string | null;
+  work_arrangement: WorkArrangement | null;  // 근로형태 (정규/파견/현지법인)
+  arrangement_start_date: string | null;     // 근로형태 시작일
+  arrangement_end_date: string | null;       // 근로형태 종료일 (파견 등)
   resident_number: string | null;
   personal_email: string | null;
   marriage_date: string | null;
@@ -514,6 +517,22 @@ export interface RetirementSettlement {
   updated_at: string;
 }
 
+// 사업장 유형
+export type WorkplaceType =
+  | 'headquarters'      // 본사
+  | 'branch'            // 지사/사무소
+  | 'factory'           // 공장
+  | 'overseas_corp'     // 현지법인
+  | 'project_site';     // 현장사무소
+
+// 직원 근로형태 (사업장 배정에 따라 달라짐)
+export type WorkArrangement =
+  | 'regular'           // 정규 (본사/지사 소속)
+  | 'dispatch_domestic' // 국내 파견
+  | 'dispatch_overseas' // 해외 파견
+  | 'overseas_corp'     // 현지법인 채용
+  | 'project';          // 프로젝트 현장근무
+
 export interface Workplace {
   id: string;
   code: string;
@@ -527,6 +546,19 @@ export interface Workplace {
   is_headquarters: boolean;
   is_active: boolean;
   sort_order: number;
+  // 신규: 사업장 유형 + 근로조건
+  workplace_type: WorkplaceType;
+  country_code: string;          // KR, CN, US, VN 등
+  timezone: string;              // Asia/Seoul, Asia/Shanghai 등
+  // 사업장별 근로조건 (사용 시)
+  use_custom_work_hours: boolean;
+  start_time: string;            // 출근시간 (예: 09:00)
+  end_time: string;              // 퇴근시간 (예: 18:00)
+  break_minutes: number;         // 휴게시간(분)
+  weekly_hours: number;          // 주당 근로시간
+  late_grace_minutes: number;    // 지각 유예시간
+  // 통화
+  currency: string;              // KRW, USD, CNY 등
   created_at: string;
   updated_at: string;
 }

@@ -86,6 +86,7 @@ import {
   Trash2,
   Bell,
   Calendar,
+  Globe,
 } from 'lucide-react';
 import {
   BarChart,
@@ -1597,7 +1598,40 @@ export default function MyPage() {
                     { icon: CalendarDays, label: '입사일', value: myEmployee.hire_date },
                     { icon: Clock, label: '근속기간', value: yearsOfService },
                     { icon: Mail, label: '사내메일', value: myEmployee.email },
-                    { icon: MapPin, label: '근무지', value: myWorkplace?.name ?? '-' },
+                    {
+                      icon: MapPin,
+                      label: '근무지(사업장)',
+                      value: myWorkplace ? (
+                        <span>
+                          {myWorkplace.name}
+                          <span className="ml-1 text-[10px] text-muted-foreground">
+                            ({{ headquarters: '본사', branch: '지사', factory: '공장', overseas_corp: '현지법인', project_site: '현장' }[myWorkplace.workplace_type ?? 'branch']})
+                          </span>
+                        </span>
+                      ) : '-',
+                    },
+                    {
+                      icon: Globe,
+                      label: '근로형태',
+                      value: (() => {
+                        const arr = myEmployee.work_arrangement;
+                        if (!arr) return '정규 근무';
+                        return ({
+                          regular: '정규',
+                          dispatch_domestic: '국내 파견',
+                          dispatch_overseas: '해외 파견',
+                          overseas_corp: '현지법인 채용',
+                          project: '프로젝트 현장',
+                        } as Record<string, string>)[arr] ?? arr;
+                      })(),
+                    },
+                    {
+                      icon: Clock,
+                      label: '근무시간',
+                      value: myWorkplace?.use_custom_work_hours
+                        ? `${myWorkplace.start_time} ~ ${myWorkplace.end_time}`
+                        : `${work.default_start_time} ~ ${work.default_end_time} (전사 기본)`,
+                    },
                     { icon: Clock, label: '근무유형', value: myWorkSchedule?.name ?? '기본 고정근무' },
                   ].map((item) => (
                     <div key={item.label} className="rounded-lg border p-3">

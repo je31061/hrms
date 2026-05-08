@@ -5,7 +5,7 @@ import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { EmployeeTable } from '@/components/employee/employee-table';
 import { StatsCard } from '@/components/dashboard/stats-card';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, UserCheck, UserX, UserMinus } from 'lucide-react';
+import { Plus, Users, UserCheck, UserX, UserMinus, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 
@@ -38,6 +38,12 @@ export default function EmployeesPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">인사정보 관리</h1>
         <div className="flex gap-2">
+          <Link href="/employees/workplace-assignment">
+            <Button variant="outline">
+              <Building2 className="h-4 w-4 mr-2" />
+              사업장 배정
+            </Button>
+          </Link>
           <Link href="/employees/retirement">
             <Button variant="outline">
               <UserMinus className="h-4 w-4 mr-2" />

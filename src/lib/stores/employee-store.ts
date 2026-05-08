@@ -127,6 +127,7 @@ function emp(
     profile_image_url: null,
     emergency_contact_name: null, emergency_contact_phone: null, emergency_contact_relation: null,
     workplace_id: null,
+    work_arrangement: null, arrangement_start_date: null, arrangement_end_date: null,
     resident_number: null, personal_email: null, marriage_date: null,
     created_at: '2020-01-01', updated_at: '2020-01-01',
     ...extra,

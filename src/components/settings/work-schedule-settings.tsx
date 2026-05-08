@@ -388,6 +388,14 @@ export default function WorkScheduleSettings() {
             <Switch checked={work.weekly_52h_warning ?? true}
               onCheckedChange={(v) => updateWork({ weekly_52h_warning: v })} />
           </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <Label>사업장별 근로조건 사용</Label>
+              <p className="text-sm text-muted-foreground">법인/사업장별로 다른 출퇴근시간을 적용 (사업장 관리에서 설정)</p>
+            </div>
+            <Switch checked={work.enable_workplace_specific_hours ?? true}
+              onCheckedChange={(v) => updateWork({ enable_workplace_specific_hours: v })} />
+          </div>
           <Separator />
           <div className="space-y-2">
             <Label>생일자 조기퇴근 - 자녀 1명당 시간</Label>

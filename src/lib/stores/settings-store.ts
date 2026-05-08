@@ -93,6 +93,8 @@ interface SettingsState {
     block_duplicate_attendance_request: boolean;  // 1일 중복 근태 신청 차단
     weekly_52h_warning: boolean;                  // 주52시간 초과 경고
     weekly_max_hours: number;                     // 주 최대 근로시간 (52)
+    // 사업장별 근로조건 사용
+    enable_workplace_specific_hours: boolean;     // 사업장별 출퇴근시간 사용
   };
   workSchedules: WorkSchedule[];
 
@@ -416,10 +418,16 @@ const defaultAttendanceTypes: AttendanceTypeConfig[] = [
 ];
 
 const now = new Date().toISOString();
+const wpDefault = {
+  use_custom_work_hours: false, start_time: '07:00', end_time: '16:00',
+  break_minutes: 60, weekly_hours: 40, late_grace_minutes: 5,
+};
 const defaultWorkplaces: Workplace[] = [
-  { id: 'wp-01', code: 'HQ', name: '본사 (미음산단)', business_number: '603-81-29289', representative: '이민걸, 정진택', address: '부산광역시 강서구 미음산단3로 55 (미음동)', tax_office: '부산강서세무서', industry_type: '제조업', business_type: '선박 구성 부분품', is_headquarters: true, is_active: true, sort_order: 1, created_at: now, updated_at: now },
-  { id: 'wp-02', code: 'FAC2', name: '제2공장', business_number: '603-81-29289', representative: '이민걸, 정진택', address: '부산광역시 강서구 녹산산업중로 333', tax_office: '부산강서세무서', industry_type: '제조업', business_type: '선박용 기자재', is_headquarters: false, is_active: true, sort_order: 2, created_at: now, updated_at: now },
-  { id: 'wp-03', code: 'SEOUL', name: '서울사무소', business_number: '603-81-29289', representative: '이수태', address: '서울특별시 영등포구 여의도동 28-1', tax_office: '영등포세무서', industry_type: '서비스업', business_type: '환경설비 영업', is_headquarters: false, is_active: true, sort_order: 3, created_at: now, updated_at: now },
+  { id: 'wp-01', code: 'HQ', name: '본사 (미음산단)', business_number: '603-81-29289', representative: '이민걸, 정진택', address: '부산광역시 강서구 미음산단3로 55 (미음동)', tax_office: '부산강서세무서', industry_type: '제조업', business_type: '선박 구성 부분품', is_headquarters: true, is_active: true, sort_order: 1, workplace_type: 'headquarters', country_code: 'KR', timezone: 'Asia/Seoul', currency: 'KRW', ...wpDefault, created_at: now, updated_at: now },
+  { id: 'wp-02', code: 'FAC2', name: '제2공장', business_number: '603-81-29289', representative: '이민걸, 정진택', address: '부산광역시 강서구 녹산산업중로 333', tax_office: '부산강서세무서', industry_type: '제조업', business_type: '선박용 기자재', is_headquarters: false, is_active: true, sort_order: 2, workplace_type: 'factory', country_code: 'KR', timezone: 'Asia/Seoul', currency: 'KRW', use_custom_work_hours: true, start_time: '08:00', end_time: '17:00', break_minutes: 60, weekly_hours: 40, late_grace_minutes: 10, created_at: now, updated_at: now },
+  { id: 'wp-03', code: 'SEOUL', name: '서울사무소', business_number: '603-81-29289', representative: '이수태', address: '서울특별시 영등포구 여의도동 28-1', tax_office: '영등포세무서', industry_type: '서비스업', business_type: '환경설비 영업', is_headquarters: false, is_active: true, sort_order: 3, workplace_type: 'branch', country_code: 'KR', timezone: 'Asia/Seoul', currency: 'KRW', use_custom_work_hours: true, start_time: '09:00', end_time: '18:00', break_minutes: 60, weekly_hours: 40, late_grace_minutes: 5, created_at: now, updated_at: now },
+  { id: 'wp-04', code: 'CN-SH', name: '상하이 현지법인', business_number: 'CN-91310115...', representative: '이수태', address: 'No.123, Pudong District, Shanghai, China', tax_office: 'Shanghai Tax Bureau', industry_type: '제조업', business_type: '선박 부품', is_headquarters: false, is_active: true, sort_order: 4, workplace_type: 'overseas_corp', country_code: 'CN', timezone: 'Asia/Shanghai', currency: 'CNY', use_custom_work_hours: true, start_time: '08:30', end_time: '17:30', break_minutes: 60, weekly_hours: 40, late_grace_minutes: 5, created_at: now, updated_at: now },
+  { id: 'wp-05', code: 'VN-HCM', name: '호치민 프로젝트 현장', business_number: 'VN-0312...', representative: '이민걸', address: 'Ho Chi Minh City, Vietnam', tax_office: 'HCM Tax Authority', industry_type: '건설업', business_type: '플랜트 설치', is_headquarters: false, is_active: true, sort_order: 5, workplace_type: 'project_site', country_code: 'VN', timezone: 'Asia/Ho_Chi_Minh', currency: 'VND', use_custom_work_hours: true, start_time: '07:30', end_time: '16:30', break_minutes: 60, weekly_hours: 48, late_grace_minutes: 10, created_at: now, updated_at: now },
 ];
 
 // ---- Store ----
@@ -471,6 +479,7 @@ export const useSettingsStore = create<SettingsStore>()(
         block_duplicate_attendance_request: true,
         weekly_52h_warning: true,
         weekly_max_hours: 52,
+        enable_workplace_specific_hours: true,
       },
       workSchedules: defaultWorkSchedules,
       leave: {
@@ -783,6 +792,7 @@ export const useSettingsStore = create<SettingsStore>()(
                 block_duplicate_attendance_request: work.block_duplicate_attendance_request ?? true,
                 weekly_52h_warning: work.weekly_52h_warning ?? true,
                 weekly_max_hours: work.weekly_max_hours ?? 52,
+                enable_workplace_specific_hours: work.enable_workplace_specific_hours ?? true,
                 flex_work_enabled: work.flex_work_enabled ?? true,
                 flex_start_min: work.flex_start_min ?? '06:00',
                 flex_start_max: work.flex_start_max ?? '08:00',

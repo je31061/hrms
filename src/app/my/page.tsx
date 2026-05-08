@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, Fragment } from 'react';
+import { useMemo, useState, Fragment, useEffect } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { useLeaveStore } from '@/lib/stores/leave-store';
 import { usePayrollStore } from '@/lib/stores/payroll-store';
@@ -10,6 +10,7 @@ import { useAppointmentStore } from '@/lib/stores/appointment-store';
 import { useApprovalStore } from '@/lib/stores/approval-store';
 import { useFlexScheduleStore } from '@/lib/stores/flex-schedule-store';
 import { useAttendanceModificationStore } from '@/lib/stores/attendance-modification-store';
+import { useLeavePlanStore } from '@/lib/stores/leave-plan-store';
 import { useSettingsStore } from '@/lib/stores/settings-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { useCodeMap, CODE } from '@/lib/hooks/use-code';
@@ -83,6 +84,8 @@ import {
   EyeOff,
   Save,
   Trash2,
+  Bell,
+  Calendar,
 } from 'lucide-react';
 import {
   BarChart,
@@ -611,6 +614,11 @@ export default function MyPage() {
   const getModByAttendance = useAttendanceModificationStore((s) => s.getByAttendance);
   const getModByEmployee = useAttendanceModificationStore((s) => s.getByEmployee);
   const getCloseout = useAttendanceStore((s) => s.getCloseout);
+  const upsertPlan = useLeavePlanStore((s) => s.upsertPlan);
+  const getPlanByEmployee = useLeavePlanStore((s) => s.getPlanByEmployee);
+  const getAlertsByEmployee = useLeavePlanStore((s) => s.getAlertsByEmployee);
+  const acknowledgeAlert = useLeavePlanStore((s) => s.acknowledgeAlert);
+  const leaveSettings = useSettingsStore((s) => s.leave);
 
   const rawEmp = employees.find((e) => e.id === MY_ID);
   const myEmployee = rawEmp ? {
@@ -658,6 +666,61 @@ export default function MyPage() {
   });
   const [modHistoryOpen, setModHistoryOpen] = useState(false);
   const [modHistoryTargetId, setModHistoryTargetId] = useState<string | null>(null);
+
+  // 연차 사용계획서
+  const currentYear = new Date().getFullYear();
+  const [planDialogOpen, setPlanDialogOpen] = useState(false);
+  const myLeavePlan = useMemo(() => getPlanByEmployee(MY_ID, currentYear), [MY_ID, currentYear, getPlanByEmployee]);
+  const myLeaveAlerts = useMemo(() => getAlertsByEmployee(MY_ID), [MY_ID, getAlertsByEmployee]);
+  const [planForm, setPlanForm] = useState<{ monthly: Record<number, number>; reason: string }>({
+    monthly: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0 },
+    reason: '',
+  });
+
+  // 다이얼로그 열릴 때 기존 계획 불러오기
+  useEffect(() => {
+    if (planDialogOpen && myLeavePlan) {
+      setPlanForm({
+        monthly: { ...myLeavePlan.monthly_plan },
+        reason: myLeavePlan.reason ?? '',
+      });
+    } else if (planDialogOpen && !myLeavePlan) {
+      setPlanForm({
+        monthly: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0 },
+        reason: '',
+      });
+    }
+  }, [planDialogOpen, myLeavePlan]);
+
+  const planTotalDays = useMemo(() => {
+    return Object.values(planForm.monthly).reduce((s, v) => s + v, 0);
+  }, [planForm.monthly]);
+
+  const submitPlan = () => {
+    if (planTotalDays === 0) {
+      toast.error('월별 사용 계획을 입력해주세요.');
+      return;
+    }
+    const now = new Date().toISOString();
+    upsertPlan({
+      id: myLeavePlan?.id ?? `lup-${Date.now()}`,
+      employee_id: MY_ID,
+      year: currentYear,
+      total_planned_days: planTotalDays,
+      monthly_plan: planForm.monthly,
+      reason: planForm.reason || null,
+      status: 'submitted',
+      submitted_at: now,
+      reviewed_at: null,
+      reviewed_by: null,
+      reviewed_by_name: null,
+      review_comment: null,
+      created_at: myLeavePlan?.created_at ?? now,
+      updated_at: now,
+    });
+    toast.success('연차 사용계획서가 제출되었습니다.');
+    setPlanDialogOpen(false);
+  };
 
   // === 권한 체크 ===
   const userRole = session?.role ?? 'employee';
@@ -1329,6 +1392,64 @@ export default function MyPage() {
         {/* Tab 2: 휴가신청 (NEW - with inline form)                       */}
         {/* ============================================================== */}
         <TabsContent value="leave">
+          {/* 미사용 연차 촉진 알림 */}
+          {(() => {
+            const unread = (myLeaveAlerts ?? []).filter((a) => !a.acknowledged);
+            if (unread.length === 0) return null;
+            const latest = unread[0];
+            return (
+              <Card className="mb-4 border-orange-300 dark:border-orange-700 bg-orange-50/50 dark:bg-orange-950/20">
+                <CardContent className="pt-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Bell className="h-4 w-4 text-orange-600" />
+                        <p className="font-semibold text-sm">
+                          {latest.alert_round}차 미사용 연차 촉진 알림
+                        </p>
+                        <Badge variant="destructive" className="text-xs">미확인 {unread.length}건</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        잔여 연차 <strong>{latest.remaining_days}일</strong>이 있습니다.
+                        근로기준법에 따라 사용계획을 제출하시거나 회사 결정에 위임하실 수 있습니다.
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm" variant="outline" className="h-7 text-xs"
+                        onClick={() => {
+                          acknowledgeAlert(latest.id, 'plan_submitted');
+                          setPlanDialogOpen(true);
+                        }}
+                      >
+                        계획제출
+                      </Button>
+                      <Button
+                        size="sm" variant="outline" className="h-7 text-xs"
+                        onClick={() => {
+                          acknowledgeAlert(latest.id, 'company_decision');
+                          toast.success('회사 결정에 위임했습니다.');
+                        }}
+                      >
+                        회사위임
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })()}
+
+          {/* 사용계획서 제출 버튼 */}
+          {leaveSettings.enable_usage_plan && (
+            <div className="flex justify-end mb-3">
+              <Button variant="outline" size="sm" onClick={() => setPlanDialogOpen(true)}>
+                <Calendar className="h-3.5 w-3.5 mr-1" />
+                {myLeavePlan ? `${currentYear}년 사용계획 (${myLeavePlan.status === 'submitted' ? '제출완료' : myLeavePlan.status === 'reviewed' ? '검토완료' : '작성중'})` : `${currentYear}년 연차 사용계획 제출`}
+              </Button>
+            </div>
+          )}
+
           {/* Balance cards */}
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mb-6">
             {activeBalances.map((b, idx) => {
@@ -2112,6 +2233,60 @@ export default function MyPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setModDialogOpen(false)}>취소</Button>
             <Button onClick={submitModification}>결재 상신</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 연차 사용계획서 다이얼로그 */}
+      <Dialog open={planDialogOpen} onOpenChange={setPlanDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{currentYear}년 연차 사용계획서</DialogTitle>
+            <DialogDescription>
+              월별 사용 예정일을 입력해주세요. 근로기준법 §61에 따른 연차 사용계획서입니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-4 gap-2">
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                <div key={m} className="space-y-1">
+                  <Label className="text-xs">{m}월</Label>
+                  <Input
+                    type="number" min={0} step="0.5"
+                    value={planForm.monthly[m] ?? 0}
+                    onChange={(e) => setPlanForm((p) => ({
+                      ...p,
+                      monthly: { ...p.monthly, [m]: Number(e.target.value) },
+                    }))}
+                    className="text-center"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="p-3 rounded-lg bg-muted/30 text-sm flex items-center justify-between">
+              <span>총 계획 일수</span>
+              <span className="text-lg font-bold">{planTotalDays}일</span>
+            </div>
+            <div className="space-y-2">
+              <Label>비고</Label>
+              <Textarea
+                value={planForm.reason}
+                onChange={(e) => setPlanForm((p) => ({ ...p, reason: e.target.value }))}
+                placeholder="사용 계획에 대한 추가 설명 (선택)"
+                rows={2}
+              />
+            </div>
+            {myLeavePlan?.reviewed_by_name && (
+              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 text-xs">
+                <p className="font-semibold mb-1">검토 완료</p>
+                <p>검토자: {myLeavePlan.reviewed_by_name} ({myLeavePlan.reviewed_at?.slice(0, 10)})</p>
+                {myLeavePlan.review_comment && <p className="mt-1 italic">"{myLeavePlan.review_comment}"</p>}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPlanDialogOpen(false)}>취소</Button>
+            <Button onClick={submitPlan}>{myLeavePlan ? '재제출' : '제출'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

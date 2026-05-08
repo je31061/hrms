@@ -52,6 +52,17 @@ export default function LeavePolicySettings() {
     allow_quarter_day: false,
     unused_leave_policy: 'carryover' as 'carryover' | 'payout',
     carryover_limit: 5,
+    accrual_basis: 'fiscal_year' as 'hire_date' | 'fiscal_year',
+    fiscal_year_start_month: 1,
+    allow_hourly_leave: true,
+    hourly_leave_unit_minutes: 60,
+    enable_usage_plan: true,
+    plan_submission_deadline_month: 3,
+    enable_unused_alert: true,
+    first_alert_month: 7,
+    second_alert_month: 10,
+    first_alert_threshold: 5,
+    second_alert_threshold: 3,
   });
 
   // Condolence rule dialog state
@@ -225,6 +236,180 @@ export default function LeavePolicySettings() {
                   }))
                 }
               />
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button onClick={handleSaveLeave}>저장</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Card 1-2: 연차 계산/시간단위 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>연차 계산 기준 / 시간단위 설정</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>연차 계산 기준</Label>
+            <Select
+              value={leaveForm.accrual_basis}
+              onValueChange={(v) => setLeaveForm((p) => ({ ...p, accrual_basis: v as 'hire_date' | 'fiscal_year' }))}
+            >
+              <SelectTrigger className="w-[240px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hire_date">입사일 기준</SelectItem>
+                <SelectItem value="fiscal_year">회계연도 기준</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {leaveForm.accrual_basis === 'hire_date'
+                ? '각 직원의 입사일 기준으로 연차가 부여됩니다 (개인별 갱신일).'
+                : '회사 회계연도 기준으로 일괄 부여됩니다 (전사 동일 시점).'}
+            </p>
+          </div>
+          {leaveForm.accrual_basis === 'fiscal_year' && (
+            <div className="space-y-2">
+              <Label>회계연도 시작월</Label>
+              <Select
+                value={String(leaveForm.fiscal_year_start_month)}
+                onValueChange={(v) => setLeaveForm((p) => ({ ...p, fiscal_year_start_month: Number(v) }))}
+              >
+                <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}월</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between border-t pt-4">
+            <div>
+              <Label>시간단위 연차 (1H연차) 허용</Label>
+              <p className="text-xs text-muted-foreground">시간 단위로 연차를 차감/사용</p>
+            </div>
+            <Switch
+              checked={leaveForm.allow_hourly_leave}
+              onCheckedChange={(v) => setLeaveForm((p) => ({ ...p, allow_hourly_leave: v }))}
+            />
+          </div>
+          {leaveForm.allow_hourly_leave && (
+            <div className="space-y-2">
+              <Label>시간 단위</Label>
+              <Select
+                value={String(leaveForm.hourly_leave_unit_minutes)}
+                onValueChange={(v) => setLeaveForm((p) => ({ ...p, hourly_leave_unit_minutes: Number(v) }))}
+              >
+                <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="60">60분 (1시간)</SelectItem>
+                  <SelectItem value="30">30분</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {leaveForm.hourly_leave_unit_minutes}분 단위로 신청 가능. 1H연차 = {leaveForm.hourly_leave_unit_minutes / 480}일 차감
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button onClick={handleSaveLeave}>저장</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Card 1-3: 사용계획서 / 촉진제도 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>연차 촉진제도 (사용계획 / 미사용 알림)</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>연차 사용계획서 제출 기능</Label>
+              <p className="text-xs text-muted-foreground">직원이 연초에 연간 사용계획을 제출 (근로기준법 §61 대응)</p>
+            </div>
+            <Switch
+              checked={leaveForm.enable_usage_plan}
+              onCheckedChange={(v) => setLeaveForm((p) => ({ ...p, enable_usage_plan: v }))}
+            />
+          </div>
+          {leaveForm.enable_usage_plan && (
+            <div className="space-y-2">
+              <Label>사용계획서 제출 마감월</Label>
+              <Select
+                value={String(leaveForm.plan_submission_deadline_month)}
+                onValueChange={(v) => setLeaveForm((p) => ({ ...p, plan_submission_deadline_month: Number(v) }))}
+              >
+                <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}월</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between border-t pt-4">
+            <div>
+              <Label>미사용 연차 자동 알림</Label>
+              <p className="text-xs text-muted-foreground">1차/2차 촉진 알림 자동 발송</p>
+            </div>
+            <Switch
+              checked={leaveForm.enable_unused_alert}
+              onCheckedChange={(v) => setLeaveForm((p) => ({ ...p, enable_unused_alert: v }))}
+            />
+          </div>
+          {leaveForm.enable_unused_alert && (
+            <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30">
+              <div className="space-y-2">
+                <Label>1차 촉진 시기</Label>
+                <Select
+                  value={String(leaveForm.first_alert_month)}
+                  onValueChange={(v) => setLeaveForm((p) => ({ ...p, first_alert_month: Number(v) }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}월</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>1차 미사용 임계 (일)</Label>
+                <Input
+                  type="number" min={0}
+                  value={leaveForm.first_alert_threshold}
+                  onChange={(e) => setLeaveForm((p) => ({ ...p, first_alert_threshold: Number(e.target.value) }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>2차 촉진 시기</Label>
+                <Select
+                  value={String(leaveForm.second_alert_month)}
+                  onValueChange={(v) => setLeaveForm((p) => ({ ...p, second_alert_month: Number(v) }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}월</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>2차 미사용 임계 (일)</Label>
+                <Input
+                  type="number" min={0}
+                  value={leaveForm.second_alert_threshold}
+                  onChange={(e) => setLeaveForm((p) => ({ ...p, second_alert_threshold: Number(e.target.value) }))}
+                />
+              </div>
             </div>
           )}
 

@@ -95,6 +95,21 @@ interface SettingsState {
     allow_quarter_day: boolean;
     unused_leave_policy: 'carryover' | 'payout';
     carryover_limit: number;
+    // 연차 계산 기준
+    accrual_basis: 'hire_date' | 'fiscal_year';   // 입사일 기준 or 회계연도 기준
+    fiscal_year_start_month: number;              // 회계연도 시작월 (1-12)
+    // 시간단위 연차
+    allow_hourly_leave: boolean;                  // 1H연차 허용 (시간단위)
+    hourly_leave_unit_minutes: number;            // 시간 단위 (60분 / 30분)
+    // 연차 사용계획서
+    enable_usage_plan: boolean;                   // 사용계획서 제출 기능 활성화
+    plan_submission_deadline_month: number;       // 사용계획서 제출 마감월 (예: 3월)
+    // 미사용 연차 자동 알림 (촉진제도)
+    enable_unused_alert: boolean;                 // 미사용 알림 활성화
+    first_alert_month: number;                    // 1차 촉진 월 (예: 7월)
+    second_alert_month: number;                   // 2차 촉진 월 (예: 10월)
+    first_alert_threshold: number;                // 1차: 미사용 잔여 X일 이상
+    second_alert_threshold: number;               // 2차: 미사용 잔여 X일 이상
   };
   condolenceLeaveRules: CondolenceLeaveRule[];
 
@@ -450,6 +465,17 @@ export const useSettingsStore = create<SettingsStore>()(
         allow_quarter_day: true,
         unused_leave_policy: 'carryover',
         carryover_limit: 5,
+        accrual_basis: 'fiscal_year',
+        fiscal_year_start_month: 1,
+        allow_hourly_leave: true,
+        hourly_leave_unit_minutes: 60,
+        enable_usage_plan: true,
+        plan_submission_deadline_month: 3,
+        enable_unused_alert: true,
+        first_alert_month: 7,
+        second_alert_month: 10,
+        first_alert_threshold: 5,
+        second_alert_threshold: 3,
       },
       condolenceLeaveRules: defaultCondolenceRules,
       workplaces: defaultWorkplaces,

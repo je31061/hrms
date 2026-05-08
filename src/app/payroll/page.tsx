@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calculator, FileText, CheckCircle, Trash2, DollarSign, TrendingUp, Users, BarChart3, Settings2, Receipt, Shield, FileSpreadsheet, Landmark, Lock, Unlock, FileUp } from 'lucide-react';
+import { Calculator, FileText, CheckCircle, Trash2, DollarSign, TrendingUp, Users, BarChart3, Settings2, Receipt, Shield, FileSpreadsheet, Landmark, Lock, Unlock, FileUp, Plane } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -141,6 +141,12 @@ export default function PayrollPage() {
             <Button variant="outline">
               <FileText className="h-4 w-4 mr-2" />
               원천징수부
+            </Button>
+          </Link>
+          <Link href="/payroll/trip-expense">
+            <Button variant="outline">
+              <Plane className="h-4 w-4 mr-2" />
+              출장비 정산
             </Button>
           </Link>
           <Link href="/payroll/insurance">

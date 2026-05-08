@@ -416,6 +416,68 @@ export interface LeaveBalanceAdjustment {
   created_at: string;
 }
 
+// === 출장비 정산 ===
+export type TripExpenseGrade = 'A' | 'B' | 'C';
+export type TripScope = 'domestic' | 'overseas';
+
+// 직무별 출장비 단가 기준 (HU093 기반)
+export interface TripExpenseRate {
+  id: string;
+  job_code: string;            // 31~37 (직무 코드)
+  job_name: string;             // 연구/시험, AS/시운전 등
+  grade: TripExpenseGrade;      // A/B/C
+  scope: TripScope;             // domestic/overseas
+  daily_amount: number;         // 일비 금액
+  is_active: boolean;
+}
+
+// 출장비 정산 항목
+export interface TripExpenseItem {
+  id: string;
+  category: 'daily' | 'meal' | 'accommodation' | 'fuel' | 'other'; // 일비/식대/숙박/유류/기타
+  date: string;                 // 사용 날짜
+  description: string;
+  amount: number;
+  receipt_attached: boolean;
+  receipt_name?: string | null;
+}
+
+// 출장비 정산서
+export type TripExpenseSettlementStatus = 'draft' | 'submitted' | 'approved' | 'paid' | 'rejected';
+
+export interface TripExpenseSettlement {
+  id: string;
+  employee_id: string;
+  approval_id: string | null;   // 출장 신청 결재 ID 연결
+  trip_type: string;             // 출장 유형 (business_trip_a 등)
+  trip_grade: TripExpenseGrade;  // A/B/C
+  trip_scope: TripScope;
+  destination: string;           // 방문지역
+  client: string | null;         // 방문 거래처
+  start_date: string;
+  end_date: string;
+  trip_days: number;
+  // 자동 계산 항목
+  daily_allowance: number;       // 일비 합계 (단가 × 일수)
+  meal_allowance: number;        // 식대 합계
+  accommodation_allowance: number; // 숙박비 합계
+  fuel_allowance: number;        // 유류대
+  other_allowance: number;       // 기타 (예비비 등)
+  // 상세
+  items: TripExpenseItem[];      // 추가 정산 항목
+  total_amount: number;          // 총액
+  status: TripExpenseSettlementStatus;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  reviewed_by_name: string | null;
+  review_comment: string | null;
+  paid_at: string | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // 퇴직 정산
 export type RetirementReasonCode = 'voluntary' | 'contract_end' | 'retirement_age' | 'layoff' | 'misconduct' | 'other';
 export type RetirementSettlementStatus = 'draft' | 'confirmed' | 'paid';

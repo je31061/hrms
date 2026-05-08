@@ -416,6 +416,42 @@ export interface LeaveBalanceAdjustment {
   created_at: string;
 }
 
+// 퇴직 정산
+export type RetirementReasonCode = 'voluntary' | 'contract_end' | 'retirement_age' | 'layoff' | 'misconduct' | 'other';
+export type RetirementSettlementStatus = 'draft' | 'confirmed' | 'paid';
+
+export interface RetirementSettlement {
+  id: string;
+  employee_id: string;
+  // 입력값
+  hire_date: string;
+  resignation_date: string;
+  reason_code: RetirementReasonCode;
+  reason_detail: string | null;
+  // 평균임금 산정 (퇴직 직전 3개월)
+  base_salary_avg: number;        // 월 평균 기본급
+  bonus_avg: number;              // 월 평균 상여금 (연간 / 12)
+  annual_leave_compensation: number; // 미사용 연차 수당
+  // 계산 결과
+  service_days: number;           // 총 근속일수
+  service_years: number;          // 근속연수 (소수)
+  daily_avg_wage: number;         // 1일 평균임금
+  retirement_pay: number;         // 법정퇴직금 = 일평균임금 × 30 × (근속일수/365)
+  income_tax: number;             // 퇴직소득세
+  local_tax: number;              // 지방소득세
+  net_pay: number;                // 실수령액
+  // 처리
+  status: RetirementSettlementStatus;
+  paid_at: string | null;
+  paid_by: string | null;
+  paid_by_name: string | null;
+  bank_name: string | null;
+  bank_account: string | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Workplace {
   id: string;
   code: string;

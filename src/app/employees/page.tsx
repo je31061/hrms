@@ -37,12 +37,20 @@ export default function EmployeesPage() {
       <Breadcrumb />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">인사정보 관리</h1>
-        <Link href="/employees/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            사원 등록
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/employees/retirement">
+            <Button variant="outline">
+              <UserMinus className="h-4 w-4 mr-2" />
+              퇴직 관리
+            </Button>
+          </Link>
+          <Link href="/employees/new">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              사원 등록
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

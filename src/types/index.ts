@@ -291,6 +291,9 @@ export interface Employee {
   emergency_contact_phone: string | null;
   emergency_contact_relation: string | null;
   workplace_id: string | null;
+  resident_number: string | null;
+  personal_email: string | null;
+  marriage_date: string | null;
   created_at: string;
   updated_at: string;
   department?: Department;

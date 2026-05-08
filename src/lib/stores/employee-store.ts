@@ -127,6 +127,7 @@ function emp(
     profile_image_url: null,
     emergency_contact_name: null, emergency_contact_phone: null, emergency_contact_relation: null,
     workplace_id: null,
+    resident_number: null, personal_email: null, marriage_date: null,
     created_at: '2020-01-01', updated_at: '2020-01-01',
     ...extra,
   };
@@ -146,7 +147,7 @@ const seedEmployees: Employee[] = [
   emp('e032', 'EMP-032', '최은비', 'dept-14', 'rank-2', 'title-1', 'regular', 3700000, { hire_date: '2020-09-01', birth_date: '1993-06-20', gender: 'F', address: '부산광역시 사상구 가야대로 198', zip_code: '46971' }),
   emp('e033', 'EMP-033', '한동훈', 'dept-14', 'rank-1', 'title-1', 'regular', 3000000, { hire_date: '2024-01-02', birth_date: '1999-03-11', gender: 'M', address: '김해시 진영읍 진영로 87', zip_code: '50885' }),
   // ── 재무회계팀 (4) ──
-  emp('e013', 'EMP-013', '장미경', 'dept-15', 'rank-3', 'title-3', 'regular', 5000000, { hire_date: '2016-01-04', birth_date: '1983-07-19', gender: 'F', address: '부산광역시 강서구 명지오션시티 5로 23', zip_code: '46726' }),
+  emp('e013', 'EMP-013', '장미경', 'dept-15', 'rank-3', 'title-3', 'regular', 5000000, { hire_date: '2016-01-04', birth_date: '1983-07-19', gender: 'F', address: '부산광역시 강서구 명지오션시티 5로 23', zip_code: '46726', phone: '010-2345-1313', name_en: 'Jang Mi-Kyung', address_detail: '101동 1502호', bank_name: '국민은행', bank_account: '123-456-789012', resident_number: '830719-2******', personal_email: 'mkjang@gmail.com', marriage_date: '2010-05-15', emergency_contact_name: '박성진', emergency_contact_phone: '010-1234-0013', emergency_contact_relation: '배우자', workplace_id: 'wp-01' }),
   emp('e014', 'EMP-014', '유승호', 'dept-15', 'rank-2', 'title-1', 'regular', 3800000, { hire_date: '2019-03-04', birth_date: '1991-01-30', gender: 'M', address: '부산광역시 사하구 낙동대로 208', zip_code: '49321' }),
   emp('e034', 'EMP-034', '이소라', 'dept-15', 'rank-2', 'title-1', 'regular', 3600000, { hire_date: '2021-02-01', birth_date: '1994-10-08', gender: 'F', address: '부산광역시 서구 구덕로 225', zip_code: '49243' }),
   emp('e035', 'EMP-035', '김태현', 'dept-15', 'rank-1', 'title-1', 'regular', 3000000, { hire_date: '2023-09-01', birth_date: '1998-04-17', gender: 'M', address: '김해시 장유로 158', zip_code: '50901' }),

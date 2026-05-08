@@ -8,6 +8,7 @@ import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { useAttendanceStore } from '@/lib/stores/attendance-store';
 import { useAppointmentStore } from '@/lib/stores/appointment-store';
 import { useApprovalStore } from '@/lib/stores/approval-store';
+import { useFlexScheduleStore } from '@/lib/stores/flex-schedule-store';
 import { useSettingsStore } from '@/lib/stores/settings-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { useCodeMap, CODE } from '@/lib/hooks/use-code';
@@ -62,6 +63,16 @@ import {
   TrendingDown,
   TrendingUp,
   FileCheck,
+  Phone,
+  Mail,
+  MapPin,
+  Heart,
+  Building2,
+  Cake,
+  ClipboardList,
+  Hash,
+  CreditCard,
+  Users,
 } from 'lucide-react';
 import {
   BarChart,
@@ -564,6 +575,8 @@ export default function MyPage() {
   const TRAINING_STATUS = useCodeMap(CODE.TRAINING_STATUS);
   const LEAVE_TIME_PERIODS = useCodeMap(CODE.LEAVE_TIME_PERIODS);
   const APPROVAL_STATUS = useCodeMap(CODE.APPROVAL_STATUS);
+  const DEGREE_LABELS = useCodeMap(CODE.DEGREE_LABELS);
+  const EMPLOYMENT_TYPES = useCodeMap(CODE.EMPLOYMENT_TYPES);
 
   const session = useAuthStore((s) => s.session);
   const MY_ID = session?.employee_id ?? 'e022';
@@ -572,7 +585,14 @@ export default function MyPage() {
   const departments = useEmployeeStore((s) => s.departments);
   const positionRanks = useEmployeeStore((s) => s.positionRanks);
   const positionTitles = useEmployeeStore((s) => s.positionTitles);
+  const careerHistories = useEmployeeStore((s) => s.careerHistories);
+  const educationHistories = useEmployeeStore((s) => s.educationHistories);
+  const certifications = useEmployeeStore((s) => s.certifications);
+  const familyMembers = useEmployeeStore((s) => s.familyMembers);
   const work = useSettingsStore((s) => s.work);
+  const workplaces = useSettingsStore((s) => s.workplaces);
+  const workSchedules = useSettingsStore((s) => s.workSchedules);
+  const getActiveAssignment = useFlexScheduleStore((s) => s.getActiveAssignment);
 
   const rawEmp = employees.find((e) => e.id === MY_ID);
   const myEmployee = rawEmp ? {
@@ -666,6 +686,23 @@ export default function MyPage() {
       .filter((a) => a.employee_id === MY_ID)
       .sort((a, b) => b.effective_date.localeCompare(a.effective_date)),
     [appointments, MY_ID],
+  );
+
+  // Sub-data
+  const myCareer = useMemo(() => careerHistories.filter((c) => c.employee_id === MY_ID), [careerHistories, MY_ID]);
+  const myEducation = useMemo(() => educationHistories.filter((e) => e.employee_id === MY_ID), [educationHistories, MY_ID]);
+  const myCerts = useMemo(() => certifications.filter((c) => c.employee_id === MY_ID), [certifications, MY_ID]);
+  const myFamily = useMemo(() => familyMembers.filter((f) => f.employee_id === MY_ID), [familyMembers, MY_ID]);
+
+  // Workplace and active schedule
+  const myWorkplace = useMemo(
+    () => myEmployee?.workplace_id ? workplaces.find((w) => w.id === myEmployee.workplace_id) : workplaces.find((w) => w.is_headquarters) ?? workplaces[0],
+    [myEmployee, workplaces],
+  );
+  const myActiveAssignment = getActiveAssignment(MY_ID);
+  const myWorkSchedule = useMemo(
+    () => myActiveAssignment ? workSchedules.find((ws) => ws.id === myActiveAssignment.work_schedule_id) : null,
+    [myActiveAssignment, workSchedules],
   );
 
   const myAttendance = useMemo(
@@ -1144,59 +1181,351 @@ export default function MyPage() {
         {/* Tab 3: 기본정보                                                 */}
         {/* ============================================================== */}
         <TabsContent value="basic">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">기본 정보</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {[
-                  { label: '사원번호', value: myEmployee.employee_number },
-                  { label: '이름', value: myEmployee.name },
-                  { label: '부서', value: myEmployee.department?.name ?? '-' },
-                  { label: '직급', value: myEmployee.position_rank?.name ?? '-' },
-                  { label: '입사일', value: myEmployee.hire_date },
-                  { label: '근속연수', value: yearsOfService },
-                  { label: '고용형태', value: myEmployee.employment_type === 'regular' ? '정규직' : '계약직' },
-                  { label: '이메일', value: myEmployee.email },
-                  { label: '연락처', value: myEmployee.phone ?? '-' },
-                  { label: '은행', value: `${myEmployee.bank_name ?? '-'} ${myEmployee.bank_account ?? ''}` },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-lg border p-4">
-                    <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
-                    <p className="text-sm font-medium">{item.value}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="mt-6">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-accent-purple-subtle text-accent-purple">
-                  <Award className="h-4 w-4" />
+          <div className="space-y-6">
+            {/* 1. 인사 정보 (재직정보) */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  인사 정보
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {[
+                    { icon: Hash, label: '사번', value: myEmployee.employee_number },
+                    { icon: User, label: '성명', value: myEmployee.name },
+                    { icon: User, label: '영문명', value: myEmployee.name_en ?? '-' },
+                    { icon: Building2, label: '부서', value: myEmployee.department?.name ?? '-' },
+                    { icon: Briefcase, label: '직급', value: myEmployee.position_rank?.name ?? '-' },
+                    { icon: Briefcase, label: '직책', value: myEmployee.position_title?.name ?? '-' },
+                    { icon: Briefcase, label: '고용형태', value: EMPLOYMENT_TYPES[myEmployee.employment_type] ?? myEmployee.employment_type },
+                    { icon: CalendarDays, label: '입사일', value: myEmployee.hire_date },
+                    { icon: Clock, label: '근속기간', value: yearsOfService },
+                    { icon: Mail, label: '사내메일', value: myEmployee.email },
+                    { icon: MapPin, label: '근무지', value: myWorkplace?.name ?? '-' },
+                    { icon: Clock, label: '근무유형', value: myWorkSchedule?.name ?? '기본 고정근무' },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-lg border p-3">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <item.icon className="h-3 w-3 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">{item.label}</p>
+                      </div>
+                      <p className="text-sm font-medium">{item.value}</p>
+                    </div>
+                  ))}
                 </div>
-                <CardTitle className="text-base">증명서 발급</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-3">
-                <Link href={`/employees/${MY_ID}/certificates/employment`}>
-                  <Button variant="outline" className="gap-2">
-                    <FileText className="h-4 w-4" />
-                    재직증명서
-                  </Button>
-                </Link>
-                <Link href={`/employees/${MY_ID}/certificates/career`}>
-                  <Button variant="outline" className="gap-2">
-                    <FileText className="h-4 w-4" />
-                    경력증명서
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* 2. 개인 신상 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  개인 신상
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {[
+                    { icon: Cake, label: '생년월일', value: myEmployee.birth_date ?? '-' },
+                    { icon: User, label: '성별', value: myEmployee.gender === 'M' ? '남' : myEmployee.gender === 'F' ? '여' : '-' },
+                    { icon: Hash, label: '주민등록번호', value: myEmployee.resident_number ?? '-' },
+                    { icon: Phone, label: '휴대전화', value: myEmployee.phone ?? '-' },
+                    { icon: Mail, label: '개인메일', value: myEmployee.personal_email ?? '-' },
+                    { icon: Heart, label: '결혼기념일', value: myEmployee.marriage_date ?? '-' },
+                    { icon: MapPin, label: '주소', value: `${myEmployee.address ?? '-'} ${myEmployee.address_detail ?? ''}` },
+                    { icon: Hash, label: '우편번호', value: myEmployee.zip_code ?? '-' },
+                    {
+                      icon: Phone, label: '비상연락처',
+                      value: myEmployee.emergency_contact_name
+                        ? `${myEmployee.emergency_contact_name} (${myEmployee.emergency_contact_relation ?? ''}) ${myEmployee.emergency_contact_phone ?? ''}`
+                        : '-',
+                    },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-lg border p-3">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <item.icon className="h-3 w-3 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">{item.label}</p>
+                      </div>
+                      <p className="text-sm font-medium">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 3. 급여 정보 (요약) */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Banknote className="h-4 w-4" />
+                  급여 정보
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded-lg border p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <DollarSign className="h-3 w-3 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground">기본급</p>
+                    </div>
+                    <p className="text-sm font-bold">{fmtWon(baseSalary)}</p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <CreditCard className="h-3 w-3 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground">은행/계좌</p>
+                    </div>
+                    <p className="text-sm font-medium">{myEmployee.bank_name ?? '-'} {myEmployee.bank_account ?? ''}</p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <TrendingUp className="h-3 w-3 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground">최근 실수령</p>
+                    </div>
+                    <p className="text-sm font-bold">{latestPayroll ? fmtWon(latestPayroll.net_pay) : '-'}</p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground">연차 잔여/총</p>
+                    </div>
+                    <p className="text-sm font-bold">
+                      {annualBalance ? `${annualBalance.remaining_days} / ${annualBalance.total_days}일` : '-'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 4. 학력사항 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4" />
+                  학력사항
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>학교명</TableHead>
+                        <TableHead>전공</TableHead>
+                        <TableHead>학위</TableHead>
+                        <TableHead>기간</TableHead>
+                        <TableHead>졸업</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {myEducation.length === 0 ? (
+                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">등록된 학력 정보가 없습니다.</TableCell></TableRow>
+                      ) : myEducation.map((e) => (
+                        <TableRow key={e.id}>
+                          <TableCell className="font-medium">{e.school_name}</TableCell>
+                          <TableCell className="text-sm">{e.major ?? '-'}</TableCell>
+                          <TableCell className="text-sm">{e.degree ? DEGREE_LABELS[e.degree] ?? e.degree : '-'}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{e.start_date ?? ''} ~ {e.end_date ?? '현재'}</TableCell>
+                          <TableCell><Badge variant={e.is_graduated ? 'default' : 'secondary'} className="text-xs">{e.is_graduated ? '졸업' : '재학'}</Badge></TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 5. 경력사항 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  경력사항
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>회사명</TableHead>
+                        <TableHead>부서</TableHead>
+                        <TableHead>직위</TableHead>
+                        <TableHead>기간</TableHead>
+                        <TableHead>업무</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {myCareer.length === 0 ? (
+                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">등록된 경력 정보가 없습니다.</TableCell></TableRow>
+                      ) : myCareer.map((c) => (
+                        <TableRow key={c.id}>
+                          <TableCell className="font-medium">{c.company_name}</TableCell>
+                          <TableCell className="text-sm">{c.department ?? '-'}</TableCell>
+                          <TableCell className="text-sm">{c.position ?? '-'}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{c.start_date} ~ {c.end_date ?? '현재'}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{c.description ?? ''}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 6. 자격증 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Award className="h-4 w-4" />
+                  자격/면허
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>자격증명</TableHead>
+                        <TableHead>발급기관</TableHead>
+                        <TableHead>취득일</TableHead>
+                        <TableHead>만료일</TableHead>
+                        <TableHead>번호</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {myCerts.length === 0 ? (
+                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">등록된 자격증이 없습니다.</TableCell></TableRow>
+                      ) : myCerts.map((c) => (
+                        <TableRow key={c.id}>
+                          <TableCell className="font-medium">{c.name}</TableCell>
+                          <TableCell className="text-sm">{c.issuer ?? '-'}</TableCell>
+                          <TableCell className="text-xs">{c.issue_date ?? '-'}</TableCell>
+                          <TableCell className="text-xs">{c.expiry_date ?? '없음'}</TableCell>
+                          <TableCell className="text-xs font-mono">{c.certificate_number ?? '-'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 7. 가족사항 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  가족사항
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>성명</TableHead>
+                        <TableHead>관계</TableHead>
+                        <TableHead>생년월일</TableHead>
+                        <TableHead>연락처</TableHead>
+                        <TableHead>부양가족</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {myFamily.length === 0 ? (
+                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">등록된 가족정보가 없습니다.</TableCell></TableRow>
+                      ) : myFamily.map((f) => (
+                        <TableRow key={f.id}>
+                          <TableCell className="font-medium">{f.name}</TableCell>
+                          <TableCell className="text-sm">{f.relation}</TableCell>
+                          <TableCell className="text-xs">{f.birth_date ?? '-'}</TableCell>
+                          <TableCell className="text-xs">{f.phone ?? '-'}</TableCell>
+                          <TableCell><Badge variant={f.is_dependent ? 'default' : 'outline'} className="text-xs">{f.is_dependent ? '예' : '아니오'}</Badge></TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 8. 인사발령 이력 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  인사발령 이력
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>발령일</TableHead>
+                        <TableHead>유형</TableHead>
+                        <TableHead>변경 전</TableHead>
+                        <TableHead>변경 후</TableHead>
+                        <TableHead>사유</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {myAppointments.length === 0 ? (
+                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">인사발령 내역이 없습니다.</TableCell></TableRow>
+                      ) : myAppointments.map((a) => {
+                        const prevDept = a.prev_department_id ? departments.find((d) => d.id === a.prev_department_id)?.name : null;
+                        const prevRank = a.prev_position_rank_id ? positionRanks.find((r) => r.id === a.prev_position_rank_id)?.name : null;
+                        const newDept = a.new_department_id ? departments.find((d) => d.id === a.new_department_id)?.name : null;
+                        const newRank = a.new_position_rank_id ? positionRanks.find((r) => r.id === a.new_position_rank_id)?.name : null;
+                        return (
+                          <TableRow key={a.id}>
+                            <TableCell className="text-sm font-medium">{a.effective_date}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-xs">
+                                {APPOINTMENT_TYPES[a.type] ?? a.type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs">{prevDept && prevRank ? `${prevDept} / ${prevRank}` : '-'}</TableCell>
+                            <TableCell className="text-xs">{newDept && newRank ? `${newDept} / ${newRank}` : '-'}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{a.reason}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 9. 증명서 발급 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  증명서 발급
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3">
+                  <Link href={`/employees/${MY_ID}/certificates/employment`}>
+                    <Button variant="outline" className="gap-2"><FileText className="h-4 w-4" />재직증명서</Button>
+                  </Link>
+                  <Link href={`/employees/${MY_ID}/certificates/career`}>
+                    <Button variant="outline" className="gap-2"><FileText className="h-4 w-4" />경력증명서</Button>
+                  </Link>
+                  <Link href={`/employees/${MY_ID}/record-card`}>
+                    <Button variant="outline" className="gap-2"><ClipboardList className="h-4 w-4" />인사기록카드</Button>
+                  </Link>
+                  <Link href="/payroll/withholding-tax">
+                    <Button variant="outline" className="gap-2"><FileText className="h-4 w-4" />원천징수부</Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* ============================================================== */}

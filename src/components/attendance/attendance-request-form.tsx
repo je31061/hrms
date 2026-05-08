@@ -24,6 +24,8 @@ import {
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { useApprovalStore } from '@/lib/stores/approval-store';
+import { useAttendanceStore } from '@/lib/stores/attendance-store';
+import { useSettingsStore } from '@/lib/stores/settings-store';
 import { useNotificationStore } from '@/lib/stores/notification-store';
 import { findApprovers } from '@/lib/utils/approval-helpers';
 import { ApprovalLineEditor, type ApprovalLineEntry } from '@/components/approval/approval-line-editor';
@@ -152,6 +154,9 @@ export function AttendanceRequestForm({
   const positionRanks = useEmployeeStore((s) => s.positionRanks);
   const departments = useEmployeeStore((s) => s.departments);
   const createApproval = useApprovalStore((s) => s.createApproval);
+  const allApprovals = useApprovalStore((s) => s.approvals);
+  const attendanceRecords = useAttendanceStore((s) => s.records);
+  const work = useSettingsStore((s) => s.work);
   const addNotification = useNotificationStore((s) => s.addNotification);
 
   const employeeId = propEmployeeId ?? session?.employee_id ?? '';
@@ -306,6 +311,86 @@ export function AttendanceRequestForm({
       toast.error('시작일을 선택해주세요.');
       return;
     }
+
+    // === 1일 중복 근태 신청 차단 ===
+    if (work.block_duplicate_attendance_request) {
+      const reqEnd = isHalfType ? startDate : (endDate || startDate);
+      // 동일 직원 + 동일 날짜 범위에 이미 pending/in_progress/approved 결재 있는지
+      const conflictingApprovals = allApprovals.filter((a) => {
+        if (a.requester_id !== employeeId) return false;
+        if (a.status === 'rejected' || a.status === 'cancelled') return false;
+        if (a.type !== 'attendance_request') return false;
+        const c = a.content as Record<string, unknown> | null;
+        if (!c) return false;
+        const aStart = c.startDate as string;
+        const aEnd = c.endDate as string;
+        if (!aStart) return false;
+        // 날짜 겹침 체크
+        return !(reqEnd < aStart || startDate > aEnd);
+      });
+      if (conflictingApprovals.length > 0) {
+        const conflict = conflictingApprovals[0];
+        const c = conflict.content as Record<string, unknown>;
+        toast.error(`해당 기간에 이미 신청된 근태(${c.requestTypeLabel ?? '근태'})가 있습니다. 중복 신청은 불가합니다.`);
+        return;
+      }
+      // 이미 근태 기록이 있는 날짜인지 (휴가/출장 등)
+      const existingRecord = attendanceRecords.find((r) =>
+        r.employee_id === employeeId && r.date >= startDate && r.date <= reqEnd && r.status === 'leave',
+      );
+      if (existingRecord) {
+        toast.error(`${existingRecord.date}에 이미 휴가 처리된 근태가 있습니다.`);
+        return;
+      }
+    }
+
+    // === 전결규정 검증 ===
+    if (work.enable_delegation_rules) {
+      // 잔업/특근: 본인 결재 한도 초과 시 상위자 결재 필요 안내
+      if (isOvertime && Number(overtimeHours) > work.overtime_self_approval_limit) {
+        const proceed = window.confirm(
+          `잔업/특근 ${overtimeHours}시간은 본인 결재 한도(${work.overtime_self_approval_limit}시간)를 초과합니다.\n` +
+          `상위자(부서장 이상) 전결이 필요합니다. 진행하시겠습니까?`,
+        );
+        if (!proceed) return;
+      }
+      // 출장: 본인 결재 일수 초과 시 안내
+      if ((type === 'business_trip_a' || type === 'business_trip_b' || type === 'business_trip_c' || type === 'dispatch_overseas') && calculatedDays > work.business_trip_self_approval_limit) {
+        const proceed = window.confirm(
+          `출장 ${calculatedDays}일은 본인 결재 한도(${work.business_trip_self_approval_limit}일)를 초과합니다.\n` +
+          `상위자 전결이 필요합니다. 진행하시겠습니까?`,
+        );
+        if (!proceed) return;
+      }
+    }
+
+    // === 주52시간 초과 경고 (잔업/특근) ===
+    if (work.weekly_52h_warning && isOvertime && overtimeHours) {
+      // 해당 주의 기존 근로시간 + 신청 잔업시간 계산
+      const reqDate = new Date(startDate);
+      const dayOfWeek = reqDate.getDay();
+      const monday = new Date(reqDate);
+      monday.setDate(reqDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      const mondayStr = monday.toISOString().split('T')[0];
+      const sundayStr = sunday.toISOString().split('T')[0];
+      const weeklyHours = attendanceRecords
+        .filter((r) => r.employee_id === employeeId && r.date >= mondayStr && r.date <= sundayStr)
+        .reduce((sum, r) => sum + (r.work_hours ?? 0), 0);
+      const projected = weeklyHours + Number(overtimeHours);
+      if (projected > work.weekly_max_hours) {
+        const proceed = window.confirm(
+          `⚠ 주 52시간 초과 경고\n` +
+          `해당 주 누적 근무시간: ${weeklyHours.toFixed(1)}시간\n` +
+          `신청 잔업: ${overtimeHours}시간\n` +
+          `예상 총 근무: ${projected.toFixed(1)}시간 (한도 ${work.weekly_max_hours}시간)\n\n` +
+          `진행하시겠습니까?`,
+        );
+        if (!proceed) return;
+      }
+    }
+
     // 반차/반반차/1H연차 사용자 지정 시간 검증
     if (isHalfType && halfPeriod === 'custom') {
       if (!halfCustomStart || !halfCustomEnd) {

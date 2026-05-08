@@ -337,6 +337,57 @@ export default function WorkScheduleSettings() {
             <Switch checked={work.modification_locked_after_close ?? true}
               onCheckedChange={(v) => updateWork({ modification_locked_after_close: v })} />
           </div>
+
+          <Separator />
+          <p className="text-sm font-semibold">전결규정 / 검증</p>
+
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <Label>전결규정 활성화</Label>
+              <p className="text-sm text-muted-foreground">잔업/출장 신청 시 본인 결재 한도 초과 안내</p>
+            </div>
+            <Switch checked={work.enable_delegation_rules ?? true}
+              onCheckedChange={(v) => updateWork({ enable_delegation_rules: v })} />
+          </div>
+          {(work.enable_delegation_rules ?? true) && (
+            <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30">
+              <div className="space-y-2">
+                <Label>본인 결재 가능 잔업 시간</Label>
+                <Input
+                  type="number" min={0} step="0.5"
+                  value={work.overtime_self_approval_limit ?? 4}
+                  onChange={(e) => updateWork({ overtime_self_approval_limit: Number(e.target.value) })}
+                />
+                <p className="text-xs text-muted-foreground">초과 시 상위자 전결 안내</p>
+              </div>
+              <div className="space-y-2">
+                <Label>본인 결재 가능 출장 일수</Label>
+                <Input
+                  type="number" min={0}
+                  value={work.business_trip_self_approval_limit ?? 1}
+                  onChange={(e) => updateWork({ business_trip_self_approval_limit: Number(e.target.value) })}
+                />
+                <p className="text-xs text-muted-foreground">초과 시 상위자 전결 안내</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <Label>1일 중복 근태 신청 차단</Label>
+              <p className="text-sm text-muted-foreground">동일 직원 동일 날짜에 중복 신청 방지</p>
+            </div>
+            <Switch checked={work.block_duplicate_attendance_request ?? true}
+              onCheckedChange={(v) => updateWork({ block_duplicate_attendance_request: v })} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <Label>주52시간 초과 경고</Label>
+              <p className="text-sm text-muted-foreground">잔업 신청 시 주간 누적이 52시간 초과 시 경고</p>
+            </div>
+            <Switch checked={work.weekly_52h_warning ?? true}
+              onCheckedChange={(v) => updateWork({ weekly_52h_warning: v })} />
+          </div>
           <Separator />
           <div className="space-y-2">
             <Label>생일자 조기퇴근 - 자녀 1명당 시간</Label>

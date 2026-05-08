@@ -85,6 +85,14 @@ interface SettingsState {
     enable_late_grace_by_request_type: boolean;  // 근태별 지각 유예 차등 적용
     allow_attendance_modification: boolean;       // 사후결재 (근태 수정요청) 허용
     modification_locked_after_close: boolean;     // 근태 마감된 월은 수정 불가
+    // 전결규정
+    enable_delegation_rules: boolean;             // 전결규정 활성화
+    overtime_self_approval_limit: number;         // 본인 결재 가능 잔업 시간 (예: 0 = 사용안함)
+    business_trip_self_approval_limit: number;    // 본인 결재 가능 출장 일수 (예: 0)
+    // 중복 근태 검증
+    block_duplicate_attendance_request: boolean;  // 1일 중복 근태 신청 차단
+    weekly_52h_warning: boolean;                  // 주52시간 초과 경고
+    weekly_max_hours: number;                     // 주 최대 근로시간 (52)
   };
   workSchedules: WorkSchedule[];
 
@@ -457,6 +465,12 @@ export const useSettingsStore = create<SettingsStore>()(
         enable_late_grace_by_request_type: false,
         allow_attendance_modification: true,
         modification_locked_after_close: true,
+        enable_delegation_rules: true,
+        overtime_self_approval_limit: 4,
+        business_trip_self_approval_limit: 1,
+        block_duplicate_attendance_request: true,
+        weekly_52h_warning: true,
+        weekly_max_hours: 52,
       },
       workSchedules: defaultWorkSchedules,
       leave: {
@@ -763,6 +777,12 @@ export const useSettingsStore = create<SettingsStore>()(
                 enable_late_grace_by_request_type: work.enable_late_grace_by_request_type ?? false,
                 allow_attendance_modification: work.allow_attendance_modification ?? true,
                 modification_locked_after_close: work.modification_locked_after_close ?? true,
+                enable_delegation_rules: work.enable_delegation_rules ?? true,
+                overtime_self_approval_limit: work.overtime_self_approval_limit ?? 4,
+                business_trip_self_approval_limit: work.business_trip_self_approval_limit ?? 1,
+                block_duplicate_attendance_request: work.block_duplicate_attendance_request ?? true,
+                weekly_52h_warning: work.weekly_52h_warning ?? true,
+                weekly_max_hours: work.weekly_max_hours ?? 52,
                 flex_work_enabled: work.flex_work_enabled ?? true,
                 flex_start_min: work.flex_start_min ?? '06:00',
                 flex_start_max: work.flex_start_max ?? '08:00',

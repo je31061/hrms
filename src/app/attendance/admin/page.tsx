@@ -58,6 +58,9 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { useAttendanceModificationStore } from '@/lib/stores/attendance-modification-store';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
 
 export default function AttendanceAdminPage() {
   const ATTENDANCE_STATUS = useCodeMap(CODE.ATTENDANCE_STATUS);
@@ -168,6 +171,47 @@ export default function AttendanceAdminPage() {
       const leaveDays = empRecords.filter((r) => r.status === 'leave').length;
       const totalWorkHours = empRecords.reduce((s, r) => s + (r.work_hours ?? 0), 0);
       const overtimeHours = empRecords.reduce((s, r) => s + (r.overtime_hours ?? 0), 0);
+      // 야간 근로 (22:00~06:00) - 출퇴근 시간으로 추정
+      const nightHours = empRecords.reduce((sum, r) => {
+        if (!r.clock_in || !r.clock_out) return sum;
+        const inTime = new Date(r.clock_in);
+        const outTime = new Date(r.clock_out);
+        const inHour = inTime.getHours();
+        const outHour = outTime.getHours();
+        let night = 0;
+        if (outHour >= 22 || outHour < 6) {
+          // 22시 이후 퇴근 -> 22시 이후 시간 합산
+          if (outHour >= 22) night += (outHour - 22) + outTime.getMinutes() / 60;
+          else night += 2 + outHour + outTime.getMinutes() / 60; // 자정 넘긴 경우
+        }
+        if (inHour < 6) {
+          night += 6 - inHour - inTime.getMinutes() / 60;
+        }
+        return sum + Math.max(0, night);
+      }, 0);
+      // 휴일 근로 (토/일 출근)
+      const holidayHours = empRecords.reduce((sum, r) => {
+        const d = new Date(r.date);
+        if ((d.getDay() === 0 || d.getDay() === 6) && r.work_hours) {
+          return sum + r.work_hours;
+        }
+        return sum;
+      }, 0);
+      // 소정근로 = 총근로 - 연장 - 휴일
+      const regularHours = Math.max(0, totalWorkHours - overtimeHours - holidayHours);
+
+      // 주별 52시간 초과 주 수 계산
+      const weeklyHoursMap = new Map<string, number>();
+      for (const r of empRecords) {
+        if (!r.work_hours) continue;
+        const d = new Date(r.date);
+        const dow = d.getDay();
+        const monday = new Date(d);
+        monday.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+        const wk = monday.toISOString().split('T')[0];
+        weeklyHoursMap.set(wk, (weeklyHoursMap.get(wk) ?? 0) + r.work_hours);
+      }
+      const over52WeekCount = Array.from(weeklyHoursMap.values()).filter((h) => h > 52).length;
 
       // Leave requests for this month
       const empLeaves = leaveRequests.filter((lr) => {
@@ -194,6 +238,10 @@ export default function AttendanceAdminPage() {
         leaveDays,
         totalWorkHours: Math.round(totalWorkHours * 10) / 10,
         overtimeHours: Math.round(overtimeHours * 10) / 10,
+        regularHours: Math.round(regularHours * 10) / 10,
+        nightHours: Math.round(nightHours * 10) / 10,
+        holidayHours: Math.round(holidayHours * 10) / 10,
+        over52WeekCount,
         leaveRequests: empLeaves,
         annualTotal: annualBalance?.total_days ?? 0,
         annualUsed: annualBalance?.used_days ?? 0,
@@ -332,6 +380,10 @@ export default function AttendanceAdminPage() {
           <TabsTrigger value="modifications" className="gap-1">
             <Pencil className="h-3.5 w-3.5" />
             근태수정 결재 ({pendingModifications.length})
+          </TabsTrigger>
+          <TabsTrigger value="hours" className="gap-1">
+            <Timer className="h-3.5 w-3.5" />
+            근로시간 집계
           </TabsTrigger>
         </TabsList>
 
@@ -776,6 +828,198 @@ export default function AttendanceAdminPage() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* ===== 근로시간 집계 ===== */}
+        <TabsContent value="hours">
+          {(() => {
+            // 부서별 근로시간 집계
+            const byDept = new Map<string, { name: string; regular: number; overtime: number; night: number; holiday: number; count: number; over52: number }>();
+            for (const e of employeeStats) {
+              const deptId = e.department?.id ?? 'none';
+              const deptName = e.department?.name ?? '미지정';
+              if (!byDept.has(deptId)) {
+                byDept.set(deptId, { name: deptName, regular: 0, overtime: 0, night: 0, holiday: 0, count: 0, over52: 0 });
+              }
+              const cur = byDept.get(deptId)!;
+              cur.regular += e.regularHours;
+              cur.overtime += e.overtimeHours;
+              cur.night += e.nightHours;
+              cur.holiday += e.holidayHours;
+              cur.count++;
+              cur.over52 += e.over52WeekCount;
+            }
+            const deptData = Array.from(byDept.values())
+              .map((d) => ({
+                name: d.name,
+                count: d.count,
+                regular: Math.round(d.regular * 10) / 10,
+                overtime: Math.round(d.overtime * 10) / 10,
+                night: Math.round(d.night * 10) / 10,
+                holiday: Math.round(d.holiday * 10) / 10,
+                over52: d.over52,
+                avg: d.count > 0 ? Math.round((d.regular + d.overtime) / d.count * 10) / 10 : 0,
+              }))
+              .sort((a, b) => b.overtime - a.overtime);
+
+            // 전체 합계
+            const totalRegular = employeeStats.reduce((s, e) => s + e.regularHours, 0);
+            const totalOvertime = employeeStats.reduce((s, e) => s + e.overtimeHours, 0);
+            const totalNight = employeeStats.reduce((s, e) => s + e.nightHours, 0);
+            const totalHoliday = employeeStats.reduce((s, e) => s + e.holidayHours, 0);
+
+            // 주 52시간 초과자
+            const over52Persons = employeeStats.filter((e) => e.over52WeekCount > 0).sort((a, b) => b.over52WeekCount - a.over52WeekCount);
+
+            return (
+              <>
+                {/* 전체 집계 카드 */}
+                <div className="grid gap-4 grid-cols-2 md:grid-cols-5 mb-6">
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground mb-1">소정근로</p>
+                      <p className="text-xl font-bold text-blue-600">{Math.round(totalRegular)}h</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground mb-1">연장근로</p>
+                      <p className="text-xl font-bold text-purple-600">{Math.round(totalOvertime)}h</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground mb-1">야간근로</p>
+                      <p className="text-xl font-bold text-indigo-600">{Math.round(totalNight)}h</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground mb-1">휴일근로</p>
+                      <p className="text-xl font-bold text-amber-600">{Math.round(totalHoliday)}h</p>
+                    </CardContent>
+                  </Card>
+                  <Card className={over52Persons.length > 0 ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20' : ''}>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground mb-1">주52h 초과자</p>
+                      <p className={`text-xl font-bold ${over52Persons.length > 0 ? 'text-red-600' : ''}`}>
+                        {over52Persons.length}명
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* 주52시간 초과자 알림 */}
+                {over52Persons.length > 0 && (
+                  <Card className="mb-6 border-red-300 bg-red-50/30 dark:bg-red-950/10">
+                    <CardHeader>
+                      <CardTitle className="text-base text-red-600 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        주 52시간 초과 경고 ({over52Persons.length}명)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="border rounded-lg bg-background">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>사번</TableHead>
+                              <TableHead>이름</TableHead>
+                              <TableHead>부서</TableHead>
+                              <TableHead className="text-right">총 근무</TableHead>
+                              <TableHead className="text-right">연장</TableHead>
+                              <TableHead className="text-right">초과 주 수</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {over52Persons.map((emp) => (
+                              <TableRow key={emp.id}>
+                                <TableCell className="font-mono text-xs">{emp.employee_number}</TableCell>
+                                <TableCell className="font-medium">{emp.name}</TableCell>
+                                <TableCell className="text-sm">{emp.department?.name ?? '-'}</TableCell>
+                                <TableCell className="text-right text-sm font-mono">{emp.totalWorkHours}h</TableCell>
+                                <TableCell className="text-right text-sm font-mono text-purple-600">{emp.overtimeHours}h</TableCell>
+                                <TableCell className="text-right">
+                                  <Badge variant="destructive" className="text-xs">{emp.over52WeekCount}주</Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 부서별 비교 차트 */}
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle className="text-base">부서별 근로시간 비교</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <BarChart data={deptData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                        <YAxis unit="h" tick={{ fontSize: 11 }} />
+                        <Tooltip formatter={(v) => `${v as number}h`} />
+                        <Legend />
+                        <Bar dataKey="regular" stackId="a" fill="#3b82f6" name="소정근로" />
+                        <Bar dataKey="overtime" stackId="a" fill="#8b5cf6" name="연장근로" />
+                        <Bar dataKey="night" stackId="a" fill="#6366f1" name="야간근로" />
+                        <Bar dataKey="holiday" stackId="a" fill="#f59e0b" name="휴일근로" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* 부서별 상세 테이블 */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">부서별 상세 (월 합계)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>부서</TableHead>
+                            <TableHead className="text-right">인원</TableHead>
+                            <TableHead className="text-right">소정</TableHead>
+                            <TableHead className="text-right">연장</TableHead>
+                            <TableHead className="text-right">야간</TableHead>
+                            <TableHead className="text-right">휴일</TableHead>
+                            <TableHead className="text-right">1인 평균</TableHead>
+                            <TableHead className="text-right">52h 초과</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {deptData.map((d) => (
+                            <TableRow key={d.name}>
+                              <TableCell className="font-medium">{d.name}</TableCell>
+                              <TableCell className="text-right">{d.count}명</TableCell>
+                              <TableCell className="text-right text-sm font-mono">{d.regular}h</TableCell>
+                              <TableCell className="text-right text-sm font-mono text-purple-600">{d.overtime}h</TableCell>
+                              <TableCell className="text-right text-sm font-mono">{d.night}h</TableCell>
+                              <TableCell className="text-right text-sm font-mono text-amber-600">{d.holiday}h</TableCell>
+                              <TableCell className="text-right text-sm font-mono font-bold">{d.avg}h</TableCell>
+                              <TableCell className="text-right">
+                                {d.over52 > 0 ? (
+                                  <Badge variant="destructive" className="text-xs">{d.over52}건</Badge>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">-</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            );
+          })()}
         </TabsContent>
       </Tabs>
 

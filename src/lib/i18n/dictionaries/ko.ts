@@ -1,4 +1,3 @@
-// src/lib/i18n/dictionaries/ko.ts
 export const ko = {
   // 공통 UI
   'common.save': '저장',
@@ -86,9 +85,9 @@ export const ko = {
   'notification.clearAllConfirm': '모든 알림을 삭제하시겠습니까?',
   'notification.empty': '알림이 없습니다.',
   'notification.timeAgo.justNow': '방금',
-  'notification.timeAgo.minutes': '{{n}}분 전',
-  'notification.timeAgo.hours': '{{n}}시간 전',
-  'notification.timeAgo.days': '{{n}}일 전',
+  'notification.timeAgo.minutes': '{{count}}분 전',
+  'notification.timeAgo.hours': '{{count}}시간 전',
+  'notification.timeAgo.days': '{{count}}일 전',
 
   // 공통 토스트
   'toast.saved': '저장되었습니다',

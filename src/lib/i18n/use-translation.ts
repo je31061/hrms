@@ -1,4 +1,3 @@
-// src/lib/i18n/use-translation.ts
 'use client';
 
 import { useSettingsStore } from '@/lib/stores/settings-store';

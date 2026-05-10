@@ -13,50 +13,63 @@ import {
   Settings,
   FileSignature,
 } from 'lucide-react';
+import type { TranslationKey } from '@/lib/i18n/types';
 
 export interface MenuItem {
   href: string;
-  label: string;
+  /** translation key — resolve with useT() */
+  label: TranslationKey;
   icon: typeof LayoutDashboard;
-  description: string;
-  group?: string;
+  /** translation key — resolve with useT() */
+  description: TranslationKey;
+  /** translation key (menuGroup.*) */
+  group: TranslationKey;
 }
 
 export type MenuGroup = {
-  label: string;
+  /** translation key (menuGroup.*) */
+  label: TranslationKey;
   items: MenuItem[];
 };
 
 export const ALL_MENU_ITEMS: MenuItem[] = [
-  // 홈
-  { href: '/', label: '대시보드', icon: LayoutDashboard, description: '메인 대시보드', group: '홈' },
-  { href: '/my', label: '마이페이지', icon: UserCircle, description: '내 정보 관리', group: '홈' },
-  // 인사관리
-  { href: '/organization', label: '조직도', icon: Network, description: '조직 구조 관리', group: '인사관리' },
-  { href: '/employees', label: '인사정보', icon: Users, description: '사원 정보 관리', group: '인사관리' },
-  { href: '/appointments', label: '인사발령', icon: ArrowRightLeft, description: '인사발령 관리', group: '인사관리' },
-  // 근무관리
-  { href: '/attendance', label: '근태관리', icon: Clock, description: '출퇴근/근태 관리', group: '근무관리' },
-  { href: '/leave', label: '휴가관리', icon: CalendarDays, description: '휴가 신청/관리', group: '근무관리' },
-  // 급여관리
-  { href: '/payroll', label: '급여관리', icon: Banknote, description: '급여 계산/관리', group: '급여관리' },
-  // 인재개발
-  { href: '/training', label: '교육관리', icon: GraduationCap, description: '교육 과정/이수 관리', group: '인재개발' },
-  // 업무지원
-  { href: '/approval', label: '전자결재', icon: FileCheck, description: '전자결재 시스템', group: '업무지원' },
-  { href: '/contracts', label: '전자계약', icon: FileSignature, description: '근로계약서 관리', group: '업무지원' },
-  // 시스템
-  { href: '/audit-log', label: '감사로그', icon: ShieldAlert, description: '시스템 감사 로그', group: '시스템' },
-  { href: '/settings', label: '설정', icon: Settings, description: '시스템 설정', group: '시스템' },
+  // Home
+  { href: '/', label: 'menu.dashboard', icon: LayoutDashboard, description: 'menuDesc.dashboard', group: 'menuGroup.home' },
+  { href: '/my', label: 'menu.myPage', icon: UserCircle, description: 'menuDesc.myPage', group: 'menuGroup.home' },
+  // HR
+  { href: '/organization', label: 'menu.organization', icon: Network, description: 'menuDesc.organization', group: 'menuGroup.hr' },
+  { href: '/employees', label: 'menu.employees', icon: Users, description: 'menuDesc.employees', group: 'menuGroup.hr' },
+  { href: '/appointments', label: 'menu.appointments', icon: ArrowRightLeft, description: 'menuDesc.appointments', group: 'menuGroup.hr' },
+  // Work
+  { href: '/attendance', label: 'menu.attendance', icon: Clock, description: 'menuDesc.attendance', group: 'menuGroup.work' },
+  { href: '/leave', label: 'menu.leave', icon: CalendarDays, description: 'menuDesc.leave', group: 'menuGroup.work' },
+  // Payroll
+  { href: '/payroll', label: 'menu.payroll', icon: Banknote, description: 'menuDesc.payroll', group: 'menuGroup.payroll' },
+  // Talent
+  { href: '/training', label: 'menu.training', icon: GraduationCap, description: 'menuDesc.training', group: 'menuGroup.talent' },
+  // Support
+  { href: '/approval', label: 'menu.approval', icon: FileCheck, description: 'menuDesc.approval', group: 'menuGroup.support' },
+  { href: '/contracts', label: 'menu.contracts', icon: FileSignature, description: 'menuDesc.contracts', group: 'menuGroup.support' },
+  // System
+  { href: '/audit-log', label: 'menu.auditLog', icon: ShieldAlert, description: 'menuDesc.auditLog', group: 'menuGroup.system' },
+  { href: '/settings', label: 'menu.settings', icon: Settings, description: 'menuDesc.settings', group: 'menuGroup.system' },
+];
+
+const GROUP_ORDER: TranslationKey[] = [
+  'menuGroup.home',
+  'menuGroup.hr',
+  'menuGroup.work',
+  'menuGroup.payroll',
+  'menuGroup.talent',
+  'menuGroup.support',
+  'menuGroup.system',
 ];
 
 export const MENU_GROUPS: MenuGroup[] = (() => {
-  const groupOrder = ['홈', '인사관리', '근무관리', '급여관리', '인재개발', '업무지원', '시스템'];
-  const map = new Map<string, MenuItem[]>();
+  const map = new Map<TranslationKey, MenuItem[]>();
   for (const item of ALL_MENU_ITEMS) {
-    const g = item.group ?? '기타';
-    if (!map.has(g)) map.set(g, []);
-    map.get(g)!.push(item);
+    if (!map.has(item.group)) map.set(item.group, []);
+    map.get(item.group)!.push(item);
   }
-  return groupOrder.filter((g) => map.has(g)).map((g) => ({ label: g, items: map.get(g)! }));
+  return GROUP_ORDER.filter((g) => map.has(g)).map((g) => ({ label: g, items: map.get(g)! }));
 })();

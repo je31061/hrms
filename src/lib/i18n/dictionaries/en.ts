@@ -9,7 +9,7 @@ export const en: Record<keyof typeof ko, string> = {
   'common.search': 'Search',
   'common.next': 'Next',
   'common.prev': 'Previous',
-  'common.confirm': 'OK',
+  'common.confirm': 'Confirm',
   'common.close': 'Close',
   'common.required': 'Required',
   'common.loading': 'Loading...',
@@ -71,7 +71,7 @@ export const en: Record<keyof typeof ko, string> = {
   // Language
   'language.korean': '한국어',
   'language.english': 'English',
-  'language.label.ko': 'KO',
+  'language.label.ko': '한',
   'language.label.en': 'EN',
 
   // Roles

@@ -26,6 +26,7 @@ const defaultDisplay: DisplayState = {
   rows_per_page: 10,
   date_format: 'yyyy-MM-dd',
   number_format: 'comma',
+  locale: 'ko',
 };
 
 const THEME_OPTIONS = [

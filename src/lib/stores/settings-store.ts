@@ -12,6 +12,7 @@ import type {
   AttendanceTypeConfig,
   UserRole,
 } from '@/types';
+import type { Locale } from '@/lib/i18n/types';
 
 // ---- Display & Print Template types ----
 
@@ -23,6 +24,7 @@ export interface DisplayState {
   rows_per_page: number;
   date_format: 'yyyy-MM-dd' | 'yyyy.MM.dd' | 'yyyy년 MM월 dd일';
   number_format: 'comma' | 'plain';
+  locale: Locale;
 }
 
 export interface PrintTemplateState {
@@ -547,6 +549,7 @@ export const useSettingsStore = create<SettingsStore>()(
         rows_per_page: 10,
         date_format: 'yyyy-MM-dd',
         number_format: 'comma',
+        locale: 'ko',
       },
       menuPermissions: {
         admin: ['/', '/my', '/organization', '/employees', '/attendance', '/leave', '/payroll', '/appointments', '/approval', '/workflows', '/issues', '/audit-log', '/settings'],
@@ -726,7 +729,7 @@ export const useSettingsStore = create<SettingsStore>()(
     }),
     {
       name: 'hrms-settings',
-      version: 6,
+      version: 7,
       migrate: (persisted: unknown, version: number) => {
         if (version < 2) {
           return {};
@@ -808,6 +811,13 @@ export const useSettingsStore = create<SettingsStore>()(
               leave: { ...leave, allow_half_day: true, allow_quarter_day: true },
             };
           }
+        }
+        if (version < 7) {
+          const display = (state.display as Record<string, unknown> | undefined) ?? {};
+          state = {
+            ...state,
+            display: { ...display, locale: display.locale ?? 'ko' },
+          };
         }
         return state;
       },

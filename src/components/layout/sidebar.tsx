@@ -8,12 +8,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ALL_MENU_ITEMS, MENU_GROUPS } from '@/lib/constants/menu-items';
 import { useSettingsStore } from '@/lib/stores/settings-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
+import { useT } from '@/lib/i18n/use-translation';
 
 export function Sidebar() {
   const pathname = usePathname();
   const session = useAuthStore((s) => s.session);
   const menuPermissions = useSettingsStore((s) => s.menuPermissions);
 
+  const { t } = useT();
   const role = session?.role ?? 'employee';
   const allowedHrefs = menuPermissions?.[role] ?? ALL_MENU_ITEMS.map((m) => m.href);
 
@@ -33,7 +35,7 @@ export function Sidebar() {
             return (
               <div key={group.label}>
                 <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                  {group.label}
+                  {t(group.label)}
                 </p>
                 <div className="space-y-0.5">
                   {visibleItems.map((item) => {
@@ -53,7 +55,7 @@ export function Sidebar() {
                         )}
                       >
                         <item.icon className="h-4 w-4" />
-                        {item.label}
+                        {t(item.label)}
                       </Link>
                     );
                   })}

@@ -252,3 +252,20 @@ HSE실 → 안전팀, 공무팀
 - **추가 라인:** ~1,093줄
 - **삭제 라인:** ~268줄
 - **빌드:** 정상 통과
+
+---
+
+## i18n (한/영) 옵션 (2026-05-11)
+
+### 개요
+헤더 우측 드롭다운에서 한국어 ↔ English 즉시 전환. 사이드바·헤더·명령 팔레트·알림벨·메뉴 권한 설정의 칭크롬 라벨 i18n화.
+
+### 핵심
+- `src/lib/i18n/` (types, dictionaries/{ko,en}, use-translation) — 자체 구현 i18n (외부 라이브러리 미사용)
+- `src/components/layout/language-toggle.tsx` — 헤더 KO/EN 드롭다운
+- `settings-store.display.locale` 추가, persist version 6→7 마이그레이션
+- `<html lang>` 자동 동기화 (`display-settings-applier.tsx`)
+- 78개 번역 키, TypeScript가 ko/en 키셋 일치 강제
+
+### 비범위 (향후 점진 확장)
+페이지 본문 (대시보드/근태/휴가/급여 등), 도메인 용어 (연차/결재/인사발령), 비즈니스 로직 내부 토스트.

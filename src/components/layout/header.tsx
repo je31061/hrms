@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useT } from '@/lib/i18n/use-translation';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,12 +18,13 @@ import Link from 'next/link';
 
 export function Header() {
   const { user, role, signOut } = useAuth();
+  const { t } = useT();
 
   const roleLabels: Record<string, string> = {
-    admin: '시스템관리자',
-    hr_manager: '인사담당자',
-    dept_manager: '부서관리자',
-    employee: '일반사원',
+    admin: t('role.admin'),
+    hr_manager: t('role.hr_manager'),
+    dept_manager: t('role.dept_manager'),
+    employee: t('role.employee'),
   };
 
   return (
@@ -33,7 +35,7 @@ export function Header() {
         onClick={() => openCommandPalette()}
       >
         <Search className="h-4 w-4" />
-        <span>검색...</span>
+        <span>{t('common.searchPlaceholder')}</span>
         <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
           <span className="text-xs">⌘</span>K
         </kbd>
@@ -65,13 +67,13 @@ export function Header() {
               <DropdownMenuItem asChild>
                 <Link href="/my">
                   <User className="mr-2 h-4 w-4" />
-                  내 정보
+                  {t('header.myInfo')}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut}>
                 <LogOut className="mr-2 h-4 w-4" />
-                로그아웃
+                {t('header.logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

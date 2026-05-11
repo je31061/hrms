@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { useT } from '@/lib/i18n/use-translation';
 
 const ROLES: { value: UserRole; label: string; color: string }[] = [
   { value: 'admin', label: '시스템관리자', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
@@ -22,6 +23,8 @@ const ROLES: { value: UserRole; label: string; color: string }[] = [
 export default function MenuPermissionSettings() {
   const menuPermissions = useSettingsStore((s) => s.menuPermissions);
   const updateMenuPermissions = useSettingsStore((s) => s.updateMenuPermissions);
+
+  const { t } = useT();
 
   const [localPerms, setLocalPerms] = useState<Record<UserRole, string[]>>({
     ...menuPermissions,
@@ -112,8 +115,8 @@ export default function MenuPermissionSettings() {
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <item.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                             <div className="min-w-0">
-                              <div className="text-sm font-medium">{item.label}</div>
-                              <div className="text-xs text-muted-foreground truncate">{item.description}</div>
+                              <div className="text-sm font-medium">{t(item.label)}</div>
+                              <div className="text-xs text-muted-foreground truncate">{t(item.description)}</div>
                             </div>
                           </div>
                         </label>

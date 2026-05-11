@@ -38,5 +38,9 @@ export function DisplaySettingsApplier() {
     html.classList.add(DENSITY_CLASS[display.content_density] ?? 'density-comfortable');
   }, [display.font_size, display.content_density]);
 
+  useEffect(() => {
+    document.documentElement.lang = display.locale;
+  }, [display.locale]);
+
   return null;
 }

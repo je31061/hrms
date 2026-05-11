@@ -13,20 +13,7 @@ import {
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { useNotificationStore, type NotificationType } from '@/lib/stores/notification-store';
 import { cn } from '@/lib/utils';
-
-function timeAgo(iso: string): string {
-  const now = new Date();
-  const then = new Date(iso);
-  const diffMs = now.getTime() - then.getTime();
-  const diffMin = Math.floor(diffMs / (1000 * 60));
-  if (diffMin < 1) return '방금';
-  if (diffMin < 60) return `${diffMin}분 전`;
-  const diffHour = Math.floor(diffMin / 60);
-  if (diffHour < 24) return `${diffHour}시간 전`;
-  const diffDay = Math.floor(diffHour / 24);
-  if (diffDay < 7) return `${diffDay}일 전`;
-  return then.toLocaleDateString('ko-KR');
-}
+import { useT } from '@/lib/i18n/use-translation';
 
 function notificationIcon(type: NotificationType) {
   switch (type) {
@@ -48,6 +35,21 @@ function notificationIcon(type: NotificationType) {
 export function NotificationBell() {
   const router = useRouter();
   const session = useAuthStore((s) => s.session);
+  const { t, locale } = useT();
+
+  const timeAgo = (iso: string): string => {
+    const now = new Date();
+    const then = new Date(iso);
+    const diffMs = now.getTime() - then.getTime();
+    const diffMin = Math.floor(diffMs / (1000 * 60));
+    if (diffMin < 1) return t('notification.timeAgo.justNow');
+    if (diffMin < 60) return t('notification.timeAgo.minutes', { count: diffMin });
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return t('notification.timeAgo.hours', { count: diffHour });
+    const diffDay = Math.floor(diffHour / 24);
+    if (diffDay < 7) return t('notification.timeAgo.days', { count: diffDay });
+    return then.toLocaleDateString(locale === 'ko' ? 'ko-KR' : 'en-US');
+  };
   const notifications = useNotificationStore((s) => s.notifications);
   const markAsRead = useNotificationStore((s) => s.markAsRead);
   const markAllAsRead = useNotificationStore((s) => s.markAllAsRead);
@@ -89,10 +91,10 @@ export function NotificationBell() {
         <div className="flex items-center justify-between px-3 py-2 border-b">
           <div className="flex items-center gap-2">
             <CalendarDays className="h-4 w-4" />
-            <span className="font-semibold text-sm">알림</span>
+            <span className="font-semibold text-sm">{t('notification.title')}</span>
             {unreadCount > 0 && (
               <Badge variant="secondary" className="text-xs">
-                {unreadCount}개 미확인
+                {t('notification.unreadBadge', { count: unreadCount })}
               </Badge>
             )}
           </div>
@@ -105,7 +107,7 @@ export function NotificationBell() {
                 onClick={() => markAllAsRead(userId)}
               >
                 <CheckCheck className="h-3.5 w-3.5 mr-1" />
-                모두 읽음
+                {t('notification.markAllRead')}
               </Button>
             )}
             {myNotifications.length > 0 && (
@@ -114,7 +116,7 @@ export function NotificationBell() {
                 variant="ghost"
                 className="h-7 text-xs text-destructive"
                 onClick={() => {
-                  if (window.confirm('모든 알림을 삭제하시겠습니까?')) {
+                  if (window.confirm(t('notification.clearAllConfirm'))) {
                     clearAll(userId);
                   }
                 }}
@@ -129,7 +131,7 @@ export function NotificationBell() {
           {myNotifications.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
               <Bell className="h-8 w-8 mx-auto mb-2 opacity-30" />
-              알림이 없습니다.
+              {t('notification.empty')}
             </div>
           ) : (
             <div className="divide-y">

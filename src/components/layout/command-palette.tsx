@@ -15,6 +15,8 @@ import {
 import { HighlightMatches } from '@/lib/utils/highlight-matches';
 import { useEmployeeStore } from '@/lib/stores/employee-store';
 import { ALL_MENU_ITEMS } from '@/lib/constants/menu-items';
+import { useSettingsStore } from '@/lib/stores/settings-store';
+import { useT } from '@/lib/i18n/use-translation';
 
 // Shared open state so header can trigger it
 let externalSetOpen: ((v: boolean) => void) | null = null;
@@ -34,6 +36,8 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const router = useRouter();
+  const { t } = useT();
+  const locale = useSettingsStore((s) => s.display.locale);
 
   // Share setter for external trigger
   useEffect(() => {
@@ -57,6 +61,9 @@ export function CommandPalette() {
   const departments = useEmployeeStore((s) => s.departments);
   const positionRanks = useEmployeeStore((s) => s.positionRanks);
   // Build searchable entries
+  // `t` is intentionally omitted from deps: it is a derived function of `locale`,
+  // so `locale` is the true semantic trigger for recomputation.
+  /* eslint-disable react-hooks/exhaustive-deps */
   const entries = useMemo<SearchEntry[]>(() => {
     const result: SearchEntry[] = [];
 
@@ -79,14 +86,15 @@ export function CommandPalette() {
       result.push({
         id: `menu-${menu.href}`,
         category: 'menu',
-        title: menu.label,
-        subtitle: menu.description,
+        title: t(menu.label),
+        subtitle: t(menu.description),
         href: menu.href,
       });
     }
 
     return result;
-  }, [employees, departments, positionRanks]);
+  }, [employees, departments, positionRanks, locale]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Fuse instance
   const fuse = useMemo(
@@ -166,22 +174,22 @@ export function CommandPalette() {
     <CommandDialog
       open={open}
       onOpenChange={(v) => { setOpen(v); if (!v) setQuery(''); }}
-      title="글로벌 검색"
-      description="직원, 메뉴를 검색합니다"
+      title={t('commandPalette.title')}
+      description={t('commandPalette.description')}
       shouldFilter={false}
       showCloseButton={false}
     >
       <CommandInput
-        placeholder="검색어를 입력하세요... (직원, 메뉴)"
+        placeholder={t('commandPalette.inputPlaceholder')}
         value={query}
         onValueChange={setQuery}
       />
       <CommandList>
         {query.trim() && results.length === 0 && (
-          <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
+          <CommandEmpty>{t('commandPalette.empty')}</CommandEmpty>
         )}
-        {renderGroup('직원', employeeResults)}
-        {renderGroup('메뉴', menuResults)}
+        {renderGroup(t('commandPalette.groupEmployees'), employeeResults)}
+        {renderGroup(t('commandPalette.groupMenus'), menuResults)}
       </CommandList>
     </CommandDialog>
   );
